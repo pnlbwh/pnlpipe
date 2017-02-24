@@ -3,13 +3,10 @@ import sys
 from os.path import getmtime
 import yaml
 import pickle
-import settings
-
-
 # from abc import abstractmethod, abstractproperty
+
 def logfmt(scriptname):
     return '%(asctime)s ' + scriptname + ' %(levelname)s  %(message)s'
-
 
 import logging
 logger = logging.getLogger()
@@ -17,6 +14,7 @@ logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
 OUTDIR = local.path('_data')
 DBDIR = local.path('_data/db')
+
 
 class Node(object):
     def __init__(self, kwargs):
@@ -26,20 +24,27 @@ class Node(object):
                 continue
             self.__setattr__(key, val)
         # self.caseid = kwargs['caseid']
+        if not hasattr(self, 'deps'):
+            self.deps = []
+        if not hasattr(self, 'opts'):
+            self.opts = []
     def name(self):
         return self.__class__.__name__
+    def show(self):
+        depsString = ','.join([d.show() for d in self.deps] + self.opts)
+        return self.name() + bracket(depsString)
 
 class GeneratedNode(Node):
     def path(self):
         return OUTDIR / self.caseid / (self.show() + '-' + self.caseid + '.nrrd')
 
-class SourceNode(Node):
+class Src(Node):
     def __init__(self, caseid, pathsKey):
+        self.deps=[]
+        self.opts=[pathsKey]
         Node.__init__(self, locals())
     def path(self):
-        return lookupPathKey(self.pathsKey, self.caseid, settings.PATHS)
-    def show(self):
-        return 'Source-'+self.pathsKey
+        return lookupPathKey(self.pathsKey, self.caseid, PATHS)
     def build(self):
         pass
 
@@ -115,3 +120,6 @@ def update(node):
     logging.info(node.path() +
                  ': it or its dependencies haven\'t changed, so doing nothing')
     return currentValue
+
+def bracket(s):
+    return '(' + s + ')'
