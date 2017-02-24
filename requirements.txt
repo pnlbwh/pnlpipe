@@ -1,0 +1,6 @@
+plumbum
+future
+numpy
+pandas
+nibabel
+pyyaml
