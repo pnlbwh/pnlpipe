@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from plumbum import local, FG
+from plumbum import local, FG, cli
 from pnlscripts.util.scripts import alignAndCenter_py, convertdwi_py, atlas_py, fs2dwi_py
 from pnlscripts.util import TemporaryDirectory
 import sys
@@ -110,27 +110,31 @@ class UKFTractographyDefault(GeneratedNode):
                             ,'--recordTensors'
                             ,'--tracts', self.path()] & FG
 
-from os.path import dirname
-SRCPATHS = {'t1raw': dirname(__file__) + '/testdata/{case}-t1w.nrrd',
-            't2raw': dirname(__file__) + '/testdata/{case}-t2w.nrrd',
-            'dwiraw': dirname(__file__) + '/testdata/{case}-dwi.nrrd',
-            't2rawmask': dirname(__file__) + '/testdata/{case}-t2mask.nrrd'}
-SOFTDIR = local.path('~/soft')
+class App(cli.Application):
+    """ Run pipeline"""
+
+    dataDir = cli.SwitchAttr(['-i'], cli.ExistingDirectory, help='Input data directory', mandatory=True)
+
+    def main(self):
+        with open(self.dataDir / 'paths.yml', 'r') as f:
+            srcpaths = yaml.load(f)
+            for key, val in srcpaths.items():
+                srcpaths[key] = self.dataDir / val
+            import pipelinelib
+            pipelinelib.SRCPATHS = srcpaths
+
+        bthash = '41353e8'
+        bthash = 'e13c873'
+        t1 = Src('001', 't1raw')
+        t1xc = T1wXc('001', t1)
+        t1mabs = T1wMaskMabs('001', t1xc, bthash)
+        t2 = Src('001', 't2raw')
+        t2mask = Src('001', 't2rawmask')
+        # t1rigidmask = T1wMaskRigid('001', t1xc, t2, t2mask)
+        # update(t1xc)
+        fs = FreeSurferUsingMask('001', t1xc, t1mabs)
+        dwixc = DwiXc('001', Src('001', 'dwiraw'), bthash)
+        update(t1mabs)
 
 if __name__ == '__main__':
-    bthash = '41353e8'
-    bthash = 'e13c873'
-    # get paths from user
-    import pipelinelib
-    pipelinelib.SRCPATHS = SRCPATHS
-    pipelinelib.SOFTDIR = SOFTDIR
-    t1 = Src('001', 't1raw')
-    t1xc = T1wXc('001', t1)
-    t1mabs = T1wMaskMabs('001', t1xc, bthash)
-    t2 = Src('001', 't2raw')
-    t2mask = Src('001', 't2rawmask')
-    # t1rigidmask = T1wMaskRigid('001', t1xc, t2, t2mask)
-    # update(t1xc)
-    fs = FreeSurferUsingMask('001', t1xc, t1mabs)
-    dwixc = DwiXc('001', Src('001', 'dwiraw'), bthash)
-    update(t1mabs)
+    App.run()
