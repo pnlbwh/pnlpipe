@@ -149,7 +149,7 @@ def update(node):
     if db == None:
         log.info(' doesn\'t exist (has no db), build'.format(node.path()))
         val = buildNode(node)
-    if db['value'] != currentValue:
+    elif db['value'] != currentValue:
         log.info(' It\'s value has changed, rebuild'.format(
             node.show()))
         val = buildNode(node)

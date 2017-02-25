@@ -1,4 +1,4 @@
-_data
-_pnlscripts-env
+_*
+!__init__.py
 testdata
 *.pyc

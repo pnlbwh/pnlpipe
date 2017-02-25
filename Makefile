@@ -1,19 +1,22 @@
-.PHONY: all clean nix conda env
-clean: ; rm pip_packages.nix
-nix: pip_packages.nix
-env: _pnlscripts-env
+.PHONY: clean conda env
+clean: ; rm -rf _env _requirements _environment.yml
+env: _env
 
-pip_packages.nix: requirements.txt
-	if [ ! -d "_pip2nix" ]; then \
-		git clone https://github.com/acowley/pip2nix _pip2nix; \
-  fi
-	cd _pip2nix; nix-shell --run 'pip2nix ../requirements.txt -o ../pip_packages.nix'
-	@echo "Now run 'nix-shell'"
-
-conda: environment.yml
+conda: _environment.yml
 	conda env create -f $<
-	@echo "Now run `source activate pnlscripts`"
+	@echo "Now run `source activate pyppl`"
 
-_pnlscripts-env: requirements.txt
+_env: _requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<
 	@echo "Now run `source $@/bin/activate`"
+
+_environment.yml: pnlscripts/environment.yml
+	cp $< $@
+	echo '  - pyyaml' >> $@
+	echo '  - python_log_indenter' >> $@
+	sed -i 's/pnlscripts/pyppl/' $@
+
+_requirements.txt: pnlscripts/requirements.txt
+	cp $< $@
+	echo 'pyyaml' >> $@
+	echo 'python_log_indenter' >> $@

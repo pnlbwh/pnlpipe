@@ -1,7 +1,0 @@
-plumbum
-future
-numpy
-pandas
-nibabel
-pyyaml
-python_log_indenter
