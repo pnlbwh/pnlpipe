@@ -14,8 +14,8 @@ def logfmt(scriptname):
 
 import logging
 logger = logging.getLogger()
-# logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
-logging.basicConfig(level=logging.INFO, format=logfmt(__file__))
+logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+# logging.basicConfig(level=logging.INFO, format=logfmt(__file__))
 from python_log_indenter import IndentedLoggerAdapter
 log = IndentedLoggerAdapter(logger, indent_char='.')
 
@@ -57,7 +57,7 @@ class Src(Node):
         Node.__init__(self, locals())
 
     def path(self):
-        return lookupPathKey(self.pathsKey, self.caseid, PATHS)
+        return lookupPathKey(self.pathsKey, self.caseid, SRCPATHS)
 
     def build(self):
         pass
@@ -195,19 +195,18 @@ def update(node):
             node.show())).sub()
     return currentValue
 
-
-def getBrainsToolsPath(hash):
+def getSoftDir():
     import os
     environSoft = os.environ.get('soft', None)
-    softDir = None
     if 'SOFTDIR' in globals():
-        softDir = SOFTDIR
-    elif environSoft:
-        softDir = environSoft
-    else:
-        log.error("Either environment variable '$soft' or 'pipelinelib.SOFTDIR' must be set")
+        return local.path(SOFTDIR)
+    if environSoft:
+        return local.path(environSoft)
+    log.error("Either environment variable '$soft' or 'pipelinelib.SOFTDIR' must be set")
+    sys.exit(1)
 
-    btpath = local.path(softDir / ('BRAINSTools-bin-' + hash))
+def getBrainsToolsPath(hash):
+    btpath = local.path(getSoftDir() / ('BRAINSTools-bin-' + hash))
     if not btpath.exists():
         log.error('{} doesn\'t exist, make it first with software.py'.format(btpath))
         sys.exit(1)
@@ -217,6 +216,30 @@ def btPath(hash):
     newpath = ':'.join(str(p) for p in [getBrainsToolsPath(hash)] + local.env.path)
     return local.env(PATH=newpath)
 
+def brainsToolsEnv(hash):
+    btpath = getBrainsToolsPath(hash)
+    newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
+    return local.env(PATH=newpath, ANTSPATH=btpath)
+
+def getTrainingDataT1AHCCCsv():
+    csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
+    if not csv.exists():
+        log.error('{} doesn\'t exist, make it first with \'pnlscripts/software.py t1s\''.format(csv))
+        sys.exit(1)
+    return csv
+
+def getUKFTractography(ukfhash):
+    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
+    if not binary.exists():
+        log.error('{} doesn\'t exist, make it first with \'pnlscripts/software.py ukf\''.format(binary))
+
 
 def bracket(s):
     return '(' + s + ')'
+
+def convertImage(i, o, bthash):
+    if i.suffixes == o.suffixes:
+        i.copy(o)
+    with brainsToolsEnv(bthash):
+        from plumbum.cmd import ConvertBetweenFileFormats
+        ConvertBetweenFileFormats(i, o)
