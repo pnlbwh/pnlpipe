@@ -4,3 +4,4 @@ numpy
 pandas
 nibabel
 pyyaml
+python_log_indenter

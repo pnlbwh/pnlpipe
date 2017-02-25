@@ -3,71 +3,64 @@
 from plumbum import local
 # from util.scripts import alignAndCenter_py
 import sys
-from os.path import getmtime
 import yaml
 import pickle
-from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey ,bracket
+from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps
 import logging
 logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+# logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+logging.basicConfig(level=logging.INFO, format=logfmt(__file__))
 
 
 class T1wXc(GeneratedNode):
     def __init__(self, caseid, t1):
         self.deps = [t1]
         GeneratedNode.__init__(self, locals())
+
     def build(self):
         need(self, self.t1)
         # alignAndCenter_py('-i', t1.filename()
         #                     ,'-o', self.path())
         self.t1.path().copy(self.path())
 
-def showKey(node, deps):
-    depsString = ','.join([d.show() for d in deps])
-    return node.name() + bracket(depsString)
 
 class T1wMaskRigid(GeneratedNode):
     def __init__(self, caseid, t1, t2, t2mask):
         self.deps = [t1, t2, t2mask]
         GeneratedNode.__init__(self, locals())
+
     def build(self):
-        need(self, self.t1)
-        need(self, self.t2)
-        need(self, self.t2mask)
+        needDeps(self)
         self.t2.path().copy(self.path())
 
 
 class T1wMaskMabs(GeneratedNode):
     def show(self):
         return self.name() + bracket(self.t1.show())
+
     def __init__(self, caseid, t1):
         self.deps = [t1]
         GeneratedNode.__init__(self, locals())
+
     def build(self):
-        need(self, self.t1)
+        needDeps(self)
         self.t1.path().copy(self.path())
 
-
-# class FreeSurferUsingMask(Node):
-#     def path(self):
-#         return OUTDIR / self.caseid / (self.show() + '-' + self.caseid + '.nrrd')
-#     def show(self):
-#         return self.__class__.__name__ + '-' + self.t1.show()
-#     def __init__(self, caseid, t1, t1mask):
-#         self.t1=t1
-#         Node.__init__(self, locals())
-#     def build(self):
-#         need(self, t1)
-#         # alignAndCenter_py('-i', t1.filename()
-#         #                     ,'-o', self.path())
-#         t1.path().copy(self.path())
+class FreeSurferUsingMask(GeneratedNode):
+    def __init__(self, caseid, t1, t1mask):
+        self.deps = [t1, t1mask]
+        Node.__init__(self, locals())
+    def build(self):
+        needDeps(self)
+        # alignAndCenter_py('-i', t1.filename()
+        #                     ,'-o', self.path())
+        t1.path().copy(self.path())
 
 from os.path import dirname
-PATHS = { 't1raw' : dirname(__file__) + '/testdata/{case}-t1w.nrrd'
-          ,'t2raw' : dirname(__file__) + '/testdata/{case}-t2w.nrrd'
-          ,'dwiraw' : dirname(__file__) + '/testdata/{case}-dwi.nrrd'
-          , 't2rawmask' : dirname(__file__) + '/testdata/{case}-t2mask.nrrd'
-          }
+PATHS = {'t1raw': dirname(__file__) + '/testdata/{case}-t1w.nrrd',
+         't2raw': dirname(__file__) + '/testdata/{case}-t2w.nrrd',
+         'dwiraw': dirname(__file__) + '/testdata/{case}-dwi.nrrd',
+         't2rawmask': dirname(__file__) + '/testdata/{case}-t2mask.nrrd'}
 
 if __name__ == '__main__':
     # get paths from user
