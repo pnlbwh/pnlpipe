@@ -23,7 +23,6 @@ log = IndentedLoggerAdapter(logger, indent_char='.')
 OUTDIR = local.path('_data')
 DBDIR = local.path('_data/db')
 
-
 class Node(object):
     def __init__(self, kwargs):
         self.db = {'value': None, 'deps': {}}
@@ -135,6 +134,7 @@ def buildNode(node):
     del node.db
     with open(dbfile(node), 'w') as f:
         yaml.dump(db, f)
+    log.info(' Built, recorded mtime and md5 hash').sub()
     return db['value']
 
 
@@ -145,23 +145,24 @@ def update(node):
     db = readDB(node)
     currentValue = None if not node.path().exists() else readCurrentValue(node)
     nodeChanged = False
-    val = None
+    rebuild = False
     if db == None:
         log.info(' doesn\'t exist (has no db), build'.format(node.path()))
-        val = buildNode(node)
+        rebuild = True
+    elif currentValue == None:
+        log.info(' File missing ({}), rebuild'.format(node.path()))
+        rebuild = True
     elif db['value'] != currentValue:
         log.info(' It\'s value has changed, rebuild'.format(
             node.show()))
-        val = buildNode(node)
-    if val:
-        log.info(' Built, recorded mtime and md5 hash'.format(
-            node.show())).sub()
-        return val
+        rebuild = True
+    if rebuild:
+        return buildNode(node)
     log.info(' Node exists and has not been modified')
 
     if node.name() == 'Src':
         log.info(
-            ' Source node hasn\'t changed, do nothing'.format(
+            ' Source node hasn\'t changed, db up to date'.format(
                 node.show())).sub()
         return currentValue
 
@@ -186,18 +187,35 @@ def update(node):
 
     if changedDeps:
         changedDepStr = ', '.join([d.show() for d in changedDeps])
-        msg = ' Deps changed ({}), rebuild'.format(changedDepStr)
-        log.info(msg)
-        val = buildNode(node)
-        msg = ' Rebuilt, recorded mtime and md5 hash'.format(
-            node.show(), changedDepStr)
-        log.info(msg).sub()
-        return val
+        log.info(' Deps changed ({}), rebuild'.format(changedDepStr))
+        return buildNode(node)
 
     log.info(
         ' It or its dependencies haven\'t changed, do nothing'.format(
             node.show())).sub()
     return currentValue
+
+
+def getBrainsToolsPath(hash):
+    import os
+    environSoft = os.environ.get('soft', None)
+    softDir = None
+    if 'SOFTDIR' in globals():
+        softDir = SOFTDIR
+    elif environSoft:
+        softDir = environSoft
+    else:
+        log.error("Either environment variable '$soft' or 'pipelinelib.SOFTDIR' must be set")
+
+    btpath = local.path(softDir / ('BRAINSTools-bin-' + hash))
+    if not btpath.exists():
+        log.error('{} doesn\'t exist, make it first with software.py'.format(btpath))
+        sys.exit(1)
+    return btpath
+
+def btPath(hash):
+    newpath = ':'.join(str(p) for p in [getBrainsToolsPath(hash)] + local.env.path)
+    return local.env(PATH=newpath)
 
 
 def bracket(s):
