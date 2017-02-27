@@ -1,3 +1,14 @@
+# Prerequisites
+
+* FSL
+* FreeSurfer
+
+# Setup
+
+    git clone https://github.com/reckbo/pyppl.git --recursive
+    export soft=<path/to/software/dir>
+    make software # makes BRAINSTools, tract_querier, UKFTractography, T1w mask training set
+
 # Run
 
     ./pnlmake [switches]  # Makes _paths.yml, a dictionary of template paths to your input data

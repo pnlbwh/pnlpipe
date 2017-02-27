@@ -29,6 +29,13 @@ _pip_packages.nix: _requirements.txt
 	cd _pip2nix; nix-shell --run 'pip2nix ../_requirements.txt -o ../_pip_packages.nix'
 	@echo "Now run 'nix-shell'"
 
+software:
+	$(call check_defined, soft, "Export 'soft' first e.g. export soft=/path/to/software")
+	./pnlscripts/software.py --commit 41353e8 brainstools
+	./pnlscripts/software.py --commit a8e354e tractquerier
+	./pnlscripts/software.py t1s
+	./pnlscripts/software.py --commit 999f14d ukftractography # TODO
+
 %-bsub4:
 	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pnlrun $*
 %-bsub8:
@@ -37,3 +44,14 @@ _pip_packages.nix: _requirements.txt
 	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pnlrun $*
 caselist:
 	while read subj; do echo $$subj-bsub8; done < caselist.txt
+
+
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
