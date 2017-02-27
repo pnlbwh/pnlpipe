@@ -61,7 +61,8 @@ class App(cli.Application):
             sys.exit(1)
 
         with open('_paths.yml', 'r') as f:
-            pipelinelib.INPUT_PATH_PATTERNS = yaml.load(f)
+            pathsDict = yaml.load(f)
+            pipelinelib.INPUT_PATH_PATTERNS = pathsDict
 
         for caseid in caseids:
             pipelines = makePipelines(caseid, pathsDict)
