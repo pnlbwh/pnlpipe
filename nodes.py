@@ -9,6 +9,7 @@ from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey,
 
 
 class DwiEd(GeneratedNode):
+    """ Eddy current correction. Accepts nrrd only. """
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
         self.opts = [bthash]
@@ -20,6 +21,7 @@ class DwiEd(GeneratedNode):
             eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
 class DwiXc(GeneratedNode):
+    """ Axis align and center a dWI. Accepts nrrd or nifti. """
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
         self.opts = [bthash]
@@ -31,15 +33,20 @@ class DwiXc(GeneratedNode):
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
             alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
 
+
 class DwiMaskHcpBet(GeneratedNode):
     def __init__(self, caseid, dwi):
         self.deps = [dwi]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-        needDeps(self)
-        print('TODO')
-        sys.exit(1)
+         needDeps(self)
+         from plumbum.mcd import bet
+         with TemporaryDirectory() as tmpdir:
+             tmpdir = local.path(tmpdir)
+             nii = tmpdir / 'dwi.nii.gz'
+             bet[nii, tmpdir / 'dwi','-m','-f','0.1']
+             convertImage(tmpdir / 'dwi_mask.nii.gz', self.path())
 
 
 class StrctXc(GeneratedNode):
