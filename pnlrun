@@ -5,9 +5,6 @@ import yaml
 import pipelinelib
 from pipelinelib import logfmt, Src, update
 from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd
-import logging
-logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
 BTHASH = '41353e8'
 TQHASH = 'a8e354e'
@@ -56,18 +53,19 @@ class App(cli.Application):
 
     def main(self, *caseids):
 
+        if not caseids:
+            print('Specify caseid(s) on command line, e.g. ./pnlrun 001')
+            sys.exit(1)
         if not local.path('_paths.yml').exists():
-            logging.error('Missing _paths.yml, run pnlmake first')
+            print('Missing _paths.yml, run pnlmake first')
             sys.exit(1)
 
         with open('_paths.yml', 'r') as f:
-            pathsDict = yaml.load(f)
-        pipelinelib.INPUT_PATH_PATTERNS = pathsDict
+            pipelinelib.INPUT_PATH_PATTERNS = yaml.load(f)
 
         for caseid in caseids:
             pipelines = makePipelines(caseid, pathsDict)
             for pipeline in pipelines:
-                print(pipeline[self.want])
                 update(pipeline[self.want])
 
 
