@@ -126,6 +126,7 @@ def needDeps(node):
 
 
 def buildNode(node):
+    node.path().dirname.mkdir()
     node.build()
     db = node.db
     db['value'] = readCurrentValue(node)
