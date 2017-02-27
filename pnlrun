@@ -26,12 +26,12 @@ def makePipelines(caseid, pathsDict):
         pipeline['dwi'] = Src(caseid, 'dwi')
 
         pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
-        pipeline['dwied'] = DwiEd(caseid, pipeline['dwi'], BTHASH)
-        pipeline['dwiedxc'] = DwiXc(caseid, pipeline['dwied'], BTHASH)
+        pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], BTHASH)
+        pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], BTHASH)
 
         pipeline['dwimask'] = Src(
             caseid, 'dwimask') if pathsDict.get('dwimask') else DwiMaskHcpBet(
-                caseid, pipeline['dwiedxc'])
+                caseid, pipeline['dwied'])
 
         pipeline['t1mask'] = Src(
             caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
@@ -39,7 +39,7 @@ def makePipelines(caseid, pathsDict):
 
         pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'], pipeline['t1mask'])
         pipeline['fsindwi'] = FsInDwiDirect(
-            caseid, pipeline['fs'], pipeline['dwiedxc'], pipeline['dwimask'],
+            caseid, pipeline['fs'], pipeline['dwied'], pipeline['dwimask'],
             BTHASH)
 
         pipelines.append(pipeline)
