@@ -98,8 +98,9 @@ class FreeSurferUsingMask(GeneratedNode):
 
     def build(self):
         needDeps(self)
+        from pnlscripts.util.scripts import fs_py
         fs_py['-i', self.t1.path(), '-m', self.t1mask.path(), '-f', '-o',
-              self.path().dirname.dirname]
+              self.path().dirname.dirname] & FG
 
 
 class FsInDwiDirect(GeneratedNode):
