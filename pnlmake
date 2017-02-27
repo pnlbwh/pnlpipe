@@ -14,7 +14,12 @@ def readPathsYml(pathsDir):
 
 
 class App(cli.Application):
-    """ Configures pipeline"""
+    """
+    Makes _paths.yml, which is a dictionary of template paths to your input
+    data (typically a t1, dwi, and a dwi mask). The paths must have the
+    following format: /data/pnl/INTRuST/{case}/diff/{case}-dwi-Ed.nhdr
+
+    """
 
     pathsDir = cli.SwitchAttr(
         ['-i'],
@@ -24,13 +29,13 @@ class App(cli.Application):
         mandatory=False)
 
     t1 = cli.SwitchAttr(
-        ['--t1'], excludes=['-i'], help='path or key in paths.yml')
+        ['--t1'], excludes=['-i'], help='template path')
     t2 = cli.SwitchAttr(
-        ['--t2'], excludes=['-i'], help='path or key in paths.yml')
+        ['--t2'], excludes=['-i'], help='template path')
     dwi = cli.SwitchAttr(
-        ['--dwi'], excludes=['-i'], help='path or key in paths.yml')
+        ['--dwi'], excludes=['-i'], help='template path')
     dwimask = cli.SwitchAttr(
-        ['--dwimask'], excludes=['-i'], help="path or a key in paths.yml")
+        ['--dwimask'], excludes=['-i'], help='template path')
 
     def main(self):
         if self.pathsDir:

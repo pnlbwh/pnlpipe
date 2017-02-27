@@ -1,4 +1,4 @@
-.PHONY: clean conda env nix
+.PHONY: clean conda env nix caselist
 clean: ; rm -rf _env _requirements _environment.yml
 env: _env
 nix: _pip_packages.nix
@@ -35,3 +35,5 @@ _pip_packages.nix: _requirements.txt
 	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pnlrun $*
 %-bsub16:
 	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pnlrun $*
+caselist:
+	while read subj; do echo $$subj-bsub8; done < caselist.txt
