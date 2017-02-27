@@ -57,6 +57,9 @@ class Src(Node):
     def path(self):
         return lookupPathKey(self.pathsKey, self.caseid, INPUT_PATH_PATTERNS)
 
+    def show(self):
+        return 'Src-' + self.opts[0]
+
     def build(self):
         pass
 
@@ -98,14 +101,14 @@ def readDB(node):
 
 
 def readCurrentValue(node):
-    log.debug('readCurrentValue: ' + node.__class__.__name__ + ' path: ' +
-                  str(node.path()))
+    log.debug(node.__class__.__name__ + ' path: ' +
+                  str(node.path()) + ' (readCurrentValue)')
     mtime = node.path().stat().st_mtime
     return mtime
 
 
 def need(parentNode, childNode):
-    log.debug(' need: {} needs {}, update'.format(parentNode.show(),
+    log.debug('{} needs {}, update (need)'.format(parentNode.show(),
                                                     childNode.show()))
     val = update(childNode)
     parentNode.db['deps'][pickle.dumps(childNode)] = (

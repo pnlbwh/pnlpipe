@@ -5,7 +5,7 @@ from pnlscripts.util import TemporaryDirectory
 import sys
 import yaml
 import pickle
-from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR
+from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR, log
 
 
 class DwiEd(GeneratedNode):
@@ -75,6 +75,7 @@ class T1wMaskMabs(GeneratedNode):
 
     def build(self):
         needDeps(self)
+        log.info(' Now run MABS using pnlscripts/atlas.py')
         with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so
