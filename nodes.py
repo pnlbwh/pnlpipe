@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from plumbum import local, FG, cli
-from pnlscripts.util.scripts import alignAndCenter_py, convertdwi_py, atlas_py, fs2dwi_py
+from pnlscripts.util.scripts import alignAndCenter_py, convertdwi_py, atlas_py, fs2dwi_py, eddy_py
 from pnlscripts.util import TemporaryDirectory
 import sys
 import yaml
@@ -17,14 +17,7 @@ class DwiEd(GeneratedNode):
     def build(self):
         needDeps(self)
         with brainsToolsEnv(self.bthash):
-            from pnlscripts.util.scripts import eddy_py
-            eddy_py['-i', self.dwi.path(), '-o', self.path()]
-
-    def build(self):
-        needDeps(self)
-        with brainsToolsEnv(self.bthash):
-            convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
-            alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
+            eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
 class DwiXc(GeneratedNode):
     def __init__(self, caseid, dwi, bthash):

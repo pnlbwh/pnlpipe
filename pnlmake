@@ -7,7 +7,12 @@ from plumbum import local, cli
 def readPathsYml(pathsDir):
     pathsDict = {}
     with open(pathsDir / 'paths.yml', 'r') as f:
-        relativePaths = yaml.load(f)
+        try:
+            relativePaths = yaml.load(f)
+        except yaml.parser.ParserError as err:
+            print(err)
+            print('Error parsing {}, is there a typo? (And are the path templates in quotes?)'.format(pathsDir/'paths.yml'))
+            sys.exit(1)
         for key, val in relativePaths.items():
             pathsDict[key] = str(pathsDir / val)
     return pathsDict

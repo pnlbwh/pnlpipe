@@ -90,7 +90,7 @@ def readHash(filepath):
 
 
 def dbfile(node):
-    return DBDIR / node.path().name
+    return DBDIR / (node.show() + '-' + node.caseid)
 
 
 def readDB(node):
@@ -137,6 +137,8 @@ def buildNode(node):
     db = node.db
     db['value'] = readCurrentValue(node)
     del node.db
+    if not dbfile(node).dirname.exists():
+        dbfile(node).dirname.mkdir()
     with open(dbfile(node), 'w') as f:
         yaml.dump(db, f)
     log.info(' Built, recorded mtime and md5 hash').sub()
