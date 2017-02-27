@@ -1,13 +1,30 @@
 #!/usr/bin/env python
-
 from plumbum import local, FG, cli
 from pnlscripts.util.scripts import alignAndCenter_py, convertdwi_py, atlas_py, fs2dwi_py
 from pnlscripts.util import TemporaryDirectory
 import sys
 import yaml
 import pickle
-from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage
+from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR
 
+
+class DwiEd(GeneratedNode):
+    def __init__(self, caseid, dwi, bthash):
+        self.deps = [dwi]
+        self.opts = [bthash]
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+        needDeps(self)
+        with brainsToolsEnv(self.bthash):
+            from pnlscripts.util.scripts import eddy_py
+            eddy_py['-i', self.dwi.path(), '-o', self.path()]
+
+    def build(self):
+        needDeps(self)
+        with brainsToolsEnv(self.bthash):
+            convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
+            alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
 
 class DwiXc(GeneratedNode):
     def __init__(self, caseid, dwi, bthash):
@@ -16,20 +33,30 @@ class DwiXc(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-        need(self, self.dwi)
+        needDeps(self)
         with brainsToolsEnv(self.bthash):
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
             alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
 
-
-class T1wXc(GeneratedNode):
-    def __init__(self, caseid, t1):
-        self.deps = [t1]
+class DwiMaskHcpBet(GeneratedNode):
+    def __init__(self, caseid, dwi):
+        self.deps = [dwi]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-        need(self, self.t1)
-        alignAndCenter_py['-i', self.t1.path(), '-o', self.path()] & FG
+        needDeps(self)
+        print('TODO')
+        sys.exit(1)
+
+
+class StrctXc(GeneratedNode):
+    def __init__(self, caseid, strct):
+        self.deps = [strct]
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+        need(self, self.strct)
+        alignAndCenter_py['-i', self.strct.path(), '-o', self.path()] & FG
 
 # class T1wMaskRigid(GeneratedNode):
 #     def __init__(self, caseid, t1, t2, t2mask):
@@ -81,7 +108,7 @@ class FsInDwiDirect(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-        needDeps(self.deps)
+        needDeps(self)
         fssubjdir = self.fs.path().dirname.dirname
         with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
             tmpdir = local.path(tmpdir)
@@ -96,7 +123,7 @@ class UKFTractographyDefault(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-        needDeps(self.deps)
+        needDeps(self)
         with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
             tmpdir = local.path(tmpdir)
             dwi = tmpdir / 'dwi.nrrd'
@@ -109,32 +136,3 @@ class UKFTractographyDefault(GeneratedNode):
                             ,'--seedsFile', dwimasknrrd
                             ,'--recordTensors'
                             ,'--tracts', self.path()] & FG
-
-class App(cli.Application):
-    """ Run pipeline"""
-
-    dataDir = cli.SwitchAttr(['-i'], cli.ExistingDirectory, help='Input data directory', mandatory=True)
-
-    def main(self):
-        with open(self.dataDir / 'paths.yml', 'r') as f:
-            srcpaths = yaml.load(f)
-            for key, val in srcpaths.items():
-                srcpaths[key] = self.dataDir / val
-            import pipelinelib
-            pipelinelib.SRCPATHS = srcpaths
-
-        bthash = '41353e8'
-        bthash = 'e13c873'
-        t1 = Src('001', 't1raw')
-        t1xc = T1wXc('001', t1)
-        t1mabs = T1wMaskMabs('001', t1xc, bthash)
-        t2 = Src('001', 't2raw')
-        t2mask = Src('001', 't2rawmask')
-        # t1rigidmask = T1wMaskRigid('001', t1xc, t2, t2mask)
-        # update(t1xc)
-        fs = FreeSurferUsingMask('001', t1xc, t1mabs)
-        dwixc = DwiXc('001', Src('001', 'dwiraw'), bthash)
-        update(t1mabs)
-
-if __name__ == '__main__':
-    App.run()

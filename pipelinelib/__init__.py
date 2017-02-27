@@ -3,9 +3,7 @@ import sys
 import yaml
 import pickle
 import hashlib
-
 # from abc import abstractmethod, abstractproperty
-
 
 from os.path import basename
 def logfmt(scriptname):
@@ -57,7 +55,7 @@ class Src(Node):
         Node.__init__(self, locals())
 
     def path(self):
-        return lookupPathKey(self.pathsKey, self.caseid, SRCPATHS)
+        return lookupPathKey(self.pathsKey, self.caseid, INPUT_PATH_PATTERNS)
 
     def build(self):
         pass
@@ -205,19 +203,20 @@ def getSoftDir():
     log.error("Either environment variable '$soft' or 'pipelinelib.SOFTDIR' must be set")
     sys.exit(1)
 
-def getBrainsToolsPath(hash):
-    btpath = local.path(getSoftDir() / ('BRAINSTools-bin-' + hash))
+def getBrainsToolsPath(bthash):
+    btpath = local.path(getSoftDir() / ('BRAINSTools-bin-' + bthash))
     if not btpath.exists():
-        log.error('{} doesn\'t exist, make it first with software.py'.format(btpath))
+        log.error(
+            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} brainstools".format(btpath, bthash))
         sys.exit(1)
     return btpath
 
-def btPath(hash):
-    newpath = ':'.join(str(p) for p in [getBrainsToolsPath(hash)] + local.env.path)
+def btPath(bthash):
+    newpath = ':'.join(str(p) for p in [getBrainsToolsPath(bthash)] + local.env.path)
     return local.env(PATH=newpath)
 
-def brainsToolsEnv(hash):
-    btpath = getBrainsToolsPath(hash)
+def brainsToolsEnv(bthash):
+    btpath = getBrainsToolsPath(bthash)
     newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
     return local.env(PATH=newpath, ANTSPATH=btpath)
 

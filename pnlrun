@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+import sys
+from plumbum import local, FG, cli
+import yaml
+import pipelinelib
+from pipelinelib import logfmt, Src, update
+from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd
+import logging
+logger = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+
+BTHASH = '41353e8'
+TQHASH = 'a8e354e'
+UKFHASH = '999f14d'
+
+
+def makePipelines(caseid, pathsDict):
+    """Make one or more pipelines, the default is PNL's standard pipeline. """
+
+    pipelines = []
+    # for ukfparams in [ukfparamsDefault, ukfparamsCustom]:
+    # for bthash in [BTHASH, 'e13c873']:
+    for i in range(1):
+        pipeline = {}
+        pipeline['t1'] = Src(caseid, 't1')
+        pipeline['dwi'] = Src(caseid, 'dwi')
+
+        pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
+        pipeline['dwied'] = DwiEd(caseid, pipeline['dwi'], BTHASH)
+        pipeline['dwiedxc'] = DwiXc(caseid, pipeline['dwied'], BTHASH)
+
+        pipeline['dwimask'] = Src(
+            caseid, 'dwimask') if pathsDict.get('dwimask') else DwiMaskHcpBet(
+                caseid, pipeline['dwiedxc'])
+
+        pipeline['t1mask'] = Src(
+            caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
+                caseid, pipeline['t1xc'], BTHASH)
+
+        pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'], pipeline['t1mask'])
+        pipeline['fsindwi'] = FsInDwiDirect(
+            caseid, pipeline['fs'], pipeline['dwiedxc'], pipeline['dwimask'],
+            BTHASH)
+
+        pipelines.append(pipeline)
+
+    return pipelines
+
+
+class App(cli.Application):
+    """ Run pipeline"""
+
+    want = cli.SwitchAttr(
+        ['-w', '--want'], default='fsindwi', help='target node')
+
+    def main(self, *caseids):
+
+        if not local.path('_paths.yml').exists():
+            logging.error('Missing _paths.yml, run pnlmake first')
+            sys.exit(1)
+
+        with open('_paths.yml', 'r') as f:
+            pathsDict = yaml.load(f)
+        pipelinelib.INPUT_PATH_PATTERNS = pathsDict
+
+        for caseid in caseids:
+            pipelines = makePipelines(caseid, pathsDict)
+            for pipeline in pipelines:
+                print(pipeline[self.want])
+                update(pipeline[self.want])
+
+
+if __name__ == '__main__':
+    App.run()
