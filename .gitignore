@@ -2,3 +2,4 @@ _*
 !__init__.py
 testdata
 *.pyc
+caselist.txt

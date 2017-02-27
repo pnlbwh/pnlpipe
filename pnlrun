@@ -48,7 +48,8 @@ def makePipelines(caseid, pathsDict):
 
 
 class App(cli.Application):
-    """ Run pipeline"""
+    """Runs the PNL pipeline using the input paths in _paths.yml (Run 'pnlmake'
+    first)"""
 
     want = cli.SwitchAttr(
         ['-w', '--want'], default='fsindwi', help='target node')
