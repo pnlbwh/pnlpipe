@@ -28,3 +28,10 @@ _pip_packages.nix: _requirements.txt
   fi
 	cd _pip2nix; nix-shell --run 'pip2nix ../_requirements.txt -o ../_pip_packages.nix'
 	@echo "Now run 'nix-shell'"
+
+%-bsub4:
+	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pnlrun $*
+%-bsub8:
+	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pnlrun $*
+%-bsub16:
+	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pnlrun $*
