@@ -4,7 +4,7 @@ from plumbum import local, FG, cli
 import yaml
 import pipelinelib
 from pipelinelib import logfmt, Src, update
-from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd
+from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault
 
 BTHASH = '41353e8'
 TQHASH = 'a8e354e'
@@ -38,6 +38,11 @@ def makePipelines(caseid, pathsDict):
         pipeline['fsindwi'] = FsInDwiDirect(
             caseid, pipeline['fs'], pipeline['dwied'], pipeline['dwimask'],
             BTHASH)
+
+        pipeline['ukf'] = UkfDefault(caseid
+                                     , pipeline['dwied']
+                                     , pipeline['dwimask']
+                                     , UKFHASH)
 
         pipelines.append(pipeline)
 
