@@ -35,18 +35,20 @@ class DwiXc(GeneratedNode):
 
 
 class DwiMaskHcpBet(GeneratedNode):
-    def __init__(self, caseid, dwi):
+    def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
          needDeps(self)
-         from plumbum.mcd import bet
-         with TemporaryDirectory() as tmpdir:
+         from plumbum.cmd import bet
+         with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
              tmpdir = local.path(tmpdir)
              nii = tmpdir / 'dwi.nii.gz'
-             bet[nii, tmpdir / 'dwi','-m','-f','0.1']
-             convertImage(tmpdir / 'dwi_mask.nii.gz', self.path())
+             convertdwi_py('-i', self.dwi.path(), '-o', nii)
+             bet(nii, tmpdir / 'dwi','-m','-f','0.1')
+             convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), self.bthash)
 
 
 class StrctXc(GeneratedNode):
@@ -132,7 +134,7 @@ class UKFTractographyDefault(GeneratedNode):
             dwimask = tmpdir / 'dwimask.nrrd'
             convertdwi_py('-i', self.dwi.path()
                           ,'-o', dwi)
-            convertImage(self.dwimask.path(), dwimask)
+            convertImage(self.dwimask.path(), dwimask, self.bthash)
             UKFTractography['--dwiFile', dwinrrd
                             ,'--maskFile', dwimasknrrd
                             ,'--seedsFile', dwimasknrrd
