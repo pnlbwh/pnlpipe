@@ -5,8 +5,20 @@ from pnlscripts.util import TemporaryDirectory
 import sys
 import yaml
 import pickle
-from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR, log
+from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR, log, ukftractographyEnv
 
+defaultUkfParams = [("Ql","70")
+                    ,("Qm","0.001")
+                    ,("Rs","0.015")
+                    ,("numTensor","2")
+                    ,("recordLength","1.7")
+                    ,("seedFALimit","0.18")
+                    ,("seedsPerVoxel","10")
+                    ,("stepLength","0.3")]
+
+def formatParams(paramsList):
+     formatted = [['--'+key, val] for key, val in paramsList]
+     return [item for pair in formatted for item in pair]
 
 class DwiEd(GeneratedNode):
     """ Eddy current correction. Accepts nrrd only. """
@@ -47,6 +59,27 @@ class DwiMaskHcpBet(GeneratedNode):
              nii = tmpdir / 'dwi.nii.gz'
              bet[nii, tmpdir / 'dwi','-m','-f','0.1']
              convertImage(tmpdir / 'dwi_mask.nii.gz', self.path())
+
+class UkfDefault(GeneratedNode):
+    def __init__(self, caseid, dwi, dwimask, ukfhash):
+        self.deps = [dwi]
+        self.opts = [ukfhash]
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+         needDeps(self)
+         with ukftractographyEnv(self.ukfhash), TemporaryDirectory() as tmpdir:
+             tmpdir = local.path(tmpdir)
+             tmpdwi = tmpdir / 'dwi.nrrd'
+             tmpdwimask = tmpdir / 'dwimask.nrrd'
+             convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
+             convertImage(self.dwimask.path(), tmpdwimask)
+             params = ['--dwiFile', tmpdwi
+                       ,'--maskFile', tmpdwimask
+                       ,'--seedsFile', tmpdwimask
+                       ,'--recordTensors'
+                       ,'--tracts', self.path()] + formatParams(defaultUkfParams)
+             UKFTractography(*params)
 
 
 class StrctXc(GeneratedNode):

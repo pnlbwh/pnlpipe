@@ -212,6 +212,14 @@ def getSoftDir():
     log.error("Either environment variable '$soft' or 'pipelinelib.SOFTDIR' must be set")
     sys.exit(1)
 
+def getUkftractographyPath(ukfhash):
+    ukfpath = local.path(getSoftDir() / ('UKFTractography-' + ukfhash))
+    if not ukfpath.exists():
+        log.error(
+            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} ukftractography".format(ukfpath, ukfhashs))
+        sys.exit(1)
+    return ukfpath
+
 def getBrainsToolsPath(bthash):
     btpath = local.path(getSoftDir() / ('BRAINSTools-bin-' + bthash))
     if not btpath.exists():
@@ -220,14 +228,19 @@ def getBrainsToolsPath(bthash):
         sys.exit(1)
     return btpath
 
-def btPath(bthash):
-    newpath = ':'.join(str(p) for p in [getBrainsToolsPath(bthash)] + local.env.path)
-    return local.env(PATH=newpath)
+# def btPath(bthash):
+#     newpath = ':'.join(str(p) for p in [getBrainsToolsPath(bthash)] + local.env.path)
+#     return local.env(PATH=newpath)
 
 def brainsToolsEnv(bthash):
     btpath = getBrainsToolsPath(bthash)
     newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
     return local.env(PATH=newpath, ANTSPATH=btpath)
+
+def ukftractographyEnv(ukfhash):
+    path = getUkftractographyPath(ukfhash)
+    newpath = ':'.join(str(p) for p in [path] + local.env.path)
+    return local.env(PATH=newpath)
 
 def getTrainingDataT1AHCCCsv():
     csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
