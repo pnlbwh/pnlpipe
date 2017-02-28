@@ -5,7 +5,7 @@ from pnlscripts.util import TemporaryDirectory
 import sys
 import yaml
 import pickle
-from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR, log, ukftractographyEnv
+from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR, log, getUKFTractographyPath
 
 defaultUkfParams = [("Ql","70")
                     ,("Qm","0.001")
@@ -63,25 +63,28 @@ class DwiMaskHcpBet(GeneratedNode):
              convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), self.bthash)
 
 class UkfDefault(GeneratedNode):
-    def __init__(self, caseid, dwi, dwimask, ukfhash):
+    def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
         self.deps = [dwi]
-        self.opts = [ukfhash]
+        self.opts = [ukfhash, bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
          needDeps(self)
-         with ukftractographyEnv(self.ukfhash), TemporaryDirectory() as tmpdir:
+         with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
              tmpdir = local.path(tmpdir)
              tmpdwi = tmpdir / 'dwi.nrrd'
              tmpdwimask = tmpdir / 'dwimask.nrrd'
              convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
-             convertImage(self.dwimask.path(), tmpdwimask)
+             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
              params = ['--dwiFile', tmpdwi
                        ,'--maskFile', tmpdwimask
                        ,'--seedsFile', tmpdwimask
                        ,'--recordTensors'
                        ,'--tracts', self.path()] + formatParams(defaultUkfParams)
-             UKFTractography(*params)
+             ukfpath = getUKFTractographyPath(self.ukfhash)
+             log.info(' Found UKF at {}'.format(ukfpath))
+             ukfbin = local[ukfpath]
+             ukfbin(*params)
 
 
 class StrctXc(GeneratedNode):
