@@ -13,9 +13,8 @@ def readPathsYml(pathsDir):
             print(err)
             print('Error parsing {}, is there a typo? (And are the path templates in quotes?)'.format(pathsDir/'paths.yml'))
             sys.exit(1)
-        for key, val in relativePaths.items():
-            pathsDict[key] = str(pathsDir / val)
-    return pathsDict
+    return relativePaths
+
 
 
 class App(cli.Application):
@@ -46,7 +45,13 @@ class App(cli.Application):
 
     def main(self):
         if self.pathsDir:
-            pathsDict = readPathsYml(self.pathsDir)
+            relativePaths = readPathsYml(self.pathsDir)
+            pathsDict = {}
+            for key, val in relativePaths.items():
+                if key == 'caseid':
+                    pathsDict[key] = val
+                else:
+                    pathsDict[key] = str(self.pathsDir / val)
         else:
             pathsDict = {
                 't1': self.t1,
@@ -59,16 +64,16 @@ class App(cli.Application):
         # Check paths exist
         allexist = True
         for key, path in pathsDict.items():
+            print('{}: {}'. format(key, path))
             if key == 'caseid':
                 continue
-            print('{}: {}'. format(key, path))
             if not local.path(path).exists():
                 allexist = False
                 print("'{}' does not exist, is that right?".format(path))
         if allexist:
             print('All paths exist')
         else:
-            print("Some paths in _paths.yml don't exist for the given caseid, so 'pnlrun' will fail to run.")
+            print("Some paths in _paths.yml don't exist for the given caseid, so 'pnlrun' may fail to run.")
 
         with open('_paths.yml', 'w') as f:
             yaml.dump(pathsDict, f, default_flow_style=False)

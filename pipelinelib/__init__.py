@@ -44,8 +44,11 @@ class Node(object):
 
 class GeneratedNode(Node):
     def path(self):
+        ext = getattr(self, 'ext', '.nrrd')
+        if not ext.startswith('.'):
+            ext = '.' + ext
         return OUTDIR / self.caseid / (
-            self.show() + '-' + self.caseid + '.nrrd')
+            self.show() + '-' + self.caseid + ext)
 
 
 class Src(Node):
@@ -67,14 +70,15 @@ class Src(Node):
 def lookupPathKey(key, caseid, pathsDict):
     try:
         pathPattern = pathsDict[key]
-        filepath = local.path(pathPattern.replace('{case}', caseid))
+        caseid_string = pathsDict.get('caseid', '{case}')
+        filepath = local.path(pathPattern.replace(caseid_string, caseid))
         if not filepath.exists():
             log.error(
-                str(filepath) + ' does not exist, maybe a typo in PATHS?')
+                str(filepath) + ' does not exist, maybe a typo in _paths.yml?')
             sys.exit(1)
         return filepath
     except KeyError:
-        log.error("Key '{}' not in PATHS, maybe a typo?".format(key))
+        log.error("Key '{}' not in _paths.yml, maybe a typo?".format(key))
         sys.exit(1)
 
 
@@ -108,7 +112,7 @@ def readCurrentValue(node):
 
 
 def need(parentNode, childNode):
-    log.debug('{} needs {}, update (need)'.format(parentNode.show(),
+    log.debug('{} needs {}'.format(parentNode.show(),
                                                     childNode.show()))
     val = update(childNode)
     parentNode.db['deps'][pickle.dumps(childNode)] = (
@@ -116,8 +120,10 @@ def need(parentNode, childNode):
 
 
 def needDeps(node):
+    log.info(' Update dependencies')
     for depNode in node.deps:
         need(node, depNode)
+    log.info(' Finished updating dependencies')
 
 
 # def needDeps(node, changedDeps=[]):
@@ -146,7 +152,7 @@ def buildNode(node):
 
 
 def update(node):
-    log.info(' Update {} ({})'.format(node.show(), node.path())).add()
+    log.info(' * Update {} (path: {})'.format(node.show(), node.path())).add()
 
     log.info(' Check if node exists or has been modified')
     db = readDB(node)

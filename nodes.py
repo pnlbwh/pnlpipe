@@ -29,6 +29,7 @@ class DwiEd(GeneratedNode):
 
     def build(self):
         needDeps(self)
+        log.info(' Run eddy current correction')
         with brainsToolsEnv(self.bthash):
             eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
@@ -41,6 +42,7 @@ class DwiXc(GeneratedNode):
 
     def build(self):
         needDeps(self)
+        log.info(' Now make axis aligned and centered DWI')
         with brainsToolsEnv(self.bthash):
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
             alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
@@ -66,10 +68,12 @@ class UkfDefault(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
         self.deps = [dwi]
         self.opts = [ukfhash, bthash]
+        self.ext = 'vtk'
         GeneratedNode.__init__(self, locals())
 
     def build(self):
          needDeps(self)
+         log.info(' Now compute ukf tractography')
          with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
              tmpdir = local.path(tmpdir)
              tmpdwi = tmpdir / 'dwi.nrrd'
@@ -155,24 +159,3 @@ class FsInDwiDirect(GeneratedNode):
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             fs2dwi_py('-f', fssubjdir, '-t', self.dwi.path(), '-m',
                        self.dwimask.path(), '-o', tmpoutdir, 'direct')
-
-class UKFTractographyDefault(GeneratedNode):
-    def __init__(self, caseid, dwi, dwimask, ukfhash):
-        self.deps = [dwi, dwimask]
-        self.opts = [ukfhash]
-        GeneratedNode.__init__(self, locals())
-
-    def build(self):
-        needDeps(self)
-        with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
-            tmpdir = local.path(tmpdir)
-            dwi = tmpdir / 'dwi.nrrd'
-            dwimask = tmpdir / 'dwimask.nrrd'
-            convertdwi_py('-i', self.dwi.path()
-                          ,'-o', dwi)
-            convertImage(self.dwimask.path(), dwimask, self.bthash)
-            UKFTractography['--dwiFile', dwinrrd
-                            ,'--maskFile', dwimasknrrd
-                            ,'--seedsFile', dwimasknrrd
-                            ,'--recordTensors'
-                            ,'--tracts', self.path()] & FG

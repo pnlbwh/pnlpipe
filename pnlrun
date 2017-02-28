@@ -10,43 +10,51 @@ BTHASH = '41353e8'
 TQHASH = 'a8e354e'
 UKFHASH = '999f14d'
 
-
-def makePipelines(caseid, pathsDict):
-    """Make one or more pipelines, the default is PNL's standard pipeline. """
-
+def makeCustomPipelines(caseid, pathsDict):
+    """Make one or more custom pipelines.  Uncomment this and it will be run,
+    instead of the standard PNL pipeline defined below."""
     pipelines = []
     # for ukfparams in [ukfparamsDefault, ukfparamsCustom]:
     # for bthash in [BTHASH, 'e13c873']:
-    for i in range(1):
-        pipeline = {}
-        pipeline['t1'] = Src(caseid, 't1')
-        pipeline['dwi'] = Src(caseid, 'dwi')
-
-        pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
-        pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], BTHASH)
-        pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], BTHASH)
-
-        pipeline['dwimask'] = Src(
-            caseid, 'dwimask') if pathsDict.get('dwimask') else DwiMaskHcpBet(
-                caseid, pipeline['dwied'])
-
-        pipeline['t1mask'] = Src(
-            caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
-                caseid, pipeline['t1xc'], BTHASH)
-
-        pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'], pipeline['t1mask'])
-        pipeline['fsindwi'] = FsInDwiDirect(
-            caseid, pipeline['fs'], pipeline['dwied'], pipeline['dwimask'],
-            BTHASH)
-
-        pipeline['ukf'] = UkfDefault(caseid
-                                     , pipeline['dwied']
-                                     , pipeline['dwimask']
-                                     , UKFHASH)
-
+    for dwikey in ['dwihcp', 'dwibuddi']:
+        pipeline = makeStandardPipeline(caseid, pathsDict, dwiKey=dwikey)
         pipelines.append(pipeline)
-
     return pipelines
+
+
+def makeStandardPipeline(caseid, pathsDict, dwiKey='dwi', t1Key='t1', dwimaskKey='dwimask'):
+    """Makes the PNL's standard pipeline. """
+
+    pipeline = {}
+    pipeline['t1'] = Src(caseid, t1Key)
+    pipeline['dwi'] = Src(caseid, dwiKey)
+
+    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
+    # run DwiXc first as it's able to convert a DWI nifti to nrrd
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], BTHASH)
+    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], BTHASH)
+
+    pipeline['dwimask'] = Src(
+        caseid, dwimaskKey) if pathsDict.get(dwimaskKey) else DwiMaskHcpBet(
+            caseid, pipeline['dwied'], BTHASH)
+
+    pipeline['t1mask'] = Src(
+        caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
+            caseid, pipeline['t1xc'], BTHASH)
+
+    pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'], pipeline['t1mask'])
+    pipeline['fsindwi'] = FsInDwiDirect(
+        caseid, pipeline['fs'], pipeline['dwied'], pipeline['dwimask'],
+        BTHASH)
+
+    pipeline['ukf'] = UkfDefault(caseid
+                                 , pipeline['dwied']
+                                 , pipeline['dwimask']
+                                 , UKFHASH
+                                 , BTHASH)
+    return pipeline
+
+
 
 
 class App(cli.Application):
@@ -54,13 +62,10 @@ class App(cli.Application):
     first)"""
 
     want = cli.SwitchAttr(
-        ['-w', '--want'], default='fsindwi', help='target node')
+        ['-w', '--want'], default='ukf', help='target node')
 
     def main(self, *caseids):
 
-        if not caseids:
-            print('Specify caseid(s) on command line, e.g. ./pnlrun 001')
-            sys.exit(1)
         if not local.path('_paths.yml').exists():
             print('Missing _paths.yml, run pnlmake first')
             sys.exit(1)
@@ -69,9 +74,21 @@ class App(cli.Application):
             pathsDict = yaml.load(f)
             pipelinelib.INPUT_PATH_PATTERNS = pathsDict
 
+        if not caseids:
+            if not pathsDict.get('caseid'):
+                print('Specify caseid(s) on command line, e.g. ./pnlrun 001')
+                sys.exit(1)
+            caseids = [pathsDict.get('caseid')]
+
         for caseid in caseids:
-            pipelines = makePipelines(caseid, pathsDict)
-            for pipeline in pipelines:
+            try:
+                # if makeCustomPipelines defined, run those
+                pipelines = makeCustomPipelines(caseid, pathsDict)
+                for pipeline in pipelines:
+                    update(pipeline[self.want])
+            except AttributeError:
+                # else, run standard PNL pipeline
+                pipeline = makeStandardPipeline(caseid, pathsDict)
                 update(pipeline[self.want])
 
 
