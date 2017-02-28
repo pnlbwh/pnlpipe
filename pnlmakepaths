@@ -34,13 +34,15 @@ class App(cli.Application):
         mandatory=False)
 
     t1 = cli.SwitchAttr(
-        ['--t1'], excludes=['-i'], help='template path')
+        ['--t1'], excludes=['-i'], help='path')
     t2 = cli.SwitchAttr(
-        ['--t2'], excludes=['-i'], help='template path')
+        ['--t2'], excludes=['-i'], help='path')
     dwi = cli.SwitchAttr(
-        ['--dwi'], excludes=['-i'], help='template path')
+        ['--dwi'], excludes=['-i'], help='path')
     dwimask = cli.SwitchAttr(
-        ['--dwimask'], excludes=['-i'], help='template path')
+        ['--dwimask'], excludes=['-i'], help='path')
+    caseid = cli.SwitchAttr(
+        ['-s', '--subjid'], excludes=['-i'], help='subject id/caseid in t1,t2,dwi,dwimask paths')
 
     def main(self):
         if self.pathsDir:
@@ -50,13 +52,30 @@ class App(cli.Application):
                 't1': self.t1,
                 't2': self.t2,
                 'dwi': self.dwi,
-                'dwimask': self.dwimask
+                'dwimask': self.dwimask,
+                'caseid': self.caseid
             }
+
+        # Check paths exist
+        allexist = True
+        for key, path in pathsDict.items():
+            if key == 'caseid':
+                continue
+            print('{}: {}'. format(key, path))
+            if not local.path(path).exists():
+                allexist = False
+                print("'{}' does not exist, is that right?".format(path))
+        if allexist:
+            print('All paths exist')
+        else:
+            print("Some paths in _paths.yml don't exist for the given caseid, so 'pnlrun' will fail to run.")
 
         with open('_paths.yml', 'w') as f:
             yaml.dump(pathsDict, f, default_flow_style=False)
-
         print("Made '_paths.yml'")
+
+        if allexist:
+            print("Now run './pnlrun'")
 
 
 if __name__ == '__main__':

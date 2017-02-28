@@ -1,4 +1,8 @@
+* remove indent from 'it or it's dependencies ...'
 * add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
+* factor out pnl specific code from pipelinelib
+* think about multi file nodes
 * add logging to pnlscripts scripts
 * add ncurses interface to ppmake
+** add optional caseid substring to avoid having to type in '{case}'
 * add HCP preprocessing pipeline if we decide to use it
