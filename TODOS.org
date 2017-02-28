@@ -1,5 +1,4 @@
-* Add ukftractography to software.py
-* Fix src db names?
+* add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
+* add logging to pnlscripts scripts
 * add ncurses interface to ppmake
 * add HCP preprocessing pipeline if we decide to use it
-* add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)

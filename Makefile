@@ -1,4 +1,4 @@
-.PHONY: clean conda env nix caselist
+.PHONY: clean conda env nix caselist software ukftractography
 clean: ; rm -rf _env _requirements _environment.yml
 env: _env
 nix: _pip_packages.nix
@@ -33,8 +33,12 @@ software:
 	$(call check_defined, soft, "Export 'soft' first e.g. export soft=/path/to/software")
 	./pnlscripts/software.py --commit 41353e8 brainstools
 	./pnlscripts/software.py --commit a8e354e tractquerier
-	./pnlscripts/software.py t1s
-	./pnlscripts/software.py --commit 999f14d ukftractography # TODO
+	./pnlscripts/software.py trainingt1s
+	./pnlscripts/software.py --commit 999f14d ukftractography
+
+ukftractography:
+	$(call check_defined, soft, "Export 'soft' first e.g. export soft=/path/to/software")
+	./pnlscripts/software.py --commit 999f14d ukftractography
 
 %-bsub4:
 	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pnlrun $*
