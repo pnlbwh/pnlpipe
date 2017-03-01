@@ -1,3 +1,4 @@
+* add paths.yml for generated
 * add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
 * factor out pnl specific code from pipelinelib
 * think about multi file nodes
