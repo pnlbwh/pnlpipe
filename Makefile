@@ -2,18 +2,19 @@ ifeq ($(soft),)
   $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
-.PHONY: all clean conda env nix
+.PHONY: all
 all: _paths.yml
 	./pyppl
-env: _env
-nix: _pip_packages.nix
-
-BTHASH=41353e8
-TQHASH=a8e354e
-UKFHASH=999f14d
 
 ##############################################################################
 # Setup Python Environment
+
+.PHONY: clean conda env nix
+
+env: _env
+
+nix: _pip_packages.nix
+	@echo "now run 'nix-shell'"
 
 conda: _environment.yml
 	conda env create -f $<
@@ -44,6 +45,11 @@ _pip_packages.nix: _requirements.txt
 ##############################################################################
 # Setup Pipeline Software
 
+BTHASH=41353e8
+TQHASH=a8e354e
+UKFHASH=999f14d
+
+.PHONY: software ukftractography
 software:
 	./pnlscripts/software.py --commit $(BTHASH) brainstools
 	./pnlscripts/software.py --commit $(TQHASH) tractquerier
@@ -58,21 +64,23 @@ ukftractography:
 # Run pipeline
 
 .PHONY: paths
+
 paths: _paths.yml
+
 _paths.yml:
-ifeq ($(dir),)
+ifeq ($(fromdir),)
 	./pnlscripts/makepathsyml.py -o $@
 else
-	./pnlscripts/makepathsyml.py -o $@ fromdir $(dir)
+	./pnlscripts/makepathsyml.py -o $@ fromdir $(fromdir)
 endif
-%-bsub4:
-	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pyppl $*
-%-bsub8:
-	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pyppl $*
-%-bsub16:
-	bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pyppl $*
+
+%-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pyppl $*
+%-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pyppl $*
+%-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pyppl $*
+
 caselist: caselist.txt
 	while read subj; do echo $$subj-bsub8; done < caselist.txt
+
 caselist.txt:
 	$(error First make a caselist.txt with your subject ids, then run again)
 
