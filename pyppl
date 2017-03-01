@@ -55,7 +55,21 @@ def makeStandardPipeline(caseid, pathsDict, dwiKey='dwi', t1Key='t1', dwimaskKey
     return pipeline
 
 
+def makeGeneratedPathsYml(caseid, pipelines):
+    paths = {'caseid': caseid}
+    for idx, pipeline in enumerate(pipelines):
+        for key, node in pipeline.items():
+            print('{} {}'.format(key,node.path()))
+            if len(pipelines) == 1:
+                paths[key] = str(node.path())
+            else:
+                paths[key + str(idx)] = str(node.path())
+    return paths
 
+def writeGeneratedPathsYml(caseid, pipelines):
+    generatedPathsDict = makeGeneratedPathsYml(caseid, pipelines)
+    with open('_data/paths.yml', 'w') as f:
+        yaml.dump(generatedPathsDict, f, default_flow_style=False)
 
 class App(cli.Application):
     """Runs the PNL pipeline using the input paths in _paths.yml (Run 'pnlmake'
@@ -80,15 +94,22 @@ class App(cli.Application):
                 sys.exit(1)
             caseids = [pathsDict.get('caseid')]
 
+        madeGeneratedPathsYml = False
         for caseid in caseids:
             # if makeCustomPipelines is uncommented, use it
             if 'makeCustomPipelines' in globals():
                 pipelines = makeCustomPipelines(caseid, pathsDict)
+                if not madeGeneratedPathsYml:
+                    writeGeneratedPathsYml(caseid, pipelines)
+                    madeGeneratedPathsYml = True
                 for pipeline in pipelines:
                     update(pipeline[self.want])
             else:
                 # otherwise, run the standard PNL pipeline
                 pipeline = makeStandardPipeline(caseid, pathsDict)
+                if not madeGeneratedPathsYml:
+                    writeGeneratedPathsYml(caseid, [pipeline])
+                    madeGeneratedPathsYml = True
                 update(pipeline[self.want])
 
 
