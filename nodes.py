@@ -7,21 +7,20 @@ import yaml
 import pickle
 from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR, log, getUKFTractographyPath
 
-defaultUkfParams = [("Ql","70")
-                    ,("Qm","0.001")
-                    ,("Rs","0.015")
-                    ,("numTensor","2")
-                    ,("recordLength","1.7")
-                    ,("seedFALimit","0.18")
-                    ,("seedsPerVoxel","10")
-                    ,("stepLength","0.3")]
+defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
+                    ("numTensor", "2"), ("recordLength", "1.7"),
+                    ("seedFALimit", "0.18"), ("seedsPerVoxel", "10"),
+                    ("stepLength", "0.3")]
+
 
 def formatParams(paramsList):
-     formatted = [['--'+key, val] for key, val in paramsList]
-     return [item for pair in formatted for item in pair]
+    formatted = [['--' + key, val] for key, val in paramsList]
+    return [item for pair in formatted for item in pair]
+
 
 class DwiEd(GeneratedNode):
     """ Eddy current correction. Accepts nrrd only. """
+
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
         self.opts = [bthash]
@@ -32,8 +31,10 @@ class DwiEd(GeneratedNode):
         with brainsToolsEnv(self.bthash):
             eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
+
 class DwiXc(GeneratedNode):
     """ Axis align and center a dWI. Accepts nrrd or nifti. """
+
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
         self.opts = [bthash]
@@ -53,14 +54,15 @@ class DwiMaskHcpBet(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-         needDeps(self)
-         from plumbum.cmd import bet
-         with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
-             tmpdir = local.path(tmpdir)
-             nii = tmpdir / 'dwi.nii.gz'
-             convertdwi_py('-i', self.dwi.path(), '-o', nii)
-             bet(nii, tmpdir / 'dwi','-m','-f','0.1')
-             convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), self.bthash)
+        needDeps(self)
+        from plumbum.cmd import bet
+        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
+            tmpdir = local.path(tmpdir)
+            nii = tmpdir / 'dwi.nii.gz'
+            convertdwi_py('-i', self.dwi.path(), '-o', nii)
+            bet(nii, tmpdir / 'dwi', '-m', '-f', '0.1')
+            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), self.bthash)
+
 
 class UkfDefault(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
@@ -70,22 +72,20 @@ class UkfDefault(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-         needDeps(self)
-         with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
-             tmpdir = local.path(tmpdir)
-             tmpdwi = tmpdir / 'dwi.nrrd'
-             tmpdwimask = tmpdir / 'dwimask.nrrd'
-             convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
-             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
-             params = ['--dwiFile', tmpdwi
-                       ,'--maskFile', tmpdwimask
-                       ,'--seedsFile', tmpdwimask
-                       ,'--recordTensors'
-                       ,'--tracts', self.path()] + formatParams(defaultUkfParams)
-             ukfpath = getUKFTractographyPath(self.ukfhash)
-             log.info(' Found UKF at {}'.format(ukfpath))
-             ukfbin = local[ukfpath]
-             ukfbin(*params)
+        needDeps(self)
+        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
+            tmpdir = local.path(tmpdir)
+            tmpdwi = tmpdir / 'dwi.nrrd'
+            tmpdwimask = tmpdir / 'dwimask.nrrd'
+            convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
+            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
+                      '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
+                      self.path()] + formatParams(defaultUkfParams)
+            ukfpath = getUKFTractographyPath(self.ukfhash)
+            log.info(' Found UKF at {}'.format(ukfpath))
+            ukfbin = local[ukfpath]
+            ukfbin(*params)
 
 
 class StrctXc(GeneratedNode):
@@ -118,7 +118,7 @@ class T1wMaskMabs(GeneratedNode):
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so
             # we need to pass in a conventionally named one
-            tmpt1 = tmpdir / ('t1'+''.join(self.t1.path().suffixes))
+            tmpt1 = tmpdir / ('t1' + ''.join(self.t1.path().suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1.path(), tmpt1] & FG
             atlas_py['--mabs', '-t', tmpt1, '-o', tmpdir, 'csv',
@@ -154,4 +154,38 @@ class FsInDwiDirect(GeneratedNode):
             tmpdir = local.path(tmpdir)
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             fs2dwi_py('-f', fssubjdir, '-t', self.dwi.path(), '-m',
-                       self.dwimask.path(), '-o', tmpoutdir, 'direct')
+                      self.dwimask.path(), '-o', tmpoutdir, 'direct')
+
+
+class Wmql(GeneratedNode):
+    def __init__(self, caseid, fsindwi, ukf, tqhash):
+        self.deps = [fsindwi, ukf]
+        self.opts = [tqhash]
+        GeneratedNode.__init__(self, locals())
+
+    def path(self):
+        return OUTDIR / self.caseid / self.show() / 'cc.vtk'
+
+    def build(self):
+        needDeps(self)
+        if self.path().up().exists():
+            self.path().up().delete()
+        with tractQuerierEnv(self.tqhash):
+            from pnlscripts.util.scripts import wmql_py
+            wmql_py('-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
+                    '-o', self.path().dirname)
+
+
+class TractMeasures(GeneratedNode):
+    def __init__(self, caseid, wmql):
+        self.deps = [wmql]
+        self.ext = 'csv'
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+        needDeps(self)
+        measureTracts_py = local.path(
+            'pnlscripts/measuretracts/measuresTracts.py')
+        vtks = self.wmql.path().up() // '*.vtk'
+        measureTracts_py('-f', '-c', 'caseid', 'algo', '-v', self.caseid,
+                         self.wmql.show(), '-o', self.path(), '-i', vtks)

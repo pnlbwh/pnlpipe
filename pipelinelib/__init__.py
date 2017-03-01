@@ -238,6 +238,22 @@ def brainsToolsEnv(bthash):
     newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
     return local.env(PATH=newpath, ANTSPATH=btpath)
 
+def getTractQuerierPath(hash):
+    path = local.path(getSoftDir() / ('tract_querier-' + hash))
+    if not path.exists():
+        log.error(
+            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(path, hash))
+        sys.exit(1)
+    return path
+
+def tractQuerierEnv(hash):
+    path = getTractQuerierPath(hash)
+    newPath = ':'.join(str(p) for p in [path] + local.env.path)
+    import os
+    pythonPath = os.environ.get('PYTHONPATH')
+    newPythonPath = path if not pythonPath else '{}:{}'.format(path, pythonPath)
+    return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
+
 def getTrainingDataT1AHCCCsv():
     csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
     if not csv.exists():

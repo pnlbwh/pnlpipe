@@ -4,7 +4,7 @@ from plumbum import local, FG, cli
 import yaml
 import pipelinelib
 from pipelinelib import logfmt, Src, update
-from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault
+from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures
 
 BTHASH = '41353e8'
 TQHASH = 'a8e354e'
@@ -52,6 +52,9 @@ def makeStandardPipeline(caseid, pathsDict, dwiKey='dwi', t1Key='t1', dwimaskKey
                                  , pipeline['dwimask']
                                  , UKFHASH
                                  , BTHASH)
+
+    pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'], TQHASH)
+    pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
     return pipeline
 
 

@@ -1,6 +1,6 @@
-* add paths.yml for generated
-* add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
+* Add wmql and tractmeasure nodes
 * factor out pnl specific code from pipelinelib
+* add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
 * think about multi file nodes
 * add logging to pnlscripts scripts
 * add ncurses interface to makepathsyml.py
