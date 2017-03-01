@@ -216,7 +216,7 @@ def getSoftDir():
         return local.path(SOFTDIR)
     if environSoft:
         return local.path(environSoft)
-    log.error("Either environment variable '$soft' or 'pipelinelib.SOFTDIR' must be set")
+    log.error("Environment variable '$soft' must be set. This is the directory where BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
     sys.exit(1)
 
 def getUKFTractographyPath(ukfhash):

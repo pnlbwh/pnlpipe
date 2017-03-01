@@ -10,16 +10,16 @@ BTHASH = '41353e8'
 TQHASH = 'a8e354e'
 UKFHASH = '999f14d'
 
-def makeCustomPipelines(caseid, pathsDict):
-    """Make one or more custom pipelines.  Uncomment this and it will be run,
-    instead of the standard PNL pipeline defined below."""
-    pipelines = []
-    # for ukfparams in [ukfparamsDefault, ukfparamsCustom]:
-    # for bthash in [BTHASH, 'e13c873']:
-    for dwikey in ['dwihcp', 'dwibuddi']:
-        pipeline = makeStandardPipeline(caseid, pathsDict, dwiKey=dwikey)
-        pipelines.append(pipeline)
-    return pipelines
+# def makeCustomPipelines(caseid, pathsDict):
+#     """Make one or more custom pipelines.  Uncomment this and it will be run,
+#     instead of the standard PNL pipeline defined below."""
+#     pipelines = []
+#     # for ukfparams in [ukfparamsDefault, ukfparamsCustom]:
+#     # for bthash in [BTHASH, 'e13c873']:
+#     for dwikey in ['dwihcp', 'dwibuddi']:
+#         pipeline = makeStandardPipeline(caseid, pathsDict, dwiKey=dwikey)
+#         pipelines.append(pipeline)
+#     return pipelines
 
 
 def makeStandardPipeline(caseid, pathsDict, dwiKey='dwi', t1Key='t1', dwimaskKey='dwimask'):
@@ -81,13 +81,13 @@ class App(cli.Application):
             caseids = [pathsDict.get('caseid')]
 
         for caseid in caseids:
-            try:
-                # if makeCustomPipelines defined, run those
+            # if makeCustomPipelines is uncommented, use it
+            if 'makeCustomPipelines' in globals():
                 pipelines = makeCustomPipelines(caseid, pathsDict)
                 for pipeline in pipelines:
                     update(pipeline[self.want])
-            except AttributeError:
-                # else, run standard PNL pipeline
+            else:
+                # otherwise, run the standard PNL pipeline
                 pipeline = makeStandardPipeline(caseid, pathsDict)
                 update(pipeline[self.want])
 

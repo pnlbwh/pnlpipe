@@ -29,7 +29,6 @@ class DwiEd(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        log.info(' Run eddy current correction')
         with brainsToolsEnv(self.bthash):
             eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
