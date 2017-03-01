@@ -42,7 +42,6 @@ class DwiXc(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        log.info(' Now make axis aligned and centered DWI')
         with brainsToolsEnv(self.bthash):
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
             alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
@@ -66,14 +65,13 @@ class DwiMaskHcpBet(GeneratedNode):
 
 class UkfDefault(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
-        self.deps = [dwi]
+        self.deps = [dwi, dwimask]
         self.opts = [ukfhash, bthash]
         self.ext = 'vtk'
         GeneratedNode.__init__(self, locals())
 
     def build(self):
          needDeps(self)
-         log.info(' Now compute ukf tractography')
          with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
              tmpdir = local.path(tmpdir)
              tmpdwi = tmpdir / 'dwi.nrrd'
@@ -117,7 +115,6 @@ class T1wMaskMabs(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        log.info(' Now run MABS using pnlscripts/atlas.py')
         with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so

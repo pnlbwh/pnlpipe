@@ -124,6 +124,7 @@ def needDeps(node):
     for depNode in node.deps:
         need(node, depNode)
     log.info(' Finished updating dependencies')
+    log.info(' Now make ' + node.__class__.__name__)
 
 
 # def needDeps(node, changedDeps=[]):
