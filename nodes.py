@@ -5,7 +5,10 @@ from pnlscripts.util import TemporaryDirectory
 import sys
 import yaml
 import pickle
-from pipelinelib import logfmt, Src, GeneratedNode, update, need, lookupPathKey, bracket, needDeps, getTrainingDataT1AHCCCsv, brainsToolsEnv, convertImage, OUTDIR, log, getUKFTractographyPath
+from pipelinelib import logfmt, Src, GeneratedNode, update, need, needDeps, OUTDIR, log
+
+# Must be set by client code
+BTHASH = None
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("numTensor", "2"), ("recordLength", "1.7"),
@@ -13,72 +16,184 @@ defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("stepLength", "0.3")]
 
 
+def getBrainsToolsPath(bthash):
+    btpath = local.path(getSoftDir() / ('BRAINSTools-bin-' + bthash))
+    if not btpath.exists():
+        log.error(
+            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} brainstools".format(
+                btpath, bthash))
+        sys.exit(1)
+    return btpath
+
+
 def formatParams(paramsList):
     formatted = [['--' + key, val] for key, val in paramsList]
     return [item for pair in formatted for item in pair]
 
 
-class DwiEd(GeneratedNode):
+def brainsToolsEnv():
+    if not BTHASH:
+        print(
+            'BTHASH not set in nodes.py, set this (import nodes; nodes.BTHASH = <hash>)')
+    btpath = getBrainsToolsPath(BTHASH)
+    newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
+    return local.env(PATH=newpath, ANTSPATH=btpath)
+
+
+def convertImage(i, o):
+    if i.suffixes == o.suffixes:
+        i.copy(o)
+    with brainsToolsEnv():
+        from plumbum.cmd import ConvertBetweenFileFormats
+        ConvertBetweenFileFormats(i, o)
+
+
+def getSoftDir():
+    import os
+    environSoft = os.environ.get('soft', None)
+    if 'SOFTDIR' in globals():
+        return local.path(SOFTDIR)
+    if environSoft:
+        return local.path(environSoft)
+    log.error(
+        "Environment variable '$soft' must be set. This is the directory where BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
+    sys.exit(1)
+
+
+def getUKFTractographyPath(ukfhash):
+    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
+    if not binary.exists():
+        log.error(
+            '{} doesn\'t exist, make it first with \'pnlscripts/software.py --commit {} ukftractography\''.format(
+                binary, ukfhash))
+    return binary
+
+
+def getTractQuerierPath(hash):
+    path = local.path(getSoftDir() / ('tract_querier-' + hash))
+    if not path.exists():
+        log.error(
+            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(
+                path, hash))
+        sys.exit(1)
+    return path
+
+
+def tractQuerierEnv(hash):
+    path = getTractQuerierPath(hash)
+    newPath = ':'.join(str(p) for p in [path] + local.env.path)
+    import os
+    pythonPath = os.environ.get('PYTHONPATH')
+    newPythonPath = path if not pythonPath else '{}:{}'.format(path,
+                                                               pythonPath)
+    return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
+
+
+def getTrainingDataT1AHCCCsv():
+    csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
+    if not csv.exists():
+        log.error(
+            '{} doesn\'t exist, make it first with \'pnlscripts/software.py t1s\''.format(
+                csv))
+        sys.exit(1)
+    return csv
+
+
+def dependsOnBrainsTools(node):
+    if node.__class__.__bases__[0].__name__ == 'BrainsToolsNode':
+        return True
+    if not node.deps:
+        return False
+    return any(dependsOnBrainsTools(dep) for dep in node.deps)
+
+
+class PNLNode(GeneratedNode):
+    def path(self):
+        ext = getattr(self, 'ext', '.nrrd')
+        if not ext.startswith('.'):
+            ext = '.' + ext
+        outdir = OUTDIR / self.caseid
+        return outdir / (self.show() + '-bt' + BTHASH + '-' + self.caseid + ext)
+
+
+class BrainsToolsNode(PNLNode):
+    pass
+
+
+class DwiEd(BrainsToolsNode):
     """ Eddy current correction. Accepts nrrd only. """
 
-    def __init__(self, caseid, dwi, bthash):
+    def __init__(self, caseid, dwi):
         self.deps = [dwi]
-        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash):
+        with brainsToolsEnv():
             eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
 
-class DwiXc(GeneratedNode):
+class DwiXc(BrainsToolsNode):
     """ Axis align and center a dWI. Accepts nrrd or nifti. """
 
-    def __init__(self, caseid, dwi, bthash):
+    def __init__(self, caseid, dwi):
         self.deps = [dwi]
-        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash):
+        with brainsToolsEnv():
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
             alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
 
 
-class DwiMaskHcpBet(GeneratedNode):
-    def __init__(self, caseid, dwi, bthash):
+class DwiEpi(BrainsToolsNode):
+    """Epi correction. """
+
+    def __init__(self, caseid, dwi, dwimask, t2, t2mask):
+        self.deps = [dwi, t2, t2mask]
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+        needDeps(self)
+        with brainsToolsEnv():
+            from pnlscripts.util.scripts import epi_py
+            epi_py('--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
+                   '--t2', self.t2.path(), '--t2mask', self.t2mask.path(),
+                   '-o', self.path())
+
+
+class DwiMaskHcpBet(BrainsToolsNode):
+    def __init__(self, caseid, dwi):
         self.deps = [dwi]
-        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
         from plumbum.cmd import bet
-        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
+        with brainsToolsEnv(), TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             nii = tmpdir / 'dwi.nii.gz'
             convertdwi_py('-i', self.dwi.path(), '-o', nii)
             bet(nii, tmpdir / 'dwi', '-m', '-f', '0.1')
-            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), self.bthash)
+            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), BTHASH)
 
 
-class UkfDefault(GeneratedNode):
-    def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
+class UkfDefault(BrainsToolsNode):
+    def __init__(self, caseid, dwi, dwimask, ukfhash):
         self.deps = [dwi, dwimask]
-        self.opts = [ukfhash, bthash]
+        self.opts = [ukfhash]
         self.ext = 'vtk'
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
+        with brainsToolsEnv(), TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
             convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
-            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            convertImage(self.dwimask.path(), tmpdwimask, BTHASH)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
                       self.path()] + formatParams(defaultUkfParams)
@@ -88,33 +203,39 @@ class UkfDefault(GeneratedNode):
             ukfbin(*params)
 
 
-class StrctXc(GeneratedNode):
+class StrctXc(BrainsToolsNode):
     def __init__(self, caseid, strct):
         self.deps = [strct]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
-        need(self, self.strct)
-        alignAndCenter_py['-i', self.strct.path(), '-o', self.path()] & FG
-
-# class T1wMaskRigid(GeneratedNode):
-#     def __init__(self, caseid, t1, t2, t2mask):
-#         self.deps = [t1, t2, t2mask]
-#         GeneratedNode.__init__(self, locals())
-#     def build(self):
-#         needDeps(self)
-#         self.t2.path().copy(self.path())
+        needDeps(self)
+        with brainsToolsEnv():
+            alignAndCenter_py['-i', self.strct.path(), '-o', self.path()] & FG
 
 
-class T1wMaskMabs(GeneratedNode):
-    def __init__(self, caseid, t1, bthash):
-        self.deps = [t1]
-        self.opts = [bthash]
+class T2wMaskRigid(BrainsToolsNode):
+    def __init__(self, caseid, t2, t1, t1mask):
+        self.deps = [t2, t1, t1mask]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
+        with brainsToolsEnv():
+            from pnlscripts.util.scripts import makeRigidMask_py
+            makeRigidMask_py('-i', self.t1.path(), '--lablemap',
+                             self.t1mask.path(), '--target', self.t2.path(),
+                             '-o', self.path())
+
+
+class T1wMaskMabs(BrainsToolsNode):
+    def __init__(self, caseid, t1):
+        self.deps = [t1]
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+        needDeps(self)
+        with TemporaryDirectory() as tmpdir, brainsToolsEnv():
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so
             # we need to pass in a conventionally named one
@@ -141,16 +262,15 @@ class FreeSurferUsingMask(GeneratedNode):
               self.path().dirname.dirname] & FG
 
 
-class FsInDwiDirect(GeneratedNode):
-    def __init__(self, caseid, fs, dwi, dwimask, bthash):
+class FsInDwiDirect(BrainsToolsNode):
+    def __init__(self, caseid, fs, dwi, dwimask):
         self.deps = [fs, dwi, dwimask]
-        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
         fssubjdir = self.fs.path().dirname.dirname
-        with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
+        with TemporaryDirectory() as tmpdir, brainsToolsEnv():
             tmpdir = local.path(tmpdir)
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             fs2dwi_py('-f', fssubjdir, '-t', self.dwi.path(), '-m',

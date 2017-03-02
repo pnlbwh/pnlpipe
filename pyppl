@@ -9,6 +9,8 @@ from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMab
 BTHASH = '41353e8'
 TQHASH = 'a8e354e'
 UKFHASH = '999f14d'
+import nodes
+nodes.BTHASH = BTHASH
 
 # def makeCustomPipelines(caseid, pathsDict):
 #     """Make one or more custom pipelines.  Uncomment this and it will be run,
@@ -22,7 +24,11 @@ UKFHASH = '999f14d'
 #     return pipelines
 
 
-def makeStandardPipeline(caseid, pathsDict, dwiKey='dwi', t1Key='t1', dwimaskKey='dwimask'):
+def makeStandardPipeline(caseid,
+                         pathsDict,
+                         dwiKey='dwi',
+                         t1Key='t1',
+                         dwimaskKey='dwimask'):
     """Makes the PNL's standard pipeline. """
 
     pipeline = {}
@@ -31,29 +37,73 @@ def makeStandardPipeline(caseid, pathsDict, dwiKey='dwi', t1Key='t1', dwimaskKey
 
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
     # run DwiXc first as it's able to convert a DWI nifti to nrrd
-    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], BTHASH)
-    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], BTHASH)
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'])
+    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'])
 
     pipeline['dwimask'] = Src(
         caseid, dwimaskKey) if pathsDict.get(dwimaskKey) else DwiMaskHcpBet(
-            caseid, pipeline['dwied'], BTHASH)
+            caseid, pipeline['dwied'])
 
     pipeline['t1mask'] = Src(
         caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
-            caseid, pipeline['t1xc'], BTHASH)
+            caseid, pipeline['t1xc'])
 
-    pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'], pipeline['t1mask'])
-    pipeline['fsindwi'] = FsInDwiDirect(
-        caseid, pipeline['fs'], pipeline['dwied'], pipeline['dwimask'],
-        BTHASH)
+    pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
+                                         pipeline['t1mask'])
+    pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
+                                        pipeline['dwied'], pipeline['dwimask'])
 
-    pipeline['ukf'] = UkfDefault(caseid
-                                 , pipeline['dwied']
-                                 , pipeline['dwimask']
-                                 , UKFHASH
-                                 , BTHASH)
+    pipeline['ukf'] = UkfDefault(caseid, pipeline['dwied'],
+                                 pipeline['dwimask'], UKFHASH)
 
-    pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'], TQHASH)
+    pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
+                            TQHASH)
+    pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
+    return pipeline
+
+
+def makeStandardEpiPipeline(caseid,
+                            pathsDict,
+                            dwiKey='dwi',
+                            t1Key='t1',
+                            dwimaskKey='dwimask'):
+    """Makes the PNL's standard pipeline with EPI distortion correction. """
+
+    pipeline = {}
+    pipeline['t1'] = Src(caseid, t1Key)
+    pipeline['dwi'] = Src(caseid, dwiKey)
+
+    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
+    pipeline['t2xc'] = StrctXc(caseid, pipeline['t2'])
+    # run DwiXc first as it's able to convert a DWI nifti to nrrd
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'])
+    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'])
+
+    pipeline['dwimask'] = Src(
+        caseid, dwimaskKey) if pathsDict.get(dwimaskKey) else DwiMaskHcpBet(
+            caseid, pipeline['dwied'])
+
+    pipeline['t1mask'] = Src(
+        caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
+            caseid, pipeline['t1xc'])
+
+    pipeline['t2mask'] = Src(
+        caseid, 't2mask') if pathsDict.get('t2mask') else T2wMaskRigid(
+            caseid, pipeline['t2xc'], pipeline['t1xc'], pipeline['t1mask'])
+
+    pipeline['dwiepi'] = DwiEpi(caseid, pipeline['dwied'], pipeline['dwimask'],
+                                pipeline['t2xc'], pipeline['t2mask'])
+
+    pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
+                                         pipeline['t1mask'])
+    pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
+                                        pipeline['dwied'], pipeline['dwimask'])
+
+    pipeline['ukf'] = UkfDefault(caseid, pipeline['dwied'],
+                                 pipeline['dwimask'], UKFHASH)
+
+    pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
+                            TQHASH)
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
     return pipeline
 
@@ -62,29 +112,35 @@ def makeGeneratedPathsYml(caseid, pipelines):
     paths = {'caseid': caseid}
     for idx, pipeline in enumerate(pipelines):
         for key, node in pipeline.items():
-            print('{} {}'.format(key,node.path()))
             if len(pipelines) == 1:
                 paths[key] = str(node.path())
             else:
                 paths[key + str(idx)] = str(node.path())
     return paths
 
+
 def writeGeneratedPathsYml(caseid, pipelines):
+    print('Make {}/paths.yml'.format(pipelinelib.OUTDIR))
     generatedPathsDict = makeGeneratedPathsYml(caseid, pipelines)
     with open('_data/paths.yml', 'w') as f:
         yaml.dump(generatedPathsDict, f, default_flow_style=False)
+    print('Made {}/paths.yml'.format(pipelinelib.OUTDIR))
+    print()
+
 
 class App(cli.Application):
     """Runs the PNL pipeline using the input paths in _paths.yml (Run 'pnlmake'
     first)"""
 
     want = cli.SwitchAttr(
-        ['-w', '--want'], default='ukf', help='target node')
+        ['-w', '--want'], default='tractmeasures', help='target node')
+    epi = cli.Flag(
+        '--epi', help="Turn on EPI distortion correction", default=False)
 
     def main(self, *caseids):
 
         if not local.path('_paths.yml').exists():
-            print('Missing _paths.yml, run pnlmake first')
+            print("Missing _paths.yml, run 'pnlscripts/makepathsyml.py' first")
             sys.exit(1)
 
         with open('_paths.yml', 'r') as f:
@@ -96,6 +152,8 @@ class App(cli.Application):
                 print('Specify caseid(s) on command line, e.g. ./pnlrun 001')
                 sys.exit(1)
             caseids = [pathsDict.get('caseid')]
+
+        local.path(pipelinelib.OUTDIR).mkdir()
 
         madeGeneratedPathsYml = False
         for caseid in caseids:
@@ -109,7 +167,10 @@ class App(cli.Application):
                     update(pipeline[self.want])
             else:
                 # otherwise, run the standard PNL pipeline
-                pipeline = makeStandardPipeline(caseid, pathsDict)
+                if self.epi:
+                    pipeline = makeStandardEpiPipeline(caseid, pathsDict)
+                else:
+                    pipeline = makeStandardPipeline(caseid, pathsDict)
                 if not madeGeneratedPathsYml:
                     writeGeneratedPathsYml(caseid, [pipeline])
                     madeGeneratedPathsYml = True

@@ -4,7 +4,11 @@ endif
 
 .PHONY: all
 all: _paths.yml
+ifeq ($(want),)
 	./pyppl
+else
+	./pyppl --want $(want)
+endif
 
 ##############################################################################
 # Setup Python Environment
@@ -49,22 +53,32 @@ BTHASH=41353e8
 TQHASH=a8e354e
 UKFHASH=999f14d
 
-.PHONY: software ukftractography
-software:
-	./pnlscripts/software.py --commit $(BTHASH) brainstools
-	./pnlscripts/software.py --commit $(TQHASH) tractquerier
-	./pnlscripts/software.py trainingt1s
-	./pnlscripts/software.py --commit $(UKFHASH) ukftractography
+ukf=$(soft)/UKFTractography-$(UKFHASH)
+bt=$(soft)/BRAINSTools-bin-$(BTHASH)/antsRegistration
+tq=$(soft)/tract_querier-$(TQHASH)/README.md
+t1s=$(soft)/trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv
 
-ukftractography:
-	./pnlscripts/software.py --commit $(UKFHASH) ukftractography
+.PHONY: software
+software: $(tq) $(t1s) $(bt) $(ukf)
+
+$(ukf): ; ./pnlscripts/software.py --commit $(UKFHASH) ukftractography
+$(bt): ; ./pnlscripts/software.py --commit $(BTHASH) brainstools
+$(tq): ; ./pnlscripts/software.py --commit $(TQHASH) tractquerier
+$(t1s): ; ./pnlscripts/software.py trainingt1s
 
 
 ##############################################################################
 # Run pipeline
 
-.PHONY: paths
+.PHONY: run
+run: _paths.yml $(ukf) $(tq) $(bt) $(ukf)
+ifeq ($(want),)
+	./pyppl
+else
+	./pyppl --want $(want)
+endif
 
+.PHONY: paths
 paths: _paths.yml
 
 _paths.yml:

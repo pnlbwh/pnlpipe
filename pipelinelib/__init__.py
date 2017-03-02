@@ -5,18 +5,15 @@ import pickle
 import hashlib
 # from abc import abstractmethod, abstractproperty
 
-from os.path import basename
 def logfmt(scriptname):
-    return '%(asctime)s ' + basename(scriptname) + ' %(levelname)s  %(message)s'
-
+    return '%(asctime)s ' + local.path(scriptname).name + ' %(levelname)s  %(message)s'
 
 import logging
 logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
-# logging.basicConfig(level=logging.INFO, format=logfmt(__file__))
+#logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+logging.basicConfig(level=logging.INFO, format=logfmt(__file__))
 from python_log_indenter import IndentedLoggerAdapter
 log = IndentedLoggerAdapter(logger, indent_char='.')
-
 
 OUTDIR = local.path('_data')
 DBDIR = local.path('_data/db')
@@ -38,6 +35,7 @@ class Node(object):
         return self.__class__.__name__
 
     def show(self):
+        bracket = lambda x : '(' + x + ')'
         depsString = ','.join([d.show() for d in self.deps] + self.opts)
         return self.name() + bracket(depsString)
 
@@ -126,15 +124,6 @@ def needDeps(node):
     log.info(' Finished updating dependencies')
     log.info(' Now make ' + node.__class__.__name__)
 
-
-# def needDeps(node, changedDeps=[]):
-#     for depNode in node.deps:
-#         if depNode not in changedDeps:
-#             logging.debug('needDeps: {} already up to date, ignoring'.format(depNode.show()))
-#             continue
-#         need(node, depNode)
-
-
 def buildNode(node):
     node.path().dirname.mkdir()
     node.build()
@@ -208,65 +197,3 @@ def update(node):
         ' It or its dependencies haven\'t changed, do nothing'.format(
             node.show())).sub()
     return currentValue
-
-def getSoftDir():
-    import os
-    environSoft = os.environ.get('soft', None)
-    if 'SOFTDIR' in globals():
-        return local.path(SOFTDIR)
-    if environSoft:
-        return local.path(environSoft)
-    log.error("Environment variable '$soft' must be set. This is the directory where BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
-    sys.exit(1)
-
-def getUKFTractographyPath(ukfhash):
-    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
-    if not binary.exists():
-        log.error('{} doesn\'t exist, make it first with \'pnlscripts/software.py --commit {} ukftractography\''.format(binary, ukfhash))
-    return binary
-
-def getBrainsToolsPath(bthash):
-    btpath = local.path(getSoftDir() / ('BRAINSTools-bin-' + bthash))
-    if not btpath.exists():
-        log.error(
-            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} brainstools".format(btpath, bthash))
-        sys.exit(1)
-    return btpath
-
-def brainsToolsEnv(bthash):
-    btpath = getBrainsToolsPath(bthash)
-    newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
-    return local.env(PATH=newpath, ANTSPATH=btpath)
-
-def getTractQuerierPath(hash):
-    path = local.path(getSoftDir() / ('tract_querier-' + hash))
-    if not path.exists():
-        log.error(
-            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(path, hash))
-        sys.exit(1)
-    return path
-
-def tractQuerierEnv(hash):
-    path = getTractQuerierPath(hash)
-    newPath = ':'.join(str(p) for p in [path] + local.env.path)
-    import os
-    pythonPath = os.environ.get('PYTHONPATH')
-    newPythonPath = path if not pythonPath else '{}:{}'.format(path, pythonPath)
-    return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
-
-def getTrainingDataT1AHCCCsv():
-    csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
-    if not csv.exists():
-        log.error('{} doesn\'t exist, make it first with \'pnlscripts/software.py t1s\''.format(csv))
-        sys.exit(1)
-    return csv
-
-def bracket(s):
-    return '(' + s + ')'
-
-def convertImage(i, o, bthash):
-    if i.suffixes == o.suffixes:
-        i.copy(o)
-    with brainsToolsEnv(bthash):
-        from plumbum.cmd import ConvertBetweenFileFormats
-        ConvertBetweenFileFormats(i, o)
