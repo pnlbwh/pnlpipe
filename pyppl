@@ -12,7 +12,6 @@ from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMab
 import nodes
 
 def makeStandardPipeline(caseid,
-                         pathsDict,
                          bthash,
                          ukfhash,
                          tqhash,
@@ -32,11 +31,11 @@ def makeStandardPipeline(caseid,
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'])
 
     pipeline['dwimask'] = Src(
-        caseid, dwimaskKey) if pathsDict.get(dwimaskKey) else DwiMaskHcpBet(
+        caseid, dwimaskKey) if pipelinelib.INPUT_PATHS.get(dwimaskKey) else DwiMaskHcpBet(
             caseid, pipeline['dwied'])
 
     pipeline['t1mask'] = Src(
-        caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
+        caseid, 't1mask') if pipelinelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
             caseid, pipeline['t1xc'])
 
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
@@ -54,7 +53,6 @@ def makeStandardPipeline(caseid,
 
 
 def makeStandardEpiPipeline(caseid,
-                            pathsDict,
                             bthash,
                             ukfhash,
                             tqhash,
@@ -74,15 +72,15 @@ def makeStandardEpiPipeline(caseid,
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'])
 
     pipeline['dwimask'] = Src(
-        caseid, dwimaskKey) if pathsDict.get(dwimaskKey) else DwiMaskHcpBet(
+        caseid, dwimaskKey) if pipelinelib.INPUT_PATHS.get(dwimaskKey) else DwiMaskHcpBet(
             caseid, pipeline['dwied'])
 
     pipeline['t1mask'] = Src(
-        caseid, 't1mask') if pathsDict.get('t1mask') else T1wMaskMabs(
+        caseid, 't1mask') if pipelinelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
             caseid, pipeline['t1xc'])
 
     pipeline['t2mask'] = Src(
-        caseid, 't2mask') if pathsDict.get('t2mask') else T2wMaskRigid(
+        caseid, 't2mask') if pipelinelib.INPUT_PATHS.get('t2mask') else T2wMaskRigid(
             caseid, pipeline['t2xc'], pipeline['t1xc'], pipeline['t1mask'])
 
     pipeline['dwiepi'] = DwiEpi(caseid, pipeline['dwied'], pipeline['dwimask'],
@@ -180,10 +178,10 @@ class Pnl(PypplSubcommand):
 
     def pipelines(self, caseid):
         if self.epi:
-            pipeline = makeStandardEpiPipeline(caseid, pathsDict, self.bthash,
+            pipeline = makeStandardEpiPipeline(caseid, self.bthash,
                                                    self.ukfhash, self.tqhash)
         else:
-            pipeline = makeStandardPipeline(caseid, pathsDict, self.bthash,
+            pipeline = makeStandardPipeline(caseid, self.bthash,
                                                 self.ukfhash, self.tqhash)
         return [pipeline]
 

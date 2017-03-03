@@ -59,7 +59,7 @@ class Src(Node):
         Node.__init__(self, locals())
 
     def path(self):
-        return lookupPathKey(self.pathsKey, self.caseid, INPUT_PATH_PATTERNS)
+        return lookupPathKey(self.pathsKey, self.caseid, INPUT_PATHS)
 
     def show(self):
         return 'Src-' + self.opts[0]

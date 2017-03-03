@@ -22,13 +22,14 @@ else
 	RUN=./pyppl $(subcmd) $(args)
 endif
 
+
 ##############################################################################
 # Run pipeline
 .PHONY: all caselist
-
-all: _inputPaths.yml $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
+all: _inputPaths.yml | $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
 	$(RUN)
-%: ; $(RUN) $*
+%:
+	$(RUN) $*
 %-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 $(RUN) $*
 %-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 $(RUN) $*
 %-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 $(RUN) $*
@@ -52,6 +53,15 @@ else
 endif
 
 ##############################################################################
+# Setup Pipeline Software
+.PHONY: software
+software: $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
+$(UKFTRACTOGRAPHY): ; ./pnlscripts/software.py --commit $(UKFHASH) ukftractography
+$(BRAINSTOOLS): ; ./pnlscripts/software.py --commit $(BTHASH) brainstools
+$(TRACT_QUERIER): ; ./pnlscripts/software.py --commit $(TQHASH) tractquerier
+$(TRAININGT1S): ; ./pnlscripts/software.py trainingt1s
+
+##############################################################################
 # Make Python Environment
 .PHONY: conda env nix
 
@@ -71,20 +81,11 @@ _pip_packages.nix: _requirements.txt
   fi
 	cd _pip2nix; nix-shell --run 'pip2nix ../requirements.txt -o ../_pip_packages.nix'
 
-##############################################################################
-# Setup Pipeline Software
-.PHONY: software $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
-software: $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
-$(UKFTRACTOGRAPHY): ; ./pnlscripts/software.py --commit $(UKFHASH) ukftractography
-$(BRAINSTOOLS): ; ./pnlscripts/software.py --commit $(BTHASH) brainstools
-$(TRACT_QUERIER): ; ./pnlscripts/software.py --commit $(TQHASH) tractquerier
-$(TRAININGT1S): ; ./pnlscripts/software.py trainingt1s
-
 #########################################################
 # Shell script to setup environment
 .PHONY: env
 env: _env.sh
-_env.sh:
+_env.sh: $(BRAINSTOOLS) $(TRACT_QUERIER)
 	sed "s,__BRAINSTOOLS__,$(dir $(BRAINSTOOLS))," ._env.sh > $@
 	sed -i "s,__UKFTRACTOGRAPHY__,$(UKFTRACTOGRAPHY),"  $@
 	sed -i "s,__TRACT_QUERIER__,$(dir $(TRACT_QUERIER))," $@

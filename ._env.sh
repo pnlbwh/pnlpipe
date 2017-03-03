@@ -1,5 +1,31 @@
-PYPPLDIR=$(readlink -m ${BASH_SOURCE[0]})
-PYPPLDIR=${PYPPLDIR%/*}
+# Exports the key value pairs in paths.yml if it exists
+# E.g.
+#    withpaths
+#    unu head $t1
+#    fslinfo $dwihcp
+# (Would work nicely with direnv)
+withpaths() {
+    dir='.'
+    if [ -n "${1}" ]; then
+        dir=$1
+    fi
+    if [ -f "$dir/paths.yml" ]; then
+        yml="$dir/paths.yml"
+    elif [ -f "$dir/_inputPaths.yml" ]; then
+        yml="$dir/_inputPaths.yml"
+    else
+        echo "$dir/paths.yml or $dir/_paths.yml doesn't exist";
+        return
+    fi
+    echo "Found $dir/paths.yml, exporting variables..."
+    while IFS=":" read -r key val; do
+        path="$(echo -e "${val}" | sed -e 's/^[[:space:]]*//')"
+        echo "export $key=$dir/$path"
+        export $key=$dir/$path
+    done < $yml
+}
+
+base=$(readlink -m ${BASH_SOURCE[0]}) && base=${base%/*}
 
 type -P "conda" && source activate pyppl || \
         echo "Conda not found in path, so not loading python environment.
@@ -10,11 +36,11 @@ BRAINSTOOLS=__BRAINSTOOLS__
 # UKFTRACTOGRAPHY=__UKFTRACTOGRAPHY__
 TRACT_QUERIER=__TRACT_QUERIER__
 
-export PATH=$PYPPLDIR/pnlscripts:$TRACT_QUERIER/scripts:$UKFTRACTOGRAPHY:$BRAINSTOOLS:$PATH
-export PYTHONPATH=$TRACT_QUERIER:PYTHONPATH
+export PATH=${base}/pnlscripts:${TRACT_QUERIER}/scripts:$UKFTRACTOGRAPHY:$BRAINSTOOLS:$PATH
+export PYTHONPATH=$TRACT_QUERIER:$PYTHONPATH
 
 echo "Added to PATH:"
-echo $PNLSCRIPTS/pnlscripts
+echo $base/pnlscripts
 echo $BRAINSTOOLS
 # echo $UKFTRACTOGRAPHY
 echo $TRACT_QUERIER/scripts
@@ -22,26 +48,4 @@ echo $TRACT_QUERIER/scripts
 echo "Added to PYTHONPATH:"
 echo $TRACT_QUERIER
 
-
-# Exports the key value pairs in paths.yml if it exists
-# E.g.
-#    withpaths
-#    unu head $t1
-#    fslinfo $dwihcp
-# (Would work nicely with direnv)
-withpaths() {
-    if [ -f paths.yml ]; then
-        yml=paths.yml
-    elif [ -f _inputPaths.yml ]; then
-        yml=_inputPaths.yml
-    else
-        echo "paths.yml or _paths.yml doesn't exist";
-        return
-    fi
-    echo "Found paths.yml, exporting variables..."
-    while IFS=":" read -r key val; do
-        path="$(echo -e "${val}" | sed -e 's/^[[:space:]]*//')"
-        echo "export $key=$path"
-        export $key=$path
-    done < $yml
-}
+withpaths $base
