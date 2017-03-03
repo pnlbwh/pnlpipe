@@ -2,6 +2,7 @@ ifeq ($(soft),)
   $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
+##############################################################################
 BTHASH=41353e8
 TQHASH= e045eab
 UKFHASH=421a7ad
@@ -11,6 +12,9 @@ BRAINSTOOLS=$(soft)/BRAINSTools-bin-$(BTHASH)/antsRegistration
 TRACT_QUERIER=$(soft)/tract_querier-$(TQHASH)/README.md
 TRAININGT1s=$(soft)/trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv
 
+
+##############################################################################
+# Run pipeline
 ifeq ($(subcmd),)
 # the default, e.g.
 #    make
@@ -22,27 +26,29 @@ else
 	RUN=./pyppl $(subcmd) $(args)
 endif
 
-
-##############################################################################
-# Run pipeline
 .PHONY: all caselist
+
 all: _inputPaths.yml | $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
 	$(RUN)
+
 %:
 	$(RUN) $*
+
 %-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 $(RUN) $*
 %-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 $(RUN) $*
 %-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 $(RUN) $*
+
 caselist: caselist.txt
 	while read subj; do make $$subj-bsub8; done < caselist.txt
+
 caselist.txt:
 	$(error First make a caselist.txt with your subject ids, then run again)
 
 ##############################################################################
 # Make Input Data Paths
-.PHONY: paths
+.PHONY: inputpaths
 
-paths: _inputPaths.yml
+inputpaths: _inputPaths.yml
 
 _inputPaths.yml:
 ifeq ($(fromdir),)

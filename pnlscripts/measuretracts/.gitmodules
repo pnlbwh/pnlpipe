@@ -1,0 +1,3 @@
+[submodule "MeasureTractsModule"]
+	path = MeasureTractsModule
+	url = /projects/schiz/software/SlicerModules/MeasureTracts

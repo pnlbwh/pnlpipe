@@ -5,14 +5,18 @@
 
 # Setup
 
-    git clone https://github.com/reckbo/pyppl.git --recursive
+    git clone https://github.com/reckbo/pyppl.git
     export soft=<path/to/software/dir>
-    make software # makes BRAINSTools, tract_querier, UKFTractography, T1w mask training set
 
 # Run
 
-    ./pnlmake [switches]  # Makes _paths.yml, a dictionary of template paths to your input data
-    ./pnlrun [-w target] caseids... # Runs the pipeline(s)
+    make <caseid>  # runs default PNL pipeline
+
+Or, you can run the setup steps individually:
+
+    make software # makes $soft/BRAINSTools-bin-<hash>, etc.
+    make inputpaths # makes _inputPaths.yml
+    make <caseid> # runs default PNL pipeline
 
 For PNL users using the cluster, you can run:
 

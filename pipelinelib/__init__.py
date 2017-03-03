@@ -79,7 +79,7 @@ def lookupPathKey(key, caseid, pathsDict):
             sys.exit(1)
         return filepath
     except KeyError:
-        log.error("Key '{}' not in _paths.yml, maybe a typo?".format(key))
+        log.error("Key '{}' not in _inputPaths.yml, maybe a typo?".format(key))
         sys.exit(1)
 
 

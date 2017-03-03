@@ -1,0 +1,9 @@
+CL_DTImeasure Read Me
+---------------------
+To use the measure tracts command line tool, enter 'CL_DTImeasure.py' 
+followed by the name of each file you wish to take measures of separated by spaces.
+ The last argument entered should specify the path where you want to save your
+ data to with the extension '.csv'.
+
+To specify you intend to overwrite any files that are of the same name as your
+output file, enter -o as the second to last argument.

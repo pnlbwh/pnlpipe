@@ -8,8 +8,15 @@ import sys
 import yaml
 import pipelinelib
 from pipelinelib import logfmt, Src, update
-from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures
+from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi
 import nodes
+
+def assertKeys(pipelineName, keys):
+    absentKeys = [k for k in keys if not pipelinelib.INPUT_PATHS.get(k)]
+    if absentKeys:
+        for key in absentKeys:
+            print("{} requires '{}' set in _inputPaths.yml".format(pipelineName, key))
+        sys.exit(1)
 
 def makeStandardPipeline(caseid,
                          bthash,
@@ -20,6 +27,8 @@ def makeStandardPipeline(caseid,
                          dwimaskKey='dwimask',
                          ukfparams=None):
     """Makes the PNL's standard pipeline. """
+
+    assertKeys("Standard PNL Pipeline", [dwiKey, t1Key])
 
     pipeline = {'BTHASH': bthash}
     pipeline['t1'] = Src(caseid, t1Key)
@@ -58,12 +67,16 @@ def makeStandardEpiPipeline(caseid,
                             tqhash,
                             dwiKey='dwi',
                             t1Key='t1',
-                            dwimaskKey='dwimask'):
+                            dwimaskKey='dwimask',
+                            t2Key='t2'):
     """Makes the PNL's standard pipeline with EPI distortion correction. """
+
+    assertKeys("EPI correction pipeline", [dwiKey,t1Key,t2Key])
 
     pipeline = {'BTHASH': bthash}
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
+    pipeline['t2'] = Src(caseid, 't2')
 
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
     pipeline['t2xc'] = StrctXc(caseid, pipeline['t2'])
