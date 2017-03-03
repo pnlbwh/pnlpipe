@@ -9,3 +9,6 @@ dependencies:
   - vtk
   - nibabel
   - python_log_indenter
+   - pip:
+     - git+https://github.com/dstrohl/Python_log_indenter.git
+     - git+https://github.com/npcole/npyscreen.git

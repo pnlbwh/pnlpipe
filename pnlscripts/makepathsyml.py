@@ -16,7 +16,7 @@ def checkPaths(pathsDict):
     if allexist:
         print('All paths exist')
         return
-    print("Warning: Some paths in {} don't exist for the given caseid, so 'pyppl' may fail to run.".format(self.parent.out))
+    print("Warning: Some paths don't exist for the given caseid, so 'pyppl' may fail to run.")
 
     if not pathsDict.get('t1'):
         print("Warning: 't1' not set")
