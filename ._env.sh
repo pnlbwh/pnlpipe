@@ -14,7 +14,7 @@ withpaths() {
     elif [ -f "$dir/_inputPaths.yml" ]; then
         yml="$dir/_inputPaths.yml"
     else
-        echo "$dir/paths.yml or $dir/_paths.yml doesn't exist";
+        echo "$dir/paths.yml or $dir/_inputPaths.yml doesn't exist";
         return
     fi
     echo "Found $dir/paths.yml, exporting variables..."
@@ -33,7 +33,6 @@ type -P "conda" && source activate pyppl || \
 if you just haven't made the conda environment yet, run 'make conda')"
 
 BRAINSTOOLS=__BRAINSTOOLS__
-# UKFTRACTOGRAPHY=__UKFTRACTOGRAPHY__
 TRACT_QUERIER=__TRACT_QUERIER__
 
 export PATH=${base}/pnlscripts:${TRACT_QUERIER}/scripts:$UKFTRACTOGRAPHY:$BRAINSTOOLS:$PATH

@@ -9,8 +9,12 @@ import sys
 import yaml
 import pipelinelib
 from pipelinelib import logfmt, Src, update
-from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi
+from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, getBrainsToolsPath, getUKFTractographyPath, getTractQuerierPath, getTrainingDataT1AHCCCsv, DoesNotExistException
 import nodes
+
+BTHASHES = ['41353e8']
+TQHASHES = ['e045eab']
+UKFHASHES = ['421a7ad']
 
 
 def assertKeys(pipelineName, keys):
@@ -23,7 +27,6 @@ def assertKeys(pipelineName, keys):
 
 
 def makeStandardPipeline(caseid,
-                         bthash,
                          ukfhash,
                          tqhash,
                          dwiKey='dwi',
@@ -32,9 +35,9 @@ def makeStandardPipeline(caseid,
                          ukfparams=None):
     """Makes the PNL's standard pipeline. """
 
-    assertKeys("Standard PNL Pipeline", [dwiKey, t1Key])
+    pipeline = { 'name' : "standard PNL pipeline" }
+    assertKeys(pipeline['name'], [dwiKey, t1Key])
 
-    pipeline = {'BTHASH': bthash}
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
 
@@ -66,13 +69,18 @@ def makeStandardPipeline(caseid,
     return pipeline
 
 
-def makeStandardEpiPipeline(caseid, bthash, ukfhash, tqhash, dwiKey='dwimask', t1Key='t1',
-                            t2Key='t2', dwimaskKey='dwimask'):
+def makeStandardEpiPipeline(caseid,
+                            ukfhash,
+                            tqhash,
+                            dwiKey='dwimask',
+                            t1Key='t1',
+                            t2Key='t2',
+                            dwimaskKey='dwimask'):
     """Makes the PNL's standard pipeline with EPI distortion correction. """
 
-    assertKeys("EPI correction pipeline", [dwiKey, t1Key, t2Key])
+    pipeline = { 'name' :  "EPI correction pipeline" }
+    assertKeys(pipeline['name'], [dwiKey, t1Key, t2Key])
 
-    pipeline = {'BTHASH': bthash}
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
     pipeline['t2'] = Src(caseid, 't2')
@@ -134,6 +142,16 @@ def writeGeneratedPathsYml(caseid, pipelines):
     print()
 
 
+def readAndSetInputPaths():
+    if not local.path('_inputPaths.yml').exists():
+        print(
+            "Missing _inputPaths.yml, first make one using 'pnlscripts/makepathsyml.py' or a text editor")
+        sys.exit(1)
+    with open('_inputPaths.yml', 'r') as f:
+        pipelinelib.INPUT_PATHS = yaml.load(f)
+    # local.path(pipelinelib.OUTDIR).mkdir()
+
+
 class App(cli.Application):
     """Runs the PNL pipeline using the input paths in _inputPaths.yml"""
     want = cli.SwitchAttr(
@@ -149,26 +167,50 @@ class App(cli.Application):
             return 1  # error exit code
 
 
-def readAndSetInputPaths():
-    if not local.path('_inputPaths.yml').exists():
-        print(
-            "Missing _inputPaths.yml, first make one using 'pnlscripts/makepathsyml.py' or a text editor")
-        sys.exit(1)
-    with open('_inputPaths.yml', 'r') as f:
-        pipelinelib.INPUT_PATHS = yaml.load(f)
-    # local.path(pipelinelib.OUTDIR).mkdir()
+@App.subcommand('setup')
+class Setup(cli.Application):
+    """Makes prerequisite software given the hashes defined at the top of the file."""
+
+    def main(self):
+        from pnlscripts.util.scripts import software_py
+
+        for ukfhash in UKFHASHES:
+            try:
+                getUKFTractographyPath(ukfhash) # throws error if doesn't exist
+            except DoesNotExistException:
+                print('Make UKFTractography')
+                software_py['--commit', ukfhash, 'ukftractography'] & FG
+
+        for bthash in BTHASHES:
+            try:
+                getBrainsToolsPath(bthash)
+            except DoesNotExistException:
+                print('Make BRAINSTools')
+                software_py['--commit', bthash, 'brainstools'] & FG
+
+        for tqhash in TQHASHES:
+            try:
+                getTractQuerierPath(tqhash)
+            except DoesNotExistException:
+                print('Make tract_querier')
+                software_py['--commit', bthash, 'tractquerier'] & FG
+
+        try:
+            getTrainingDataT1AHCCCsv()
+        except DoesNotExistException:
+            print('Make training T1s')
+            software_py['trainingt1s'] & FG
+
+        print('All necessary software installed:')
+        print(getUKFTractographyPath(ukfhash))
+        print(getBrainsToolsPath(bthash))
+        print(getTractQuerierPath(tqhash))
+        print(getTrainingDataT1AHCCCsv())
 
 
-def run(caseids, pipelines):
-    for caseid in self.caseids:
-        for pipeline in self.pipelines:
-            nodes.BTHASH = pipeline['BTHASH']
-            update(pipeline[self.parent.want])
-            writeGeneratedPathsYml(caseid, [pipeline])
-
-
-class PypplSubcommand(cli.Application):
+class PipelineSubcommand(cli.Application):
     def main(self, *caseids):
+
         readAndSetInputPaths()  # reads _inputPaths.yml into pipelinelib.INPUT_PATHS
         caseids = caseids if caseids else [
             pipelinelib.INPUT_PATHS.get('caseid')
@@ -179,57 +221,67 @@ class PypplSubcommand(cli.Application):
             return
 
         for caseid in caseids:
-            for pipeline in self.pipelines(caseid):
-                nodes.BTHASH = pipeline['BTHASH']
-                update(pipeline[self.parent.want])
+            for bthash in BTHASHES:
+                nodes.BTHASH = bthash
+                for pipeline in self.pipelines(caseid):
+                    if pipeline.get('name'):
+                        print('Running {} on case id {}'.format(pipeline['name'], caseid))
+                    update(pipeline[self.parent.want])
 
 
-@App.subcommand("pnl")
-class Pnl(PypplSubcommand):
-    """ Standard PNL pipeline. """
-    epi = cli.Flag(
-        '--epi', help="Turn on EPI distortion correction", default=False)
-    bthash = cli.SwitchAttr(
-        ['--bthash'], help='BRAINSTools commit hash', mandatory=True)
-    ukfhash = cli.SwitchAttr(
-        ['--ukfhash'], help='UKFTractography commit hash', mandatory=True)
-    tqhash = cli.SwitchAttr(
-        ['--tqhash'], help='tract_querier commit hash', mandatory=True)
+@App.subcommand("std")
+class Std(PipelineSubcommand):
+    """ Run standard PNL pipeline. """
     dwiKey = cli.SwitchAttr(
         ['--dwikey'], help='DWI key', default='dwi', mandatory=False)
     t1Key = cli.SwitchAttr(
         ['--t1key'], help='T1w key', default='t1', mandatory=False)
     dwimaskKey = cli.SwitchAttr(
-        ['--dwimaskey'], help='DWI mask key', default='dwimask', mandatory=False)
+        ['--dwimaskey'],
+        help='DWI mask key',
+        default='dwimask',
+        mandatory=False)
+
+    def pipelines(self, caseid):
+        for ukfhash in UKFHASHES:
+            for tqhash in TQHASHES:
+                yield makeStandardPipeline(caseid, ukfhash, tqhash,
+                                           self.dwiKey, self.t1Key,
+                                           self.dwimaskKey)
+
+
+@App.subcommand("epi")
+class Epi(PipelineSubcommand):
+    """ Run Epi correction PNL pipeline. """
+    dwiKey = cli.SwitchAttr(
+        ['--dwikey'], help='DWI key', default='dwi', mandatory=False)
+    t1Key = cli.SwitchAttr(
+        ['--t1key'], help='T1w key', default='t1', mandatory=False)
+    dwimaskKey = cli.SwitchAttr(
+        ['--dwimaskey'],
+        help='DWI mask key',
+        default='dwimask',
+        mandatory=False)
     t2Key = cli.SwitchAttr(
         ['--t2key'], help='T2w key', default='t2', mandatory=False)
 
     def pipelines(self, caseid):
-        if self.epi:
-            pipeline = makeStandardEpiPipeline(
-                caseid, self.bthash, self.ukfhash, self.tqhash, self.dwiKey,
-                self.t1Key, self.t2Key, self.dwimaskKey)
-        else:
-            pipeline = makeStandardPipeline(caseid, self.bthash, self.ukfhash,
-                                            self.tqhash, self.dwiKey,
-                                             self.t1Key, self.dwimaskKey)
-        return [pipeline]
+        for ukfhash in UKFHASHES:
+            for tqhash in TQHASHES:
+                yield makeStandardEpiPipeline(caseid, ukfhash, tqhash,
+                                              self.dwiKey, self.t1Key,
+                                              self.t2Key, self.dwimaskKey)
 
 
 @App.subcommand("custom")
-class Custom(PypplSubcommand):
-    """User's custom pipeline"""
+class Custom(PipelineSubcommand):
+    """Run a custom pipeline (edit pyppl) """
 
     def pipelines(self, caseid):
         print('Uncomment and edit code below to make a custom pipeline')
         return []
         # Examples:
-        # bthash = '41353e8'
-        # tqhash = 'a8e354e'
-        # ukfhash = '999f14d'
-        # return [makeStandardPipeline(caseid, bthash, ukfhash, tqhash, dwikey=dwiKey) for dwiKey in ['dwihcp', 'dwibuddi']
-        # return [makeStandardPipeline(caseid, bthash, ukfhash, tqhash) for tqhash in ['a8e354e', 'e13c873']
-        # return [makeStandardPipeline(caseid, bthash, ukfhash, tqhash, ukfparams) for ukfparams in [ukfparamsDefault, ukfparamsCustom]
+        # return [makeStandardPipeline(caseid, ukfhash, tqhash, ukfparams) for ukfparams in [ukfparamsDefault, ukfparamsCustom]
 
 
 if __name__ == '__main__':

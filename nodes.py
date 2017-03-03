@@ -15,15 +15,54 @@ defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("seedFALimit", "0.18"), ("seedsPerVoxel", "10"),
                     ("stepLength", "0.3")]
 
+class DoesNotExistException(Exception):
+    pass
+
+
+def getSoftDir():
+    import os
+    environSoft = os.environ.get('soft', None)
+    if 'SOFTDIR' in globals():
+        return local.path(SOFTDIR)
+    if environSoft:
+        return local.path(environSoft)
+    log.error(
+        "Environment variable '$soft' must be set. This is the directory where BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
+    sys.exit(1)
+
 
 def getBrainsToolsPath(bthash):
-    btpath = local.path(getSoftDir() / ('BRAINSTools-bin-' + bthash))
+    btpath = getSoftDir() / ('BRAINSTools-bin-' + bthash)
     if not btpath.exists():
-        log.error(
+        raise DoesNotExistException(
             "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} brainstools".format(
                 btpath, bthash))
-        sys.exit(1)
     return btpath
+
+def getUKFTractographyPath(ukfhash):
+    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
+    if not binary.exists():
+        raise DoesNotExistException(
+            '{} doesn\'t exist, make it first with \'pnlscripts/software.py --commit {} ukftractography\''.format(
+                binary, ukfhash))
+    return binary
+
+def getTractQuerierPath(hash):
+    path = getSoftDir() / ('tract_querier-' + hash)
+    if not path.exists():
+        raise DoesNotExistException(
+            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(
+                path, hash))
+    return path
+
+def getTrainingDataT1AHCCCsv():
+    csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
+    if not csv.exists():
+        raise DoesNotExistException(
+            '{} doesn\'t exist, make it first with \'pnlscripts/software.py t1s\''.format(
+                csv))
+    return csv
+
 
 
 def formatParams(paramsList):
@@ -48,36 +87,6 @@ def convertImage(i, o):
         ConvertBetweenFileFormats(i, o)
 
 
-def getSoftDir():
-    import os
-    environSoft = os.environ.get('soft', None)
-    if 'SOFTDIR' in globals():
-        return local.path(SOFTDIR)
-    if environSoft:
-        return local.path(environSoft)
-    log.error(
-        "Environment variable '$soft' must be set. This is the directory where BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
-    sys.exit(1)
-
-
-def getUKFTractographyPath(ukfhash):
-    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
-    if not binary.exists():
-        log.error(
-            '{} doesn\'t exist, make it first with \'pnlscripts/software.py --commit {} ukftractography\''.format(
-                binary, ukfhash))
-    return binary
-
-
-def getTractQuerierPath(hash):
-    path = local.path(getSoftDir() / ('tract_querier-' + hash))
-    if not path.exists():
-        log.error(
-            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(
-                path, hash))
-        sys.exit(1)
-    return path
-
 
 def tractQuerierEnv(hash):
     path = getTractQuerierPath(hash)
@@ -88,15 +97,6 @@ def tractQuerierEnv(hash):
                                                                pythonPath)
     return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
 
-
-def getTrainingDataT1AHCCCsv():
-    csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
-    if not csv.exists():
-        log.error(
-            '{} doesn\'t exist, make it first with \'pnlscripts/software.py t1s\''.format(
-                csv))
-        sys.exit(1)
-    return csv
 
 
 def dependsOnBrainsTools(node):

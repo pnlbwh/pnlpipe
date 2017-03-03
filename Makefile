@@ -2,36 +2,25 @@ ifeq ($(soft),)
   $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
-##############################################################################
-BTHASH=41353e8
-TQHASH= e045eab
-UKFHASH=421a7ad
-
-UKFTRACTOGRAPHY=$(soft)/UKFTractography-$(UKFHASH)
-BRAINSTOOLS=$(soft)/BRAINSTools-bin-$(BTHASH)/antsRegistration
-TRACT_QUERIER=$(soft)/tract_querier-$(TQHASH)/README.md
-TRAININGT1s=$(soft)/trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv
-
+RUN := ./pyppl std
 
 ##############################################################################
 # Run pipeline
-ifeq ($(subcmd),)
-# the default, e.g.
-#    make
-#    make args="--want fsindwi" case001
-	RUN=./pyppl pnl --ukfhash $(UKFHASH) --bthash $(BTHASH) --tqhash $(TQHASH) $(args)
-else
-# custom command, e.g.
-#    make subcmd=custom
-	RUN=./pyppl $(subcmd) $(args)
-endif
+#
+# E.g
+#    make           # runs default caseid in _inputPaths.yml
+#    make case0001
+#    make case0001-bsub8
+#    make caselist
 
 .PHONY: all caselist
 
-all: _inputPaths.yml | $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
+run: _inputPaths.yml
+	./pyppl setup
 	$(RUN)
 
-%:
+%: _inputPaths.yml
+	./pyppl setup
 	$(RUN) $*
 
 %-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 $(RUN) $*
@@ -44,11 +33,19 @@ caselist: caselist.txt
 caselist.txt:
 	$(error First make a caselist.txt with your subject ids, then run again)
 
-##############################################################################
-# Make Input Data Paths
-.PHONY: inputpaths
 
-inputpaths: _inputPaths.yml
+##############################################################################
+# Pipeline Setup
+#
+#  make software
+#  make paths
+
+.PHONY: software paths
+
+software:
+	./pyppl setup
+
+paths: _inputPaths.yml
 
 _inputPaths.yml:
 ifeq ($(fromdir),)
@@ -58,17 +55,10 @@ else
 	./pnlscripts/makepathsyml.py -o $@ fromdir $(fromdir)
 endif
 
-##############################################################################
-# Setup Pipeline Software
-.PHONY: software
-software: $(UKFTRACTOGRAPHY) $(TRACT_QUERIER) $(BRAINSTOOLS) $(TRAININGT1S)
-$(UKFTRACTOGRAPHY): ; ./pnlscripts/software.py --commit $(UKFHASH) ukftractography
-$(BRAINSTOOLS): ; ./pnlscripts/software.py --commit $(BTHASH) brainstools
-$(TRACT_QUERIER): ; ./pnlscripts/software.py --commit $(TQHASH) tractquerier
-$(TRAININGT1S): ; ./pnlscripts/software.py trainingt1s
 
 ##############################################################################
 # Make Python Environment
+
 .PHONY: conda env nix
 
 venv: _venv
@@ -87,15 +77,27 @@ _pip_packages.nix: _requirements.txt
   fi
 	cd _pip2nix; nix-shell --run 'pip2nix ../requirements.txt -o ../_pip_packages.nix'
 
-#########################################################
-# Shell script to setup environment
+############################################################
+# Make a shell script that adds BRAINSTools, pnlscripts, and
+# tract_querier to $PATH and $PYTHONPATH
+#
+#  make env     # or
+#  make _env.sh
+
 .PHONY: env
+
+BTHASH=41353e8
+TQHASH=e045eab
+BRAINSTOOLS=$(soft)/BRAINSTools-bin-$(BTHASH)
+TRACT_QUERIER=$(soft)/tract_querier-$(TQHASH)
+
 env: _env.sh
-_env.sh: $(BRAINSTOOLS) $(TRACT_QUERIER)
+_env.sh:
 	sed "s,__BRAINSTOOLS__,$(dir $(BRAINSTOOLS))," ._env.sh > $@
-	sed -i "s,__UKFTRACTOGRAPHY__,$(UKFTRACTOGRAPHY),"  $@
 	sed -i "s,__TRACT_QUERIER__,$(dir $(TRACT_QUERIER))," $@
-	@echo "Now run 'source _env.sh'"
+	@echo "Made '_env.sh'"
+	@echo "Now run 'source _env.sh' to add pnlscripts, BRAINSTools, tract_querier, \
+and the paths in _inputPaths.yml to your environment"
 
 #########################################################
 # Makefile helper functions

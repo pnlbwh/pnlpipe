@@ -16,7 +16,12 @@ def checkPaths(pathsDict):
     if allexist:
         print('All paths exist')
         return
-    print("Some paths in {} don't exist for the given caseid, so 'pnlrun' may fail to run.".format(self.parent.out))
+    print("Warning: Some paths in {} don't exist for the given caseid, so 'pyppl' may fail to run.".format(self.parent.out))
+
+    if not pathsDict.get('t1'):
+        print("Warning: 't1' not set")
+    if not pathsDict.get('dwi'):
+        print("Warning: 'dwi' not set")
 
 def writePaths(pathsDict, outfile):
     checkPaths(pathsDict)
