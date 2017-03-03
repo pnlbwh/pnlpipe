@@ -1,5 +1,4 @@
-* Add wmql and tractmeasure nodes
-* factor out pnl specific code from pipelinelib
+* add ukf params
 * add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
 * think about multi file nodes
 * add logging to pnlscripts scripts

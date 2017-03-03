@@ -1,0 +1,11 @@
+name: pyppl
+
+dependencies:
+  - python=2.7
+  - plumbum
+  - future
+  - numpy
+  - pandas
+  - vtk
+  - nibabel
+  - python_log_indenter

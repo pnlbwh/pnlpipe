@@ -15,6 +15,9 @@ logging.basicConfig(level=logging.INFO, format=logfmt(__file__))
 from python_log_indenter import IndentedLoggerAdapter
 log = IndentedLoggerAdapter(logger, indent_char='.')
 
+# Needs to be set by client code
+INPUT_PATHS = None
+
 OUTDIR = local.path('_data')
 DBDIR = local.path('_data/db')
 

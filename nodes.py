@@ -113,7 +113,7 @@ class PNLNode(GeneratedNode):
         if not ext.startswith('.'):
             ext = '.' + ext
         outdir = OUTDIR / self.caseid
-        return outdir / (self.show() + '-bt' + BTHASH + '-' + self.caseid + ext)
+        return outdir / (self.show() + '-' + BTHASH + '-' + self.caseid + ext)
 
 
 class BrainsToolsNode(PNLNode):
