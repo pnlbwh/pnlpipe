@@ -2,6 +2,8 @@ ifeq ($(soft),)
   $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
+.PHONY: paths
+
 RUN := ./pyppl std
 
 ##############################################################################
@@ -13,13 +15,13 @@ RUN := ./pyppl std
 #    make case0001-bsub8
 #    make caselist
 
-.PHONY: all caselist
+.PHONY: run caselist
 
 run: _inputPaths.yml
 	./pyppl setup
 	$(RUN)
 
-%: _inputPaths.yml
+default: _inputPaths.yml
 	./pyppl setup
 	$(RUN) $*
 

@@ -11,14 +11,24 @@
 # Configure Pipeline
 
     export soft=<path/to/software/dir>  # where software will be installed
-    # make $soft/BRAINSTools-bin-<hash>, $soft/UKFTractography-<hash>,
-    # $soft/tract_querier-<hash>, $soft/trainingDataT1AHCC
     make software
     make paths # make _inputPaths.yml
+
+`make software` will download and install the following:
+
+* `$soft/BRAINSTools-bin-<hash>`
+* `$soft/UKFTractography-<hash>`
+* `$soft/tract_querier-<hash>`
+* `$soft/trainingDataT1AHCC`
+
+`make paths` makes a dictionary of paths and saves them to `_inputPaths.yml`. If
+your data directory already has a dictionary of paths in a file `paths.yml`, you
+can use that as the source: `make paths fromdir=/my/data/`.
 
 # Run
 
     make <caseid>  # runs standard PNL pipeline
+    make default   # runs the pipeline using the default caseid in _inputPaths.yml
 
 For PNL users using the cluster, you can run:
 
