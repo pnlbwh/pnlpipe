@@ -176,7 +176,7 @@ class DwiMaskHcpBet(BrainsToolsNode):
             nii = tmpdir / 'dwi.nii.gz'
             convertdwi_py('-i', self.dwi.path(), '-o', nii)
             bet(nii, tmpdir / 'dwi', '-m', '-f', '0.1')
-            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), BTHASH)
+            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path())
 
 
 class UkfDefault(BrainsToolsNode):
@@ -193,7 +193,7 @@ class UkfDefault(BrainsToolsNode):
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
             convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
-            convertImage(self.dwimask.path(), tmpdwimask, BTHASH)
+            convertImage(self.dwimask.path(), tmpdwimask)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
                       self.path()] + formatParams(defaultUkfParams)

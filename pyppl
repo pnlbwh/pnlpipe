@@ -16,6 +16,14 @@ BTHASHES = ['41353e8']
 TQHASHES = ['e045eab']
 UKFHASHES = ['421a7ad']
 
+def makeTreeDict(pipeline):
+    tree = {}
+    for keyname, node in pipeline.items():
+        if keyname == 'name':
+            continue
+        tree[node.show()] = {dep.show() for dep in node.deps}
+    return tree
+
 
 def assertKeys(pipelineName, keys):
     absentKeys = [k for k in keys if not pipelinelib.INPUT_PATHS.get(k)]
