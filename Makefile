@@ -69,11 +69,11 @@ conda: _environment.yml
 	conda env create -f $<
 	@echo "Now run `source activate pyppl`"
 
-_venv: _requirements.txt
+_venv: requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<
 	@echo "Now run `source $@/bin/activate`"
 
-_pip_packages.nix: _requirements.txt
+_pip_packages.nix: requirements.txt
 	if [ ! -d "_pip2nix" ]; then \
 		git clone https://github.com/acowley/pip2nix _pip2nix; \
   fi
