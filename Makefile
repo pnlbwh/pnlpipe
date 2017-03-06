@@ -95,8 +95,8 @@ TRACT_QUERIER=$(soft)/tract_querier-$(TQHASH)
 
 env: _env.sh
 _env.sh:
-	sed "s,__BRAINSTOOLS__,$(dir $(BRAINSTOOLS))," ._env.sh > $@
-	sed -i "s,__TRACT_QUERIER__,$(dir $(TRACT_QUERIER))," $@
+	sed "s,__BRAINSTOOLS__,$(BRAINSTOOLS)," ._env.sh > $@
+	sed -i "s,__TRACT_QUERIER__,$(TRACT_QUERIER)," $@
 	@echo "Made '_env.sh'"
 	@echo "Now run 'source _env.sh' to add pnlscripts, BRAINSTools, tract_querier, \
 and the paths in _inputPaths.yml to your environment"
