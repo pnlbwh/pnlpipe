@@ -1,6 +1,7 @@
-* add ukf params
-* add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
+* ENH: add ukf params
+* STY: change pnlscripts.util to pnlscripts
+* ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
 * think about multi file nodes
-* add logging to pnlscripts scripts
-* add ncurses interface to makepathsyml.py
-* add HCP preprocessing pipeline if we decide to use it
+* STY: add log file output to pnlscripts scripts
+* STY: use python logging correctly
+* ENH: add HCP preprocessing pipeline if we decide to use it

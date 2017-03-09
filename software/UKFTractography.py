@@ -37,3 +37,12 @@ def make(commit):
     blddir.delete()
     logging.info("Made '{}'".format(out))
     logging.info("Made '{}'".format(dateSymlink))
+
+
+def getPath(ukfhash):
+    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
+    if not binary.exists():
+        raise DoesNotExistException(
+            '{} doesn\'t exist, make it first with \'pnlscripts/software.py --commit {} ukftractography\''.format(
+                binary, ukfhash))
+    return binary

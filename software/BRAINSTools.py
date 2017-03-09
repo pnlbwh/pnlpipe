@@ -125,3 +125,12 @@ def make(commit):
     chmod('a-w', out)
     out.symlink(symlink)
     blddir.delete()
+
+
+def getPath(bthash):
+    btpath = getSoftDir() / ('BRAINSTools-bin-' + bthash)
+    if not btpath.exists():
+        raise DoesNotExistException(
+            "{} doesn\'t exist, make it first with './pipe <pipeline> make".format(
+                btpath))
+    return btpath

@@ -1,8 +1,7 @@
-from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists
+from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, TemporaryDirectory
 from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
-from software import TemporaryDirectory
 
 def make(commit):
     """Downloads a lean version of tract_querier. Output is '$soft/tract_querier-<commit>'."""
@@ -31,3 +30,12 @@ def make(commit):
     chmod('a-w', out)
     date_symlink = dest / 'tract_querier-' + date
     out.symlink(date_symlink)
+
+
+def getPath(hash):
+    path = getSoftDir() / ('tract_querier-' + hash)
+    if not path.exists():
+        raise DoesNotExistException(
+            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(
+                path, hash))
+    return path

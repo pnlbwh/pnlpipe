@@ -3,16 +3,17 @@ from plumbum import local, FG, cli
 from pnlscripts.util.scripts import alignAndCenter_py, convertdwi_py, atlas_py, fs2dwi_py, eddy_py
 from pnlscripts.util import TemporaryDirectory
 import sys
-import yaml
-import pickle
-from pipelib import logfmt, Src, GeneratedNode, update, need, needDeps, OUTDIR, log
+from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import getSoftDir
-
+import software.BRAINSTools
+import software.tract_querier
+import software.UKFTractography
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("numTensor", "2"), ("recordLength", "1.7"),
                     ("seedFALimit", "0.18"), ("seedsPerVoxel", "10"),
                     ("stepLength", "0.3")]
+
 
 def assertInputKeys(pipelineName, keys):
     import pipelib
@@ -21,35 +22,12 @@ def assertInputKeys(pipelineName, keys):
         for key in absentKeys:
             print("{} requires '{}' set in _inputPaths.yml".format(
                 pipelineName, key))
-        import sys
         sys.exit(1)
+
 
 class DoesNotExistException(Exception):
     pass
 
-def getBrainsToolsPath(bthash):
-    btpath = getSoftDir() / ('BRAINSTools-bin-' + bthash)
-    if not btpath.exists():
-        raise DoesNotExistException(
-            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} brainstools".format(
-                btpath, bthash))
-    return btpath
-
-def getUKFTractographyPath(ukfhash):
-    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
-    if not binary.exists():
-        raise DoesNotExistException(
-            '{} doesn\'t exist, make it first with \'pnlscripts/software.py --commit {} ukftractography\''.format(
-                binary, ukfhash))
-    return binary
-
-def getTractQuerierPath(hash):
-    path = getSoftDir() / ('tract_querier-' + hash)
-    if not path.exists():
-        raise DoesNotExistException(
-            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(
-                path, hash))
-    return path
 
 def getTrainingDataT1AHCCCsv():
     csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
@@ -60,7 +38,6 @@ def getTrainingDataT1AHCCCsv():
     return csv
 
 
-
 def formatParams(paramsList):
     formatted = [['--' + key, val] for key, val in paramsList]
     return [item for pair in formatted for item in pair]
@@ -69,8 +46,9 @@ def formatParams(paramsList):
 def brainsToolsEnv():
     if not BTHASH:
         print(
-            'BTHASH not set in nodes.py, set this (import nodes; nodes.BTHASH = <hash>)')
-    btpath = getBrainsToolsPath(BTHASH)
+            'BTHASH not set in nodes.py, set this (import nodes; nodes.BTHASH = <hash>)'
+        )
+    btpath = software.BRAINSTools.getPath(BTHASH)
     newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
     return local.env(PATH=newpath, ANTSPATH=btpath)
 
@@ -83,9 +61,8 @@ def convertImage(i, o):
         ConvertBetweenFileFormats(i, o)
 
 
-
 def tractQuerierEnv(hash):
-    path = getTractQuerierPath(hash)
+    path = software.tract_querier.getPath(hash)
     newPath = ':'.join(str(p) for p in [path] + local.env.path)
     import os
     pythonPath = os.environ.get('PYTHONPATH')
@@ -94,13 +71,13 @@ def tractQuerierEnv(hash):
     return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
 
 
-
 def dependsOnBrainsTools(node):
     if node.__class__.__bases__[0].__name__ == 'BrainsToolsNode':
         return True
     if not node.deps:
         return False
     return any(dependsOnBrainsTools(dep) for dep in node.deps)
+
 
 def add(d, key, val):
     if not key in d.keys():
@@ -122,6 +99,7 @@ def preorder(node, fn):
     return [(dep, fn(dep)) for dep in node.deps] + \
         flatten([preorder(dep, fn) for dep in node.deps])
 
+
 def showFn(node):
     try:
         func = getattr(node, "show")
@@ -132,11 +110,13 @@ def showFn(node):
         print node
         sys.exit(1)
 
+
 def getRepeats(node):
     nodeShowMap = preorder(node, showFn)
     from collections import Counter
     subtreeCounts = Counter(nodeShowMap)
-    return [(n,s) for (n,s), count in subtreeCounts.items() if count > 1 and not s.startswith('Src')]
+    return [(n, s) for (n, s), count in subtreeCounts.items()
+            if count > 1 and not s.startswith('Src')]
 
 
 class PNLNode(GeneratedNode):
@@ -146,7 +126,6 @@ class PNLNode(GeneratedNode):
             ext = '.' + ext
         outdir = OUTDIR / self.caseid
         return outdir / (self.show() + '-' + BTHASH + '-' + self.caseid + ext)
-
 
 
 class BrainsToolsNode(PNLNode):
@@ -230,7 +209,7 @@ class UkfDefault(BrainsToolsNode):
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
                       self.path()] + formatParams(defaultUkfParams)
-            ukfpath = getUKFTractographyPath(self.ukfhash)
+            ukfpath = software.UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
             ukfbin(*params)
@@ -331,13 +310,15 @@ class Wmql(GeneratedNode):
     def show2(self):
         repeats = getRepeats(self)
         # return map(showFn, self.deps)
-        depStrings = filter(lambda x: x!='', [d.showWithRepeats(repeats) for d in self.deps])
+        depStrings = filter(lambda x: x != '',
+                            [d.showWithRepeats(repeats) for d in self.deps])
         # legend = ['{}={}'.format(s.split('(',1)[0].lower(), s) for s in repeats]
         # Now trim repeats
         # trimmedRepeats = [n.showWithRepeats(set(repeats) - set((n,s))) for i,(n,s) in enumerate(repeats)]
         trimmedRepeats = []
         for n, s in repeats:
-            trimmed = n.showWithRepeats([(x,y) for (x,y) in repeats if y != s])
+            trimmed = n.showWithRepeats(
+                [(x, y) for (x, y) in repeats if y != s])
             trimmedRepeats.append(trimmed)
         print
         # trimmedRepeats = [n.showWithRepeats(repeats) for (n,_) in repeats]
@@ -351,8 +332,8 @@ class Wmql(GeneratedNode):
         print
         print '* result 1'
         # legend = [s for s in trimmedRepeats]
-        return 'Wmql' + '(' + ','.join(depStrings) + ')-' + '-'.join(trimmedRepeats)
-
+        return 'Wmql' + '(' + ','.join(depStrings) + ')-' + '-'.join(
+            trimmedRepeats)
 
 
 class TractMeasures(GeneratedNode):

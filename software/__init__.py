@@ -3,18 +3,74 @@ from __future__ import print_function
 import sys
 from os.path import dirname, basename, isfile
 import glob
-modules = glob.glob(dirname(__file__)+"/*.py")
-__all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.startswith('_')]
+modules = glob.glob(dirname(__file__) + "/*.py")
+__all__ = [basename(f)[:-3] for f in modules
+           if isfile(f) and not f.startswith('_')]
 try:
     from plumbum import local, FG, cli
 except ImportError:
     print('Couldn\'t import plumbum')
-    print('Did you forget to load python environment? (e.g. source activate pyppl)')
+    print(
+        'Did you forget to load python environment? (e.g. source activate pyppl)')
     sys.exit(1)
-from plumbum.cmd import  git, cmake, make, chmod
+from plumbum.cmd import git, cmake, make, chmod
 import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
+
+
+def checkExists(target):
+    if target.exists():
+        logging.info('{} already exists, skipping.'.format(target))
+        return True
+    return False
+
+
+def downloadGithubArchive(ownerrepo, commit='master'):
+    """Makes 'repo-<commit>' directory."""
+    url = 'https://github.com/{ownerrepo}/archive/{commit}.tar.gz'.format(
+        **locals())
+    repo = ownerrepo.split('/')[1]
+    from plumbum.cmd import curl, tar
+    (curl['-L', url] | tar['xz']) & FG
+    from glob import glob
+    downloadedPath = local.path(
+        glob(repo + '-' + commit + '*')[0])  # has full sha
+    return downloadedPath
+
+
+def getCommitInfo(repo_path):
+    with local.cwd(local.path(repo_path)):
+        sha = git('rev-parse', '--short', 'HEAD')[:-1]
+        date = git('show', '-s', '--format=%cd', '--date=short')[:-1]
+    return (sha, date)
+
+
+def downloadGithubRepo(ownerrepo, commit='master'):
+    url = 'https://github.com/{ownerrepo}.git'.format(**locals())
+    repo = ownerrepo.split('/')[1]
+
+    if not local.path(repo).exists():
+        git['clone', url] & FG
+
+    with local.cwd(repo):
+        git['checkout', 'master'] & FG
+        git['pull', 'origin'] & FG
+        git['checkout', commit] & FG
+    return local.path(repo)
+
+
+def getSoftDir():
+    import os
+    environSoft = os.environ.get('soft', None)
+    if 'SOFTDIR' in globals():
+        return local.path(SOFTDIR)
+    if environSoft:
+        return local.path(environSoft)
+    log.error(
+        "Environment variable '$soft' must be set. This is the directory where e.g. BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
+    sys.exit(1)
+
 
 class TemporaryDirectory(object):
     """Create and return a temporary directory.  This has the same
@@ -30,7 +86,7 @@ class TemporaryDirectory(object):
 
     def __init__(self, suffix="", prefix="tmp", dir=None):
         self._closed = False
-        self.name = None # Handle mkdtemp raising an exception
+        self.name = None  # Handle mkdtemp raising an exception
         self.name = mkdtemp(suffix, prefix, dir)
 
     def __repr__(self):
@@ -49,8 +105,10 @@ class TemporaryDirectory(object):
                 # up due to missing globals
                 if "None" not in str(ex):
                     raise
-                print("ERROR: {!r} while cleaning up {!r}".format(ex, self,),
-                      file=_sys.stderr)
+                print(
+                    "ERROR: {!r} while cleaning up {!r}".format(ex,
+                                                                self, ),
+                    file=_sys.stderr)
                 return
             self._closed = True
             if _warn:
@@ -98,51 +156,3 @@ class TemporaryDirectory(object):
             self._rmdir(path)
         except OSError:
             pass
-
-
-
-
-def checkExists(target):
-    if target.exists():
-        logging.info('{} already exists, skipping.'.format(target))
-        return True
-    return False
-
-
-def downloadGithubArchive(ownerrepo, commit='master'):
-    """Makes 'repo-<commit>' directory."""
-    url = 'https://github.com/{ownerrepo}/archive/{commit}.tar.gz'.format(**locals())
-    repo = ownerrepo.split('/')[1]
-    from plumbum.cmd import curl, tar
-    (curl['-L', url] | tar['xz']) & FG
-    return local.path(repo+'-'+commit)
-
-def getCommitInfo(repo_path):
-    with local.cwd(local.path(repo_path)):
-        sha = git('rev-parse', '--short', 'HEAD')[:-1]
-        date = git('show', '-s', '--format=%cd', '--date=short')[:-1]
-    return (sha, date)
-
-def downloadGithubRepo(ownerrepo, commit='master'):
-    url = 'https://github.com/{ownerrepo}.git'.format(**locals())
-    repo = ownerrepo.split('/')[1]
-
-    if not local.path(repo).exists():
-        git['clone', url] & FG
-
-    with local.cwd(repo):
-        git['checkout', 'master'] & FG
-        git['pull', 'origin'] & FG
-        git['checkout', commit] & FG
-    return local.path(repo)
-
-def getSoftDir():
-    import os
-    environSoft = os.environ.get('soft', None)
-    if 'SOFTDIR' in globals():
-        return local.path(SOFTDIR)
-    if environSoft:
-        return local.path(environSoft)
-    log.error(
-        "Environment variable '$soft' must be set. This is the directory where e.g. BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
-    sys.exit(1)
