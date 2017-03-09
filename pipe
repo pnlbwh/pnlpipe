@@ -68,7 +68,10 @@ def concat(l):
 def readParams(ymlfile):
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
-    paramsList = []
+    if not isinstance(yml, list):
+        return [yml]
+
+def expandParams(yml):
     for paramsDict in yml:
         flatDict = dict(paramsDict['software'], **{ k:v for k,v in paramsDict.items() if k != 'software'})
         keys = flatDict.keys()
@@ -90,7 +93,7 @@ class PipelineSubcommand(cli.Application):
 class Run(cli.Application):
     def main(self):
         readAndSetInputPaths()  # reads _inputPaths.yml into pipelib.INPUT_PATHS
-        paramsList = readParams(self.parent.paramsFile)
+        paramsList = expandParams(readParams(self.parent.paramsFile))
         from pprint import pprint
         for params in paramsList:
             print('Running {} pipeline with params:'.format(self.parent.__class__.__name__))
@@ -99,10 +102,13 @@ class Run(cli.Application):
 
 class Make(cli.Application):
     def main(self):
-        with open(self.parent.paramsFile, 'r') as f:
-            yml = yaml.load(f)
+        yml = readParams(self.parent.paramsFile)
         for paramsDict in yml:
             for softname, commits in paramsDict['software'].items():
+                recipeFile = local.path('software_recipes') / (softname + '.py')
+                if not recipeFile.exists():
+                    print("{} does not exist, maybe there is a typo in '{}'?".format(recipeFile, self.parent.paramsFile))
+                    sys.exit(1)
                 for commit in commits:
                     m = importlib.import_module('software_recipes.' + softname)
                     print('Make {} with commit {}'.format(softname, commit))

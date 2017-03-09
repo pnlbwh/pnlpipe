@@ -1,9 +1,9 @@
 software:
-  brainstools:
+  BRAINSTools:
     - '41353e8'
-  tractquerier:
+  tract_querier:
     - 'e045eab'
-  ukftractography:
+  UKFTractography:
     - '421a7ad'
 dwiKey:
   - 'dwi'
@@ -12,5 +12,4 @@ t1Key:
 dwimaskKey:
   - 'dwimask'
 caseid:
-  - 001
-caselist: ''
+  - '001'
