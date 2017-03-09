@@ -53,4 +53,7 @@ def makePipeline(caseid,
     pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
                             tract_querier)
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
+
+    pipeline['all'] = pipeline['tractmeasures']  # default target to build
+
     return pipeline

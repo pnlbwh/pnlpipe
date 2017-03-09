@@ -47,4 +47,7 @@ def makePipeline(caseid,
     sys.exit(1)
 
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
+
+    pipeline['all'] = pipeline['tractmeasures']  # default target to build
+
     return pipeline

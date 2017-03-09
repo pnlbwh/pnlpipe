@@ -8,7 +8,7 @@ except ImportError:
 import sys
 import yaml
 import pipelib
-from pipelib import logfmt, update
+import pipelib
 import itertools
 import importlib
 
@@ -51,7 +51,7 @@ def loadSubmodules(package):
 class App(cli.Application):
 
     want = cli.SwitchAttr(
-        ['-w', '--want'], default='tractmeasures', help='target node')
+        ['-w', '--want'], help='target node to build, e.g. fsindwi')
 
     writeGeneratedPathsYml = cli.Flag('--writePaths', default=False)
 
@@ -114,7 +114,13 @@ class Run(cli.Application):
         for params in paramsList:
             print('Running {} pipeline with params:'.format(self.parent.__class__.__name__))
             pprint(params)
-            self.parent.makePipeline(**params)
+            pipeline = self.parent.makePipeline(**params)
+            import pipelines.pnlnodes
+            pipelines.pnlnodes.BTHASH = params['BRAINSTools']
+            if not self.parent.parent.want:
+                pipelib.update(pipeline['all'])
+            else:
+                pipelib.update(pipeline[self.parent.want])
 
 class Make(cli.Application):
     def main(self):
