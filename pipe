@@ -43,8 +43,9 @@ def readAndSetInputPaths():
 
 def loadSubmodules(package):
     import pkgutil
+    from os.path import isfile
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
-        if not modname.startswith('_'):
+        if modname.startswith('pipe'):
             yield importer.find_module(modname).load_module(modname)
 
 class App(cli.Application):
@@ -120,12 +121,12 @@ class Make(cli.Application):
         yml = readParams(self.parent.paramsFile)
         for paramsDict in yml:
             for softname, commits in paramsDict['software'].items():
-                recipeFile = local.path('software_recipes') / (softname + '.py')
+                recipeFile = local.path('software') / (softname + '.py')
                 if not recipeFile.exists():
                     print("{} does not exist, maybe there is a typo in '{}'?".format(recipeFile, self.parent.paramsFile))
                     sys.exit(1)
                 for commit in commits:
-                    m = importlib.import_module('software_recipes.' + softname)
+                    m = importlib.import_module('software.' + softname)
                     print('Make {} with commit {}'.format(softname, commit))
                     m.make(commit)
         print('Done.')
@@ -143,8 +144,9 @@ def classFactory(name, fn, BaseClass=PipelineSubcommand):
 if __name__ == '__main__':
     import pipelines
     for m in loadSubmodules(pipelines):
-        SubcommandClass = classFactory(m.__name__, m.makePipeline)
-        App.subcommand(m.__name__, SubcommandClass)
+        name = m.__name__[9:]
+        SubcommandClass = classFactory(name, m.makePipeline)
+        App.subcommand(name, SubcommandClass)
         SubcommandClass.subcommand("run", Run)
         SubcommandClass.subcommand("make", Make)
     App.run()

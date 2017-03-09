@@ -1,8 +1,8 @@
-from software_recipes.__lib import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists
+from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists
 from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
-from pnlscripts.util import TemporaryDirectory
+from software import TemporaryDirectory
 
 def make(commit):
     """Downloads a lean version of tract_querier. Output is '$soft/tract_querier-<commit>'."""

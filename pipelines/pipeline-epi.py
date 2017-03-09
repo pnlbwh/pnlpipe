@@ -1,23 +1,26 @@
-from pipelines.__pnllib import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, getBrainsToolsPath, getUKFTractographyPath, getTractQuerierPath, getTrainingDataT1AHCCCsv, DoesNotExistException, assertInputKeys
+from pipelines.pnlnodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, getBrainsToolsPath, getUKFTractographyPath, getTractQuerierPath, getTrainingDataT1AHCCCsv, DoesNotExistException, assertInputKeys
 from pipelib import Src
 import pipelib
 
 def makePipeline(caseid,
-                 ukftractography,
-                 tractquerier,
-                 brainstools,
+                 BRAINSTools,
+                 tract_querier,
+                 UKFTractography,
                  dwiKey,
                  t1Key,
-                 dwimaskKey
-                 ):
-    """Makes the PNL's standard pipeline. """
-    pipeline = { 'name' : "standard PNL pipeline" }
-    assertInputKeys(pipeline['name'], [dwiKey, t1Key])
+                 t2Key,
+                 dwimaskKey):
+    """Makes the PNL's standard pipeline with EPI distortion correction. """
+
+    pipeline = { 'name' :  "EPI correction pipeline" }
+    assertInputKeys(pipeline['name'], [dwiKey, t1Key, t2Key])
 
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
+    pipeline['t2'] = Src(caseid, 't2')
 
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
+    pipeline['t2xc'] = StrctXc(caseid, pipeline['t2'])
     # run DwiXc first as it's able to convert a DWI nifti to nrrd
     pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'])
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'])
@@ -31,20 +34,23 @@ def makePipeline(caseid,
         't1mask') if pipelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
             caseid, pipeline['t1xc'])
 
+    pipeline['t2mask'] = Src(
+        caseid,
+        't2mask') if pipelib.INPUT_PATHS.get('t2mask') else T2wMaskRigid(
+            caseid, pipeline['t2xc'], pipeline['t1xc'], pipeline['t1mask'])
+
+    pipeline['dwiepi'] = DwiEpi(caseid, pipeline['dwied'], pipeline['dwimask'],
+                                pipeline['t2xc'], pipeline['t2mask'])
+
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
                                          pipeline['t1mask'])
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
                                         pipeline['dwied'], pipeline['dwimask'])
 
     pipeline['ukf'] = UkfDefault(caseid, pipeline['dwied'],
-                                 pipeline['dwimask'], ukftractography)
+                                 pipeline['dwimask'], UKFTractography)
 
     pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
-                            tractquerier)
-    print(pipeline['wmql'].show())
-    print(pipeline['wmql'].show2())
-    import sys
-    sys.exit(1)
-
+                            tract_querier)
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
     return pipeline
