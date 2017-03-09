@@ -42,6 +42,18 @@ class Node(object):
         depsString = ','.join([d.show() for d in self.deps] + self.opts)
         return self.name() + bracket(depsString)
 
+    def showWithRepeats(self, repeats):
+        bracket = lambda x : '(' + x + ')'
+        if self.show() in [s for _,s in repeats]:
+            return ''
+            # return self.name().lower()
+        depStrings = filter(lambda x: x!='', [d.showWithRepeats(repeats) for d in self.deps])
+        depString = ','.join(depStrings + self.opts)
+        if depString:
+            return self.name() + bracket(depString)
+        else:
+            return self.name()
+
 
 class GeneratedNode(Node):
     def path(self):

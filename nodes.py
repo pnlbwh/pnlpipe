@@ -106,6 +106,42 @@ def dependsOnBrainsTools(node):
         return False
     return any(dependsOnBrainsTools(dep) for dep in node.deps)
 
+def add(d, key, val):
+    if not key in d.keys():
+        d[key] = val
+        return
+    for i in range(5):
+        newkey = key + str(i)
+        if newKey in d.keys():
+            d[newKey] = val
+            return
+    raise Exception('Too many matches')
+
+
+def flatten(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
+
+
+def preorder(node, fn):
+    return [(dep, fn(dep)) for dep in node.deps] + \
+        flatten([preorder(dep, fn) for dep in node.deps])
+
+def showFn(node):
+    try:
+        func = getattr(node, "show")
+        return func()
+    except AttributeError:
+        print "show not found"
+        print 'Node is:'
+        print node
+        sys.exit(1)
+
+def getRepeats(node):
+    nodeShowMap = preorder(node, showFn)
+    from collections import Counter
+    subtreeCounts = Counter(nodeShowMap)
+    return [(n,s) for (n,s), count in subtreeCounts.items() if count > 1 and not s.startswith('Src')]
+
 
 class PNLNode(GeneratedNode):
     def path(self):
@@ -114,6 +150,7 @@ class PNLNode(GeneratedNode):
             ext = '.' + ext
         outdir = OUTDIR / self.caseid
         return outdir / (self.show() + '-' + BTHASH + '-' + self.caseid + ext)
+
 
 
 class BrainsToolsNode(PNLNode):
@@ -294,6 +331,32 @@ class Wmql(GeneratedNode):
             from pnlscripts.util.scripts import wmql_py
             wmql_py('-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
                     '-o', self.path().dirname)
+
+    def show2(self):
+        repeats = getRepeats(self)
+        # return map(showFn, self.deps)
+        depStrings = filter(lambda x: x!='', [d.showWithRepeats(repeats) for d in self.deps])
+        # legend = ['{}={}'.format(s.split('(',1)[0].lower(), s) for s in repeats]
+        # Now trim repeats
+        # trimmedRepeats = [n.showWithRepeats(set(repeats) - set((n,s))) for i,(n,s) in enumerate(repeats)]
+        trimmedRepeats = []
+        for n, s in repeats:
+            trimmed = n.showWithRepeats([(x,y) for (x,y) in repeats if y != s])
+            trimmedRepeats.append(trimmed)
+        print
+        # trimmedRepeats = [n.showWithRepeats(repeats) for (n,_) in repeats]
+        # legendTrimmed = ['{}'.format(s) for s in repeats]
+        print
+        print '* Repeats'
+        print repeats
+        print
+        print '* tirmmed repeats'
+        print trimmedRepeats
+        print
+        print '* result 1'
+        # legend = [s for s in trimmedRepeats]
+        return 'Wmql' + '(' + ','.join(depStrings) + ')-' + '-'.join(trimmedRepeats)
+
 
 
 class TractMeasures(GeneratedNode):
