@@ -1,0 +1,16 @@
+software:
+  brainstools:
+    - '41353e8'
+  tractquerier:
+    - 'e045eab'
+  ukftractography:
+    - '421a7ad'
+dwiKey:
+  - 'dwi'
+t1Key:
+  - 't1'
+dwimaskKey:
+  - 'dwimask'
+caseid:
+  - 001
+caselist: ''

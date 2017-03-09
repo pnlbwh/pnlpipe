@@ -7,8 +7,8 @@ except ImportError:
         'Did you forget to load python environment? (e.g. source activate pyppl)')
 import sys
 import yaml
-import pipelinelib
-from pipelinelib import logfmt, update
+import pipelib
+from pipelib import logfmt, update
 import itertools
 
 
@@ -24,11 +24,11 @@ def makeGeneratedPathsYml(caseid, pipelines):
 
 
 def writeGeneratedPathsYml(caseid, pipelines):
-    print('Make {}/paths.yml'.format(pipelinelib.OUTDIR))
+    print('Make {}/paths.yml'.format(pipelib.OUTDIR))
     generatedPathsDict = makeGeneratedPathsYml(caseid, pipelines)
     with open('_data/paths.yml', 'w') as f:
         yaml.dump(generatedPathsDict, f, default_flow_style=False)
-    print('Made {}/paths.yml'.format(pipelinelib.OUTDIR))
+    print('Made {}/paths.yml'.format(pipelib.OUTDIR))
     print()
 
 
@@ -38,14 +38,13 @@ def readAndSetInputPaths():
             "Missing _inputPaths.yml, first make one using 'pnlscripts/makepathsyml.py' or a text editor")
         sys.exit(1)
     with open('_inputPaths.yml', 'r') as f:
-        pipelinelib.INPUT_PATHS = yaml.load(f)
-    # local.path(pipelinelib.OUTDIR).mkdir()
+        pipelib.INPUT_PATHS = yaml.load(f)
 
 def loadSubmodules(package):
     import pkgutil
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
-        yield importer.find_module(modname).load_module(modname)
-
+        if not modname.startswith('_'):
+            yield importer.find_module(modname).load_module(modname)
 
 class App(cli.Application):
 
@@ -62,6 +61,9 @@ class App(cli.Application):
             print("No command given")
             return 1  # error exit code
 
+def concat(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
+
 def readParams(ymlfile):
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
@@ -70,18 +72,20 @@ def readParams(ymlfile):
         flatDict = dict(paramsDict['software'], **{ k:v for k,v in paramsDict.items() if k != 'software'})
         keys = flatDict.keys()
         valueCombos = itertools.product(*flatDict.values())
-        ps = [zip(keys, combo) for combo in valueCombos]
+        ps = [dict(zip(keys, combo)) for combo in valueCombos]
         paramsList.append(ps)
-    return paramsList
+    return concat(paramsList)
 
 
 class PipelineSubcommand(cli.Application):
     def main(self):
-        readAndSetInputPaths()  # reads _inputPaths.yml into pipelinelib.INPUT_PATHS
-        params = readParams(self.paramsFile)
+        readAndSetInputPaths()  # reads _inputPaths.yml into pipelib.INPUT_PATHS
+        paramsList = readParams(self.paramsFile)
         from pprint import pprint
-        pprint(params)
-        # self.makePipeline(*params)
+        for params in paramsList:
+            print('Running {} pipeline with params:'.format(self.__class__.__name__))
+            pprint(params)
+            self.makePipeline(**params)
 
 def classFactory(name, fn, BaseClass=PipelineSubcommand):
     def wrapFunction(self, *args, **kwargs):

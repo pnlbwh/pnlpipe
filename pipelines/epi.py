@@ -1,17 +1,6 @@
-from nodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, getBrainsToolsPath, getUKFTractographyPath, getTractQuerierPath, getTrainingDataT1AHCCCsv, DoesNotExistException
-from pipelinelib import Src
-import pipelinelib
-
-def assertKeys(pipelineName, keys):
-    absentKeys = [k for k in keys if not pipelinelib.INPUT_PATHS.get(k)]
-    if absentKeys:
-        for key in absentKeys:
-            print("{} requires '{}' set in _inputPaths.yml".format(
-                pipelineName, key))
-        import sys
-        sys.exit(1)
-
-
+from pipelines.__pnllib import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, getBrainsToolsPath, getUKFTractographyPath, getTractQuerierPath, getTrainingDataT1AHCCCsv, DoesNotExistException, assertInputKeys
+from pipelib import Src
+import pipelib
 
 def makePipeline(caseid,
                  brainstools,
@@ -24,7 +13,7 @@ def makePipeline(caseid,
     """Makes the PNL's standard pipeline with EPI distortion correction. """
 
     pipeline = { 'name' :  "EPI correction pipeline" }
-    assertKeys(pipeline['name'], [dwiKey, t1Key, t2Key])
+    assertInputKeys(pipeline['name'], [dwiKey, t1Key, t2Key])
 
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
