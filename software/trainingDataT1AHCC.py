@@ -3,15 +3,20 @@ from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
 
+
 def make(commit):
     """Downloads t1 training set. Has masks, amygdala-hippocampus (left/right), and cingulate (left/right). Makes '<dest>/trainingDataT1AHCC'"""
     installTraining('trainingDataT1AHCC', commit)
+
+def getPath(hash):
+    return local.path(getSoftDir() / 'trainingDataT1AHCC-' + hash)
 
 
 def installTraining(repo, commit):
     dest = getSoftDir()
     if commit == 'master':
-        logging.error('installing master not implemented yet for training repos, specify github hash')
+        logging.error(
+            'installing master not implemented yet for training repos, specify github hash')
         import sys
         sys.exit(1)
 
@@ -19,7 +24,7 @@ def installTraining(repo, commit):
     if checkExists(out):
         return
 
-    archive = downloadGithubArchive('pnlbwh/'+repo, commit)
+    archive = downloadGithubArchive('pnlbwh/' + repo, commit)
     archive.move(out)
 
     with local.cwd(out):

@@ -7,3 +7,6 @@ def make(commit):
     """Downloads t2 training set (has masks only). Makes '<dest>/trainingDataT2Masks"""
     from software.trainingDataT1AHCC import installTraining
     installTraining('trainingDataT2Masks', commit)
+
+def getPath(hash):
+    return local.path(getSoftDir() / repo + '-' + hash)

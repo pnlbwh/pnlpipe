@@ -6,6 +6,7 @@ def makePipeline(caseid,
                  BRAINSTools,
                  tract_querier,
                  UKFTractography,
+                 trainingDataT1AHCC,
                  dwiKey,
                  t1Key,
                  t2Key,
@@ -32,7 +33,7 @@ def makePipeline(caseid,
     pipeline['t1mask'] = Src(
         caseid,
         't1mask') if pipelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
-            caseid, pipeline['t1xc'])
+            caseid, pipeline['t1xc'], trainingDataT1AHCC)
 
     pipeline['t2mask'] = Src(
         caseid,

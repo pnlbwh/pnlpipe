@@ -8,6 +8,7 @@ from software import getSoftDir
 import software.BRAINSTools
 import software.tract_querier
 import software.UKFTractography
+import software.trainingDataT1AHCC
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("numTensor", "2"), ("recordLength", "1.7"),
@@ -43,12 +44,8 @@ def formatParams(paramsList):
     return [item for pair in formatted for item in pair]
 
 
-def brainsToolsEnv():
-    if not BTHASH:
-        print(
-            'BTHASH not set in nodes.py, set this (import nodes; nodes.BTHASH = <hash>)'
-        )
-    btpath = software.BRAINSTools.getPath(BTHASH)
+def brainsToolsEnv(bthash):
+    btpath = software.BRAINSTools.getPath(bthash)
     newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
     return local.env(PATH=newpath, ANTSPATH=btpath)
 
@@ -71,14 +68,6 @@ def tractQuerierEnv(hash):
     return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
 
 
-def dependsOnBrainsTools(node):
-    if node.__class__.__bases__[0].__name__ == 'BrainsToolsNode':
-        return True
-    if not node.deps:
-        return False
-    return any(dependsOnBrainsTools(dep) for dep in node.deps)
-
-
 def add(d, key, val):
     if not key in d.keys():
         d[key] = val
@@ -91,121 +80,93 @@ def add(d, key, val):
     raise Exception('Too many matches')
 
 
-def flatten(l):
-    return l if l == [] else [item for sublist in l for item in sublist]
+# class PNLNode(GeneratedNode):
+#     def path(self):
+#         ext = getattr(self, 'ext', '.nrrd')
+#         if not ext.startswith('.'):
+#             ext = '.' + ext
+#         outdir = OUTDIR / self.caseid
+#         return outdir / (self.showShortened() + '-' + BTHASH + '-' + self.caseid + ext)
 
 
-def preorder(node, fn):
-    return [(dep, fn(dep)) for dep in node.deps] + \
-        flatten([preorder(dep, fn) for dep in node.deps])
-
-
-def showFn(node):
-    try:
-        func = getattr(node, "show")
-        return func()
-    except AttributeError:
-        print "show not found"
-        print 'Node is:'
-        print node
-        sys.exit(1)
-
-
-def getRepeats(node):
-    nodeShowMap = preorder(node, showFn)
-    from collections import Counter
-    subtreeCounts = Counter(nodeShowMap)
-    return [(n, s) for (n, s), count in subtreeCounts.items()
-            if count > 1 and not s.startswith('Src')]
-
-
-class PNLNode(GeneratedNode):
-    def path(self):
-        ext = getattr(self, 'ext', '.nrrd')
-        if not ext.startswith('.'):
-            ext = '.' + ext
-        outdir = OUTDIR / self.caseid
-        return outdir / (self.show() + '-' + BTHASH + '-' + self.caseid + ext)
-
-
-class BrainsToolsNode(PNLNode):
-    pass
-
-
-class DwiEd(BrainsToolsNode):
+class DwiEd(GeneratedNode):
     """ Eddy current correction. Accepts nrrd only. """
 
-    def __init__(self, caseid, dwi):
+    def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv():
+        with brainsToolsEnv(self.bthash):
             eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
 
-class DwiXc(BrainsToolsNode):
+class DwiXc(GeneratedNode):
     """ Axis align and center a dWI. Accepts nrrd or nifti. """
 
-    def __init__(self, caseid, dwi):
+    def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv():
+        with brainsToolsEnv(self.bthash):
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
             alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
 
 
-class DwiEpi(BrainsToolsNode):
+class DwiEpi(GeneratedNode):
     """Epi correction. """
 
-    def __init__(self, caseid, dwi, dwimask, t2, t2mask):
+    def __init__(self, caseid, dwi, dwimask, t2, t2mask, bthash):
         self.deps = [dwi, t2, t2mask]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv():
+        with brainsToolsEnv(self.bthash):
             from pnlscripts.util.scripts import epi_py
             epi_py('--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
                    '--t2', self.t2.path(), '--t2mask', self.t2mask.path(),
                    '-o', self.path())
 
 
-class DwiMaskHcpBet(BrainsToolsNode):
-    def __init__(self, caseid, dwi):
+class DwiMaskHcpBet(GeneratedNode):
+    def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
         from plumbum.cmd import bet
-        with brainsToolsEnv(), TemporaryDirectory() as tmpdir:
+        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             nii = tmpdir / 'dwi.nii.gz'
             convertdwi_py('-i', self.dwi.path(), '-o', nii)
             bet(nii, tmpdir / 'dwi', '-m', '-f', '0.1')
-            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), BTHASH)
+            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), self.bthash)
 
 
-class UkfDefault(BrainsToolsNode):
-    def __init__(self, caseid, dwi, dwimask, ukfhash):
+class UkfDefault(GeneratedNode):
+    def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
         self.deps = [dwi, dwimask]
-        self.opts = [ukfhash]
+        self.opts = [ukfhash, bthash]
         self.ext = 'vtk'
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(), TemporaryDirectory() as tmpdir:
+        with brainsToolsEnv(bthash), TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
             convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
-            convertImage(self.dwimask.path(), tmpdwimask, BTHASH)
+            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
                       self.path()] + formatParams(defaultUkfParams)
@@ -215,47 +176,51 @@ class UkfDefault(BrainsToolsNode):
             ukfbin(*params)
 
 
-class StrctXc(BrainsToolsNode):
-    def __init__(self, caseid, strct):
+class StrctXc(GeneratedNode):
+    def __init__(self, caseid, strct, bthash):
         self.deps = [strct]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv():
+        with brainsToolsEnv(self.bthash):
             alignAndCenter_py['-i', self.strct.path(), '-o', self.path()] & FG
 
 
-class T2wMaskRigid(BrainsToolsNode):
-    def __init__(self, caseid, t2, t1, t1mask):
+class T2wMaskRigid(GeneratedNode):
+    def __init__(self, caseid, t2, t1, t1mask, bthash):
         self.deps = [t2, t1, t1mask]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv():
+        with brainsToolsEnv(self.bthash):
             from pnlscripts.util.scripts import makeRigidMask_py
             makeRigidMask_py('-i', self.t1.path(), '--lablemap',
                              self.t1mask.path(), '--target', self.t2.path(),
                              '-o', self.path())
 
 
-class T1wMaskMabs(BrainsToolsNode):
-    def __init__(self, caseid, t1):
+class T1wMaskMabs(GeneratedNode):
+    def __init__(self, caseid, t1, trainingDataT1AHCC, bthash):
         self.deps = [t1]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with TemporaryDirectory() as tmpdir, brainsToolsEnv():
+        with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so
             # we need to pass in a conventionally named one
             tmpt1 = tmpdir / ('t1' + ''.join(self.t1.path().suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1.path(), tmpt1] & FG
+            trainingCsv = software.trainingDataT1AHCC.getPath(self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
             atlas_py['--mabs', '-t', tmpt1, '-o', tmpdir, 'csv',
-                     getTrainingDataT1AHCCCsv()] & FG
+                     trainingCsv ] & FG
             (tmpdir / 'mask.nrrd').copy(self.path())
 
 
@@ -274,15 +239,16 @@ class FreeSurferUsingMask(GeneratedNode):
               self.path().dirname.dirname] & FG
 
 
-class FsInDwiDirect(BrainsToolsNode):
-    def __init__(self, caseid, fs, dwi, dwimask):
+class FsInDwiDirect(GeneratedNode):
+    def __init__(self, caseid, fs, dwi, dwimask, bthash):
         self.deps = [fs, dwi, dwimask]
+        self.opts = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
         fssubjdir = self.fs.path().dirname.dirname
-        with TemporaryDirectory() as tmpdir, brainsToolsEnv():
+        with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
             tmpdir = local.path(tmpdir)
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             fs2dwi_py('-f', fssubjdir, '-t', self.dwi.path(), '-m',
@@ -296,7 +262,7 @@ class Wmql(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def path(self):
-        return OUTDIR / self.caseid / self.show() / 'cc.vtk'
+        return OUTDIR / self.caseid / self.showShortened() / 'cc.vtk'
 
     def build(self):
         needDeps(self)
@@ -306,35 +272,6 @@ class Wmql(GeneratedNode):
             from pnlscripts.util.scripts import wmql_py
             wmql_py('-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
                     '-o', self.path().dirname)
-
-    def show2(self):
-        repeats = getRepeats(self)
-        # return map(showFn, self.deps)
-        depStrings = filter(lambda x: x != '',
-                            [d.showWithRepeats(repeats) for d in self.deps])
-        # legend = ['{}={}'.format(s.split('(',1)[0].lower(), s) for s in repeats]
-        # Now trim repeats
-        # trimmedRepeats = [n.showWithRepeats(set(repeats) - set((n,s))) for i,(n,s) in enumerate(repeats)]
-        trimmedRepeats = []
-        for n, s in repeats:
-            trimmed = n.showWithRepeats(
-                [(x, y) for (x, y) in repeats if y != s])
-            trimmedRepeats.append(trimmed)
-        print
-        # trimmedRepeats = [n.showWithRepeats(repeats) for (n,_) in repeats]
-        # legendTrimmed = ['{}'.format(s) for s in repeats]
-        print
-        print '* Repeats'
-        print repeats
-        print
-        print '* tirmmed repeats'
-        print trimmedRepeats
-        print
-        print '* result 1'
-        # legend = [s for s in trimmedRepeats]
-        return 'Wmql' + '(' + ','.join(depStrings) + ')-' + '-'.join(
-            trimmedRepeats)
-
 
 class TractMeasures(GeneratedNode):
     def __init__(self, caseid, wmql):

@@ -2,8 +2,9 @@ from plumbum import local
 import sys
 import yaml
 import pickle
-import hashlib
+# import hashlib
 # from abc import abstractmethod, abstractproperty
+from collections import Counter
 
 def logfmt(scriptname):
     return '%(asctime)s ' + local.path(scriptname).name + ' %(levelname)s  %(message)s'
@@ -42,17 +43,31 @@ class Node(object):
         depsString = ','.join([d.show() for d in self.deps] + self.opts)
         return self.name() + bracket(depsString)
 
-    def showWithRepeats(self, repeats):
-        bracket = lambda x : '(' + x + ')'
-        if self.show() in [s for _,s in repeats]:
-            return ''
-            # return self.name().lower()
-        depStrings = filter(lambda x: x!='', [d.showWithRepeats(repeats) for d in self.deps])
-        depString = ','.join(depStrings + self.opts)
-        if depString:
-            return self.name() + bracket(depString)
-        else:
-            return self.name()
+def concat(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
+
+
+def preorder(node, fn):
+    return [(dep, fn(dep)) for dep in node.deps] + \
+        concat([preorder(dep, fn) for dep in node.deps])
+
+
+def showFn(node):
+    try:
+        func = getattr(node, "show")
+        return func()
+    except AttributeError:
+        log.error("'show' not found for node")
+        print 'Node is:'
+        print node
+        sys.exit(1)
+
+
+def getRepeats(node):
+    nodeShowMap = preorder(node, showFn)
+    subtreeCounts = Counter(nodeShowMap)
+    return [(n, s) for (n, s), count in subtreeCounts.items()
+            if count > 1 and not s.startswith('Src')]
 
 
 class GeneratedNode(Node):
@@ -61,8 +76,30 @@ class GeneratedNode(Node):
         if not ext.startswith('.'):
             ext = '.' + ext
         return OUTDIR / self.caseid / (
-            self.show() + '-' + self.caseid + ext)
+            self.showShortened() + '-' + self.caseid + ext)
 
+    def showWithRepeats(self, repeats):
+            bracket = lambda x : '(' + x + ')'
+            if self.show() in [s for _,s in repeats]:
+                return ''
+            depStrings = filter(lambda x: x!='', [d.showWithRepeats(repeats) for d in self.deps])
+            depString = ','.join(depStrings + self.opts)
+            if depString:
+                return self.name() + bracket(depString)
+            else:
+                return self.name()
+
+    def showShortened(self):
+        repeats = getRepeats(self)
+        depStrings = filter(lambda x: x != '',
+                            [d.showWithRepeats(repeats) for d in self.deps])
+        trimmedRepeats = []
+        for n, s in repeats:
+            trimmed = n.showWithRepeats(
+                [(x, y) for (x, y) in repeats if y != s])
+            trimmedRepeats.append(trimmed)
+
+        return '{}/{}({})'.format('-'.join(trimmedRepeats), self.name(), ','.join(depStrings))
 
 class Src(Node):
     def __init__(self, caseid, pathsKey):
@@ -75,6 +112,12 @@ class Src(Node):
 
     def show(self):
         return 'Src-' + self.opts[0]
+
+    def showWithRepeats(self, repeats):
+        return self.show()
+
+    def showShortened(self):
+        return self.show()
 
     def build(self):
         pass
@@ -157,7 +200,14 @@ def buildNode(node):
 
 
 def update(node):
-    log.info(' * Update {} (path: {})'.format(node.show(), node.path())).add()
+    cwd = str(local.cwd) + '/'
+    isSrc = isinstance(node, Src)
+    if isSrc:
+        relativePath = node.path()
+        log.info(' * Update {} (path: {})'.format(node.show(), node.path())).add()
+    else:
+        relativePath = str(node.path()).replace(cwd,'')
+        log.info(' * Update {}'.format(relativePath)).add()
 
     log.info(' Check if node exists or has been modified')
     db = readDB(node)
@@ -168,11 +218,10 @@ def update(node):
         log.info(' doesn\'t exist (has no db), build'.format(node.path()))
         rebuild = True
     elif currentValue == None:
-        log.info(' File missing ({}), rebuild'.format(node.path()))
+        log.info(' File missing ({}), rebuild'.format(relativePath))
         rebuild = True
     elif db['value'] != currentValue:
-        log.info(' It\'s value has changed, rebuild'.format(
-            node.show()))
+        log.info(' It\'s value has changed, rebuild')
         rebuild = True
     if rebuild:
         return buildNode(node)
@@ -180,8 +229,7 @@ def update(node):
 
     if node.name() == 'Src':
         log.info(
-            ' Source node hasn\'t changed, db up to date'.format(
-                node.show())).sub()
+            ' Source node hasn\'t changed, db up to date').sub()
         return currentValue
 
     log.info(' Now check/update dependencies'.format(node.show()))
@@ -198,7 +246,7 @@ def update(node):
             changedString = '(changed)'
             changed = True
         log.debug(
-            'update: {nodeShow}: db value: {depVal}, current value: {newDepVal} {changedString}'.format(
+            'update: {relativePath}: db value: {depVal}, current value: {newDepVal} {changedString}'.format(
                 **locals()))
         # log.info(' {} is up to date {}'.format(depNode.show(), changedString))
         log.sub()
@@ -209,6 +257,5 @@ def update(node):
         return buildNode(node)
 
     log.info(
-        ' It or its dependencies haven\'t changed, do nothing'.format(
-            node.show())).sub()
+        ' It or its dependencies haven\'t changed, do nothing').sub()
     return currentValue
