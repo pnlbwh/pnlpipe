@@ -69,13 +69,28 @@ def readParams(ymlfile):
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
     if not isinstance(yml, list):
-        return [yml]
+        yml = [yml]
+    for p in yml:
+        if not p.get('caseid', None):
+            print('caseid missing in {}'.format(ymlfile))
+            sys.exit(1)
+    return yml
+
 
 def expandParams(yml):
+    paramsList = []
     for paramsDict in yml:
         flatDict = dict(paramsDict['software'], **{ k:v for k,v in paramsDict.items() if k != 'software'})
-        keys = flatDict.keys()
-        valueCombos = itertools.product(*flatDict.values())
+        # Turn values into lists if not already
+        flatDict2 = dict((k,v) if isinstance(v, list) else (k,[v]) for k,v in flatDict.items())
+        # Check if case ids are defined by a caselist
+        print flatDict2['caseid'][0]
+        if '/' in flatDict2['caseid'][0]:
+            with open(flatDict2['caseid'][0],'r') as f:
+                flatDict2['caseid'] = f.read().splitlines()
+
+        keys = flatDict2.keys()
+        valueCombos = itertools.product(*flatDict2.values())
         ps = [dict(zip(keys, combo)) for combo in valueCombos]
         paramsList.append(ps)
     return concat(paramsList)

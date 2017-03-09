@@ -9,7 +9,8 @@ dwiKey:
   - 'dwi'
 t1Key:
   - 't1'
+t2Key:
+  - 't2'
 dwimaskKey:
   - 'dwimask'
-caseid:
-  - '001'
+caseid: ./caselist.txt

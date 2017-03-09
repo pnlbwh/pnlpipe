@@ -3,9 +3,9 @@ from pipelib import Src
 import pipelib
 
 def makePipeline(caseid,
-                 brainstools,
-                 tractquerier,
-                 ukftractography,
+                 BRAINSTools,
+                 tract_querier,
+                 UKFTractography,
                  dwiKey,
                  t1Key,
                  t2Key,
@@ -26,17 +26,17 @@ def makePipeline(caseid,
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'])
 
     pipeline['dwimask'] = Src(
-        caseid, dwimaskKey) if pipelinelib.INPUT_PATHS.get(
+        caseid, dwimaskKey) if pipelib.INPUT_PATHS.get(
             dwimaskKey) else DwiMaskHcpBet(caseid, pipeline['dwied'])
 
     pipeline['t1mask'] = Src(
         caseid,
-        't1mask') if pipelinelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
+        't1mask') if pipelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
             caseid, pipeline['t1xc'])
 
     pipeline['t2mask'] = Src(
         caseid,
-        't2mask') if pipelinelib.INPUT_PATHS.get('t2mask') else T2wMaskRigid(
+        't2mask') if pipelib.INPUT_PATHS.get('t2mask') else T2wMaskRigid(
             caseid, pipeline['t2xc'], pipeline['t1xc'], pipeline['t1mask'])
 
     pipeline['dwiepi'] = DwiEpi(caseid, pipeline['dwied'], pipeline['dwimask'],
@@ -48,9 +48,9 @@ def makePipeline(caseid,
                                         pipeline['dwied'], pipeline['dwimask'])
 
     pipeline['ukf'] = UkfDefault(caseid, pipeline['dwied'],
-                                 pipeline['dwimask'], ukfhash)
+                                 pipeline['dwimask'], UKFTractography)
 
     pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
-                            tqhash)
+                            tract_querier)
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
     return pipeline
