@@ -10,6 +10,7 @@ import yaml
 import pipelib
 from pipelib import logfmt, update
 import itertools
+import importlib
 
 
 def makeGeneratedPathsYml(caseid, pipelines):
@@ -78,14 +79,36 @@ def readParams(ymlfile):
 
 
 class PipelineSubcommand(cli.Application):
+    def main(self, *args):
+        if args:
+            print("Unknown command {0!r}".format(args[0]))
+            return 1
+        if not self.nested_command:
+            print("No command given")
+            return 1  # error exit code
+
+class Run(cli.Application):
     def main(self):
         readAndSetInputPaths()  # reads _inputPaths.yml into pipelib.INPUT_PATHS
-        paramsList = readParams(self.paramsFile)
+        paramsList = readParams(self.parent.paramsFile)
         from pprint import pprint
         for params in paramsList:
-            print('Running {} pipeline with params:'.format(self.__class__.__name__))
+            print('Running {} pipeline with params:'.format(self.parent.__class__.__name__))
             pprint(params)
-            self.makePipeline(**params)
+            self.parent.makePipeline(**params)
+
+class Make(cli.Application):
+    def main(self):
+        with open(self.parent.paramsFile, 'r') as f:
+            yml = yaml.load(f)
+        for paramsDict in yml:
+            for softname, commits in paramsDict['software'].items():
+                for commit in commits:
+                    m = importlib.import_module('software_recipes.' + softname)
+                    print('Make {} with commit {}'.format(softname, commit))
+                    m.make(commit)
+        print('Done.')
+
 
 def classFactory(name, fn, BaseClass=PipelineSubcommand):
     def wrapFunction(self, *args, **kwargs):
@@ -101,4 +124,6 @@ if __name__ == '__main__':
     for m in loadSubmodules(pipelines):
         SubcommandClass = classFactory(m.__name__, m.makePipeline)
         App.subcommand(m.__name__, SubcommandClass)
+        SubcommandClass.subcommand("run", Run)
+        SubcommandClass.subcommand("make", Make)
     App.run()
