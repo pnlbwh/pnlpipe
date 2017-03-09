@@ -11,6 +11,7 @@ import pipelib
 import pipelib
 import itertools
 import importlib
+from pprint import pprint
 
 
 def makeGeneratedPathsYml(caseid, pipelines):
@@ -109,14 +110,15 @@ class PipelineSubcommand(cli.Application):
 class Run(cli.Application):
     def main(self):
         readAndSetInputPaths()  # reads _inputPaths.yml into pipelib.INPUT_PATHS
+
         paramsList = expandParams(readParams(self.parent.paramsFile))
-        from pprint import pprint
+
         for params in paramsList:
             print('Running {} pipeline with params:'.format(self.parent.__class__.__name__))
             pprint(params)
+
             pipeline = self.parent.makePipeline(**params)
-            import pipelines.pnlnodes
-            pipelines.pnlnodes.BTHASH = params['BRAINSTools']
+
             if not self.parent.parent.want:
                 pipelib.update(pipeline['all'])
             else:

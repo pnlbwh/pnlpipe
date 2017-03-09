@@ -20,36 +20,36 @@ def makePipeline(caseid,
     pipeline['dwi'] = Src(caseid, dwiKey)
     pipeline['t2'] = Src(caseid, 't2')
 
-    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'])
-    pipeline['t2xc'] = StrctXc(caseid, pipeline['t2'])
+    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], BRAINSTools)
+    pipeline['t2xc'] = StrctXc(caseid, pipeline['t2'], BRAINSTools)
     # run DwiXc first as it's able to convert a DWI nifti to nrrd
-    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'])
-    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'])
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], BRAINSTools)
+    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], BRAINSTools)
 
     pipeline['dwimask'] = Src(
         caseid, dwimaskKey) if pipelib.INPUT_PATHS.get(
-            dwimaskKey) else DwiMaskHcpBet(caseid, pipeline['dwied'])
+            dwimaskKey) else DwiMaskHcpBet(caseid, pipeline['dwied'], BRAINSTools)
 
     pipeline['t1mask'] = Src(
         caseid,
         't1mask') if pipelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
-            caseid, pipeline['t1xc'], trainingDataT1AHCC)
+            caseid, pipeline['t1xc'], trainingDataT1AHCC, BRAINSTools)
 
     pipeline['t2mask'] = Src(
         caseid,
         't2mask') if pipelib.INPUT_PATHS.get('t2mask') else T2wMaskRigid(
-            caseid, pipeline['t2xc'], pipeline['t1xc'], pipeline['t1mask'])
+            caseid, pipeline['t2xc'], pipeline['t1xc'], pipeline['t1mask'],BRAINSTools)
 
     pipeline['dwiepi'] = DwiEpi(caseid, pipeline['dwied'], pipeline['dwimask'],
-                                pipeline['t2xc'], pipeline['t2mask'])
+                                pipeline['t2xc'], pipeline['t2mask'],BRAINSTools)
 
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
                                          pipeline['t1mask'])
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
-                                        pipeline['dwied'], pipeline['dwimask'])
+                                        pipeline['dwiepi'], pipeline['dwimask'], BRAINSTools)
 
-    pipeline['ukf'] = UkfDefault(caseid, pipeline['dwied'],
-                                 pipeline['dwimask'], UKFTractography)
+    pipeline['ukf'] = UkfDefault(caseid, pipeline['dwiepi'],
+                                 pipeline['dwimask'], UKFTractography, BRAINSTools)
 
     pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
                             tract_querier)

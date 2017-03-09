@@ -32,16 +32,15 @@ class Node(object):
         # self.caseid = kwargs['caseid']
         if not hasattr(self, 'deps'):
             self.deps = []
-        if not hasattr(self, 'opts'):
-            self.opts = []
+        if not hasattr(self, 'params'):
+            self.params = []
 
     def name(self):
         return self.__class__.__name__
 
     def show(self):
-        bracket = lambda x : '(' + x + ')'
-        depsString = ','.join([d.show() for d in self.deps] + self.opts)
-        return self.name() + bracket(depsString)
+        depsString = ','.join([d.show() for d in self.deps] + self.params)
+        return '{}({})'.format(self.name(), depsString)
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
@@ -51,24 +50,49 @@ def preorder(node, fn):
     return [(dep, fn(dep)) for dep in node.deps] + \
         concat([preorder(dep, fn) for dep in node.deps])
 
+def preorderWithParams(node, fn):
+    if not isinstance(node, Node):  # is a param leaf
+        return []
+    if isinstance(node, Src): # treat Src nodes as leaves (more meaningful paths)
+        return []
+    return [(dep, fn(dep)) for dep in (node.deps + node.params)] + \
+        concat([preorderWithParams(dep, fn) for dep in (node.deps + node.params)])
 
-def showFn(node):
-    try:
-        func = getattr(node, "show")
-        return func()
-    except AttributeError:
-        log.error("'show' not found for node")
-        print 'Node is:'
-        print node
-        sys.exit(1)
+def showFn(x):
+    if isinstance(x, Node):
+        try:
+            func = getattr(x, "show")
+            return func()
+        except AttributeError:
+            log.error("'show' not found for node")
+            print 'Node is:'
+            print node
+            sys.exit(1)
+    else:
+        return str(x)
 
 
-def getRepeats(node):
-    nodeShowMap = preorder(node, showFn)
+def getRepeatedNodes(node):
+    nodeShowMap = preorderWithParams(node, showFn)
     subtreeCounts = Counter(nodeShowMap)
     return [(n, s) for (n, s), count in subtreeCounts.items()
             if count > 1 and not s.startswith('Src')]
 
+
+def showWithoutRepeats(node, repeatedNodes):
+    if showFn(node) in [s for _,s in repeatedNodes]:
+        return ''
+    if not isinstance(node, Node):
+        return str(node)
+    if isinstance(node, Src):
+        return node.show()
+    depStrings = filter(lambda x: x!='', [showWithoutRepeats(d, repeatedNodes) for d in (node.deps + node.params)])
+    # depString = ','.join(depStrings + self.params)
+    depString = ','.join(depStrings)
+    if depString:
+        return '{}({})'.format(node.name(), depString)
+    else:
+        return node.name()
 
 class GeneratedNode(Node):
     def path(self):
@@ -78,42 +102,35 @@ class GeneratedNode(Node):
         return OUTDIR / self.caseid / (
             self.showShortened() + '-' + self.caseid + ext)
 
-    def showWithRepeats(self, repeats):
-            bracket = lambda x : '(' + x + ')'
-            if self.show() in [s for _,s in repeats]:
-                return ''
-            depStrings = filter(lambda x: x!='', [d.showWithRepeats(repeats) for d in self.deps])
-            depString = ','.join(depStrings + self.opts)
-            if depString:
-                return self.name() + bracket(depString)
-            else:
-                return self.name()
-
     def showShortened(self):
-        repeats = getRepeats(self)
+        repeatedNodes = getRepeatedNodes(self)
         depStrings = filter(lambda x: x != '',
-                            [d.showWithRepeats(repeats) for d in self.deps])
+                            [showWithoutRepeats(d, repeatedNodes) for d in (self.deps + self.params)])
+        # now remove repeated nodes from other repeated nodes
         trimmedRepeats = []
-        for n, s in repeats:
-            trimmed = n.showWithRepeats(
-                [(x, y) for (x, y) in repeats if y != s])
+        for n, s in repeatedNodes:
+            trimmed = showWithoutRepeats(n,
+                [(x, y) for (x, y) in repeatedNodes if y != s])
             trimmedRepeats.append(trimmed)
 
-        return '{}/{}({})'.format('-'.join(trimmedRepeats), self.name(), ','.join(depStrings))
+        if repeatedNodes:
+            return '{}/{}({})'.format('-'.join(sorted(trimmedRepeats)), self.name(), ','.join(depStrings))
+        return '{}({})'.format(self.name(), ','.join(depStrings))
 
 class Src(Node):
     def __init__(self, caseid, pathsKey):
         self.deps = []
-        self.opts = [pathsKey]
+        self.params = [pathsKey]
         Node.__init__(self, locals())
 
     def path(self):
         return lookupPathKey(self.pathsKey, self.caseid, INPUT_PATHS)
 
     def show(self):
-        return 'Src-' + self.opts[0]
+        return 'Src-{}'.format(self.params[0])
+        # return self.params[0]
 
-    def showWithRepeats(self, repeats):
+    def showWithoutRepeats(self, repeats):
         return self.show()
 
     def showShortened(self):
@@ -195,14 +212,13 @@ def buildNode(node):
         dbfile(node).dirname.mkdir()
     with open(dbfile(node), 'w') as f:
         yaml.dump(db, f)
-    log.info(' Built, recorded mtime and md5 hash').sub()
+    log.info(' Built, recorded mtime').sub()
     return db['value']
 
 
 def update(node):
     cwd = str(local.cwd) + '/'
-    isSrc = isinstance(node, Src)
-    if isSrc:
+    if isinstance(node, Src):
         relativePath = node.path()
         log.info(' * Update {} (path: {})'.format(node.show(), node.path())).add()
     else:

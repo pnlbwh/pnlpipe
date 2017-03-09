@@ -1,3 +1,4 @@
+* add freesurfer version validator
 * ENH: add ukf params
 * STY: change pnlscripts.util to pnlscripts
 * ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)

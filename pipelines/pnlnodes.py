@@ -30,15 +30,6 @@ class DoesNotExistException(Exception):
     pass
 
 
-def getTrainingDataT1AHCCCsv():
-    csv = getSoftDir() / 'trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv'
-    if not csv.exists():
-        raise DoesNotExistException(
-            '{} doesn\'t exist, make it first with \'pnlscripts/software.py t1s\''.format(
-                csv))
-    return csv
-
-
 def formatParams(paramsList):
     formatted = [['--' + key, val] for key, val in paramsList]
     return [item for pair in formatted for item in pair]
@@ -68,33 +59,12 @@ def tractQuerierEnv(hash):
     return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
 
 
-def add(d, key, val):
-    if not key in d.keys():
-        d[key] = val
-        return
-    for i in range(5):
-        newkey = key + str(i)
-        if newKey in d.keys():
-            d[newKey] = val
-            return
-    raise Exception('Too many matches')
-
-
-# class PNLNode(GeneratedNode):
-#     def path(self):
-#         ext = getattr(self, 'ext', '.nrrd')
-#         if not ext.startswith('.'):
-#             ext = '.' + ext
-#         outdir = OUTDIR / self.caseid
-#         return outdir / (self.showShortened() + '-' + BTHASH + '-' + self.caseid + ext)
-
-
 class DwiEd(GeneratedNode):
     """ Eddy current correction. Accepts nrrd only. """
 
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -108,7 +78,7 @@ class DwiXc(GeneratedNode):
 
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -123,7 +93,7 @@ class DwiEpi(GeneratedNode):
 
     def __init__(self, caseid, dwi, dwimask, t2, t2mask, bthash):
         self.deps = [dwi, t2, t2mask]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -138,7 +108,7 @@ class DwiEpi(GeneratedNode):
 class DwiMaskHcpBet(GeneratedNode):
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -155,7 +125,7 @@ class DwiMaskHcpBet(GeneratedNode):
 class UkfDefault(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
         self.deps = [dwi, dwimask]
-        self.opts = [ukfhash, bthash]
+        self.params = [ukfhash, bthash]
         self.ext = 'vtk'
         GeneratedNode.__init__(self, locals())
 
@@ -179,7 +149,7 @@ class UkfDefault(GeneratedNode):
 class StrctXc(GeneratedNode):
     def __init__(self, caseid, strct, bthash):
         self.deps = [strct]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -191,7 +161,7 @@ class StrctXc(GeneratedNode):
 class T2wMaskRigid(GeneratedNode):
     def __init__(self, caseid, t2, t1, t1mask, bthash):
         self.deps = [t2, t1, t1mask]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -206,7 +176,7 @@ class T2wMaskRigid(GeneratedNode):
 class T1wMaskMabs(GeneratedNode):
     def __init__(self, caseid, t1, trainingDataT1AHCC, bthash):
         self.deps = [t1]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -242,7 +212,7 @@ class FreeSurferUsingMask(GeneratedNode):
 class FsInDwiDirect(GeneratedNode):
     def __init__(self, caseid, fs, dwi, dwimask, bthash):
         self.deps = [fs, dwi, dwimask]
-        self.opts = [bthash]
+        self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -258,7 +228,7 @@ class FsInDwiDirect(GeneratedNode):
 class Wmql(GeneratedNode):
     def __init__(self, caseid, fsindwi, ukf, tqhash):
         self.deps = [fsindwi, ukf]
-        self.opts = [tqhash]
+        self.params = [tqhash]
         GeneratedNode.__init__(self, locals())
 
     def path(self):
