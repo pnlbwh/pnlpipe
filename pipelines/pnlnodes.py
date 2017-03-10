@@ -51,7 +51,7 @@ def convertImage(i, o):
 
 def tractQuerierEnv(hash):
     path = software.tract_querier.getPath(hash)
-    newPath = ':'.join(str(p) for p in [path] + local.env.path)
+    newPath = ':'.join(str(p) for p in [path/'scripts'] + local.env.path)
     import os
     pythonPath = os.environ.get('PYTHONPATH')
     newPythonPath = path if not pythonPath else '{}:{}'.format(path,
@@ -213,6 +213,7 @@ class FsInDwiDirect(GeneratedNode):
     def __init__(self, caseid, fs, dwi, dwimask, bthash):
         self.deps = [fs, dwi, dwimask]
         self.params = [bthash]
+        self.ext = 'nii.gz'
         GeneratedNode.__init__(self, locals())
 
     def build(self):
@@ -251,8 +252,7 @@ class TractMeasures(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        measureTracts_py = local.path(
-            'pnlscripts/measuretracts/measuresTracts.py')
+        measureTracts_py = local['pnlscripts/measuretracts/measureTracts.py']
         vtks = self.wmql.path().up() // '*.vtk'
         measureTracts_py('-f', '-c', 'caseid', 'algo', '-v', self.caseid,
                          self.wmql.show(), '-o', self.path(), '-i', vtks)
