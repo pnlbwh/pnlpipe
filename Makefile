@@ -29,7 +29,7 @@ virutalenv: _venv
 nix: _pip_packages.nix
 conda: environment.yml
 	conda env create -f $<
-	@echo "Now run `source activate pnlpipe`"
+	@echo "Now run 'source activate pnlpipe'"
 
 _venv: requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<
