@@ -72,10 +72,14 @@ def readParams(ymlfile):
         yml = yaml.load(f)
     if not isinstance(yml, list):
         yml = [yml]
-    for p in yml:
+    for idx, p in enumerate(yml):
         if not p.get('caseid', None):
-            print('caseid missing in {}'.format(ymlfile))
-            sys.exit(1)
+            caselist = local.path('caselist.txt')
+            if not caselist.exists():
+                print("Add 'caseid' to {} (or save a caselist.txt to this directory)".format(ymlfile))
+                sys.exit(1)
+            print("Found './caselist.txt, using that to get case id's")
+            yml[idx]['caseid'] = './' + str(caselist).replace(local.cwd, '')
     return yml
 
 
@@ -86,7 +90,6 @@ def expandParams(yml):
         # Turn values into lists if not already
         flatDict2 = dict((k,v) if isinstance(v, list) else (k,[v]) for k,v in flatDict.items())
         # Check if case ids are defined by a caselist
-        print flatDict2['caseid'][0]
         if '/' in flatDict2['caseid'][0]:
             with open(flatDict2['caseid'][0],'r') as f:
                 flatDict2['caseid'] = f.read().splitlines()
