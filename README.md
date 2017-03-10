@@ -6,59 +6,31 @@
 # Install
 
     cd /project/dir
-    git clone https://github.com/reckbo/pyppl.git
-
-# Configure Pipeline
-
+    git clone https://github.com/reckbo/pnlpipe.git
+    cd pnlpipe
     export soft=<path/to/software/dir>  # where software will be installed
-    make software
-    make paths # make _inputPaths.yml
 
-`make software` will download and install the following:
+# Examaple
 
-* `$soft/BRAINSTools-bin-<hash>`
-* `$soft/UKFTractography-<hash>`
-* `$soft/tract_querier-<hash>`
-* `$soft/trainingDataT1AHCC`
+    ./pipe init  # define your input paths, makes inputPaths.yml
 
-`make paths` makes a dictionary of paths and saves them to `_inputPaths.yml`. If
-your data directory already has a dictionary of paths in a file `paths.yml`, you
-can use that as the source: `make paths fromdir=/my/data/`.
+Run the standard PNL pipeline:
 
-# Run
+    ./pipe std init # set parameters for 'std' pipeline, makes 'params.std'
+    ./pipe std make # builds 'std' pipeline's prequisite software
+    ./pipe std run # runs the 'std' pipeline with your parameters
 
-    make <caseid>  # runs standard PNL pipeline
-    make default   # runs the pipeline using the default caseid in _inputPaths.yml
+To run the EPI correctin pipeline, replace `std` with `epi`.
 
-For PNL users using the cluster, you can run:
+# Details
 
-    make <caseid>-bsub4  # starts a 4 processor job on 'big-multi' queue
-    make <caseid>-bsub8  # starts an 8 processor job on 'big-multi' queue
-    make caselist # starts 8 processor job for each case in caselist.txt
-
-# Epi Correction
-
-By default, running `make` runs the standard PNL pipeline by calling
-
-    ./pyppl std <caseid>
-
-To run the PNL pipeline with EPI correction, use this command instead:
-
-    ./pyppl epi <caseid>
-
-For convenience you can edit `RUN` at the top of the `Makefile`
-and replace `std` with `epi` and run the pipeline as `make <caseid>`.
-
+TODO
 
 # Advanced
 
-You can make your own custom pipelines by editing `Custom` in `pyppl`. You
-could, for example, create a set of pipelines with different parameters or
-algorithms in order to compare their results. Once you've defined your
-pipeline(s), run it as
+You can make a custom pipeline by creating a file `pipelines/pipeline_<name>.py`
+and run it the same way you run the standard and EPI correction pipelines:
 
-    ./pyppl custom <caseid>
-
-As with epi correction, you can edit `RUN` at the top of the `Makefile`
-and replace `std` with `custom` so that you can run your custom pipeline(s)
-as `make <caseid>`.
+    ./pipe <name> init
+    ./pipe <name> make
+    ./pipe <name> run

@@ -1,3 +1,6 @@
+* STY: make bsub subcommand
+* STY: clean up pipe, maybe factor into lib
+* STY: add setupdata.sh generation and symlinks
 * add freesurfer version validator
 * ENH: add ukf params
 * STY: change pnlscripts.util to pnlscripts

@@ -13,7 +13,7 @@ import itertools
 import importlib
 from pprint import pprint
 
-inputPathsFile = "_inputPaths.yml"
+inputPathsFile = "inputPaths.yml"
 
 def makeGeneratedPathsYml(caseid, pipelines):
     paths = {'caseid': caseid}
@@ -36,11 +36,11 @@ def writeGeneratedPathsYml(caseid, pipelines):
 
 
 def readAndSetInputPaths():
-    if not local.path('_inputPaths.yml').exists():
+    if not local.path(inputPathsFile).exists():
         print(
-            "Missing _inputPaths.yml, first make one using 'pnlscripts/makepathsyml.py' or a text editor")
+            "Missing {}, first make one using 'pnlscripts/makepathsyml.py' or a text editor".format(inputPathsFile))
         sys.exit(1)
-    with open('_inputPaths.yml', 'r') as f:
+    with open(inputPathsFile, 'r') as f:
         pipelib.INPUT_PATHS = yaml.load(f)
 
 def loadSubmodules(package):
@@ -109,8 +109,11 @@ class PipeInit(cli.Application):
 
     fromdir = cli.SwitchAttr('--fromdir', cli.ExistingDirectory, help='from data directory with existing paths.yml')
 
-
     def main(self):
+        if local.path(inputPathsFile).exists():
+            print("'{}' already exists, won't overwrite.".format(inputPathsFile))
+            return
+
         # Copy from paths.yml in another project directory
         if self.fromdir:
             dataDir = self.fromdir
@@ -155,7 +158,7 @@ text editor to make the yaml file ({}), with this format:
 
     t1: /project/dir/001/001-t1.ext
     dwi: /project/dir/001/001-dwi.ext
-    caseid: 001""".format("_inputPaths.yml"))
+    caseid: 001""".format(inputPathsFile))
                 sys.exit(1)
 
 
@@ -210,7 +213,7 @@ class PipelineSubcommand(cli.Application):
 
 class Run(cli.Application):
     def main(self):
-        readAndSetInputPaths()  # reads _inputPaths.yml into pipelib.INPUT_PATHS
+        readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
 
         params = readParams(self.parent.paramsFile)
         if any('*mandatory*' in concat(p.values()) for p in params):
