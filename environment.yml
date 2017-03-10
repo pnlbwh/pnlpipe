@@ -1,4 +1,4 @@
-name: pyppl
+name: pnlpipe
 
 dependencies:
   - python=2.7

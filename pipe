@@ -4,7 +4,7 @@ try:
 except ImportError:
     print('Couldn\'t import plumbum')
     print(
-        'Did you forget to load python environment? (e.g. source activate pyppl)')
+        'Did you forget to load python environment? (e.g. source activate pnlpipe)')
 import sys
 import yaml
 import pipelib
@@ -69,6 +69,7 @@ class App(cli.Application):
 
 def checkPaths(pathsDict):
     allexist = True
+    print('Check keys')
     for key, path in pathsDict.items():
         print('{}: {}'. format(key, path))
         if key == 'caseid':
@@ -76,16 +77,15 @@ def checkPaths(pathsDict):
         if not local.path(path).exists():
             print("'{}' does not exist, is this intended?".format(path))
             allexist = False
+    if not pathsDict.get('caseid', None):
+        print("Error: 'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects.")
+        print("'{}' not made".format(inputPathsFile))
+        sys.exit(1)
     print('')
     if allexist:
         print('All paths exist.')
         return
-    print("Warning: Some paths don't exist for the given caseid, so 'pyppl' may fail to run.")
-
-    if not pathsDict.get('t1'):
-        print("Warning: 't1' not set")
-    if not pathsDict.get('dwi'):
-        print("Warning: 'dwi' not set")
+    print("Warning: Some paths don't exist for the given caseid, so pipeline may fail to run.")
 
 
 def writePaths(pathsDict, outfile):
@@ -133,26 +133,26 @@ class PipeInit(cli.Application):
         else:
             try:
                 import npyscreen
-                class MakePathsYml(npyscreen.NPSApp):
+                class MakePathsApp(npyscreen.NPSApp):
                     def main(self):
-                        F  = npyscreen.Form(name = "Make a paths yaml file",)
-                        dwi = F.add(npyscreen.TitleFilename, name = "dwi:", begin_entry_at=24)
-                        t1 = F.add(npyscreen.TitleFilename, name = "t1:", begin_entry_at=24)
-                        dwimask = F.add(npyscreen.TitleFilename, name = "dwimask (optional):", begin_entry_at=24)
-                        self.t2 = F.add(npyscreen.TitleFilename, name = "t2 (optional):", begin_entry_at=24)
-                        caseid  = F.add(npyscreen.TitleText, name = "caseid:", begin_entry_at=24)
+                        F  = npyscreen.Form(name = "Make a paths yaml file (TAB to autocomplete and ENTER/up/down to change fields",)
+                        self.dwi = F.add(npyscreen.TitleFilename, name = "dwi:", begin_entry_at=24)
+                        self.t1 = F.add(npyscreen.TitleFilename, name = "t1:", begin_entry_at=24)
+                        #self.dwimask = F.add(npyscreen.TitleFilename, name = "dwimask:", begin_entry_at=24)
+                        self.t2 = F.add(npyscreen.TitleFilename, name = "t2:", begin_entry_at=24)
+                        self.caseid  = F.add(npyscreen.TitleText, name = "caseid:", begin_entry_at=24)
 
                         # This lets the user interact with the Form.
                         F.edit()
 
 
-                NcursesApp = MakePathsYml()
+                NcursesApp = MakePathsApp()
                 NcursesApp.run()
-                inputPaths = {
-                    'dwi': NcursesApp.dwi.value
-                }
-
-                writePaths(inputPaths, self.parent.out)
+                inputPaths = {'caseid': NcursesApp.caseid.value}
+                for key in ['dwi', 't1', 't2']:
+                    if getattr(NcursesApp, key).value:
+                        inputPaths[key] = getattr(NcursesApp,key).value
+                writePaths(inputPaths, inputPathsFile)
             except ImportError:
                 print(
 """Could not import npyscreen for ncurses interface, instead use a

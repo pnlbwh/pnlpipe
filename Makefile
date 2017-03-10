@@ -29,7 +29,7 @@ venv: _venv
 nix: _pip_packages.nix
 conda: _environment.yml
 	conda env create -f $<
-	@echo "Now run `source activate pyppl`"
+	@echo "Now run `source activate pnlpipe`"
 
 _venv: requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<
