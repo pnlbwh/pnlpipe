@@ -10,9 +10,9 @@ PARAMS := params.std
 all: inputPaths.yml $(PARAMS)
 	./pipe $(SUBCMD)
 
-bsub16: ; bsub -J $(SUBCMD) -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(SUBCMD)
-bsub8: ; bsub -J $(SUBCMD) -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(SUBCMD)
-bsub4: ; bsub -J $(SUBCMD) -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(SUBCMD)
+bsub16: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(SUBCMD)
+bsub8: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 ./pipe $(SUBCMD)
+bsub4: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe $(SUBCMD)
 %-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pipe --subjid $* $(SUBCMD)
 %-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pipe --subjid $* $(SUBCMD)
 %-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pipe --subjid $* $(SUBCMD)
