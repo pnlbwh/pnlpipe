@@ -15,6 +15,8 @@ defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("seedFALimit", "0.18"), ("seedsPerVoxel", "10"),
                     ("stepLength", "0.3")]
 
+class DoesNotExistException(Exception):
+    pass
 
 def assertInputKeys(pipelineName, keys):
     import pipelib
@@ -26,8 +28,12 @@ def assertInputKeys(pipelineName, keys):
         sys.exit(1)
 
 
-class DoesNotExistException(Exception):
-    pass
+def convertImage(i, o, bthash):
+    if i.suffixes == o.suffixes:
+        i.copy(o)
+    with brainsToolsEnv(bthash):
+        from plumbum.cmd import ConvertBetweenFileFormats
+        ConvertBetweenFileFormats(i, o)
 
 
 def formatParams(paramsList):
@@ -41,14 +47,6 @@ def brainsToolsEnv(bthash):
     return local.env(PATH=newpath, ANTSPATH=btpath)
 
 
-def convertImage(i, o, bthash):
-    if i.suffixes == o.suffixes:
-        i.copy(o)
-    with brainsToolsEnv(bthash):
-        from plumbum.cmd import ConvertBetweenFileFormats
-        ConvertBetweenFileFormats(i, o)
-
-
 def tractQuerierEnv(hash):
     path = software.tract_querier.getPath(hash)
     newPath = ':'.join(str(p) for p in [path/'scripts'] + local.env.path)
@@ -57,6 +55,27 @@ def tractQuerierEnv(hash):
     newPythonPath = path if not pythonPath else '{}:{}'.format(path,
                                                                pythonPath)
     return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
+
+def validateFreeSurfer(versionRequired):
+    freesurferHome = os.environ.get('FREESURFER_HOME')
+    if not freesurferHome:
+        log.error("'FREESURFER_HOME' not set, set that first (need version {}) then run again".format(version))
+        sys.exit(1)
+    with open(local.path(freesurferHome) / "build-stamp.txt", 'r') as f:
+        buildStamp = f.read()
+    import re
+    p = re.compile('v\d\.\d\.\d(-\w+)?$')
+    try:
+        version = p.search(buildStamp).group()
+    except:
+        log.error("Couldn't extract FreeSurfer version from {}/build-stamp.txt, either that file is malformed or the regex used to extract the version is incorrect.".format(freesurferHome))
+
+        sys.exit(1)
+    if version == versionRequired:
+        log.info("Required FreeSurfer version {} is on path".format(version))
+    else:
+        log.error("FreeSurfer version {} at {} does not match the required version of {}, either change FREESURFER_HOME or change the version you require".format(version, freesurferHome, versionRequired))
+        sys.exit(1)
 
 
 class DwiEd(GeneratedNode):

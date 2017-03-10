@@ -227,6 +227,12 @@ class Run(cli.Application):
                 if 'caseid' in paramsDict.keys():
                     paramsDict['caseid'] = [self.parent.parent.caseid]
 
+        # Check all necessary software exists
+        for module, commit in getSoftwareModules(params):
+            if not local.path(module.getPath(commit)).exists():
+                print("{} missing, run './pipe {} make' to build all prequisite software.".format(module.getPath(commit), self.parent.name))
+                sys.exit(1)
+
         paramsList = expandParams(params)
 
         for params in paramsList:
@@ -240,21 +246,25 @@ class Run(cli.Application):
             else:
                 pipelib.update(pipeline[self.parent.want])
 
+def getSoftwareModules(yml):
+    for paramsDict in yml:
+        for softname, commits in [(k[5:],v) for (k,v) in paramsDict.items() if k.startswith('hash_')]:
+            moduleFile = local.path('software') / (softname + '.py')
+            if not moduleFile.exists():
+                print("{} does not exist, maybe there is a typo in '{}'?".format(recipeFile, self.parent.paramsFile))
+                sys.exit(1)
+            module = importlib.import_module('software.' + softname)
+            for commit in commits:
+                yield (module, commit)
+
+
 class Make(cli.Application):
     """ Builds necessary software for pipeline. """
 
     def main(self):
         yml = readParams(self.parent.paramsFile)
-        for paramsDict in yml:
-            for softname, commits in [(k[5:],v) for (k,v) in paramsDict.items() if k.startswith('hash_')]:
-                recipeFile = local.path('software') / (softname + '.py')
-                if not recipeFile.exists():
-                    print("{} does not exist, maybe there is a typo in '{}'?".format(recipeFile, self.parent.paramsFile))
-                    sys.exit(1)
-                for commit in commits:
-                    m = importlib.import_module('software.' + softname)
-                    print('Make {} with commit {}'.format(softname, commit))
-                    m.make(commit)
+        for module, commit in getSoftwareModules(yml):
+            module.make(commit)
         print('Done.')
 
 class Init(cli.Application):
