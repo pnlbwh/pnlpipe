@@ -256,6 +256,7 @@ class Init(cli.Application):
     force = cli.Flag(['--force'], help='Force overwrite existing paramater file.')
 
     def main(self):
+
         pipelineName = self.parent.__class__.__name__
         paramsFile = 'params.' + pipelineName
         if local.path(paramsFile).exists() and not self.force:
@@ -267,25 +268,29 @@ class Init(cli.Application):
         from collections import OrderedDict
         args, _, _, defaults = inspect.getargspec(self.parent.makePipeline_orig)
         x = izip_longest(reversed(args), reversed(defaults), fillvalue='*mandatory*')
-        x = OrderedDict(reversed(list(x)))
+        paramDict = OrderedDict(reversed(list(x)))
+        # get a default caseid
+        paramDict['caseid'] = './caselist.txt'
+        if (not local.path('caselist.txt').exists()) and local.path(inputPathsFile).exists():
+            with open(inputPathsFile, 'r') as f:
+                inputPaths = yaml.load(f)
+                paramDict['caseid'] = inputPaths.get('caseid', './caselist.txt')
         """ http://stackoverflow.com/a/8661021 """
         represent_dict_order = lambda self, data:  self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
         help_message = \
-"""# Note: 'caseid' can be removed if you have a caselist.txt file."
-# Otherwise, use the format of one of these examples:
+"""# Use one of the following formats for 'caseid'
 # caseid: 001
 # caseid: [001, 002, 003]
 # caseid:
 #    - 001
 #    - 002
 #    - 003
-# caseid: ./caselist-controls.txt
-
+# caseid: ./caselist-controls.txt  # The '/' tells pipe that this is a file
 """
         with open(paramsFile, 'w') as f:
             f.write(help_message)
-            yaml.dump(x, f, default_flow_style=False)
+            yaml.dump(paramDict, f, default_flow_style=False)
         print("Made '{}'".format(paramsFile))
         print("Before running the pipeline, replace the '*mandatory*' fields:")
         print("# Edit {}, add your parameters".format(paramsFile))
