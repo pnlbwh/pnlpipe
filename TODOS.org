@@ -1,3 +1,4 @@
+* Make env.sh subcommand
 * STY: make bsub subcommand
 * STY: clean up pipe, maybe factor into lib
 * STY: add setupdata.sh generation and symlinks

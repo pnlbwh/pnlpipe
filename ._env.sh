@@ -37,6 +37,7 @@ TRACT_QUERIER=__TRACT_QUERIER__
 
 export PATH=${base}/pnlscripts:${TRACT_QUERIER}/scripts:$UKFTRACTOGRAPHY:$BRAINSTOOLS:$PATH
 export PYTHONPATH=$TRACT_QUERIER:$PYTHONPATH
+export ANTSPATH=$BRAINSTOOLS
 
 echo "Added to PATH:"
 echo $base/pnlscripts

@@ -41,10 +41,10 @@ def brainsToolsEnv(bthash):
     return local.env(PATH=newpath, ANTSPATH=btpath)
 
 
-def convertImage(i, o):
+def convertImage(i, o, bthash):
     if i.suffixes == o.suffixes:
         i.copy(o)
-    with brainsToolsEnv():
+    with brainsToolsEnv(bthash):
         from plumbum.cmd import ConvertBetweenFileFormats
         ConvertBetweenFileFormats(i, o)
 

@@ -32,14 +32,15 @@ class App(cli.Application):
     def main(self):
         with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
             tmpdir = local.path(tmpdir)
-            pre = 'dwi'
+            dicePrefix = 'dwi'
 
             logging.info("Dice DWI")
             (unu['convert', '-t', 'int16', '-i', self.dwi] | \
-                unu['dice','-a','3','-o',pre]) & FG
+                unu['dice','-a','3','-o',dicePrefix]) & FG
 
             logging.info("Apply warp to each DWI volume")
-            vols = sorted(tmpdir.glob(pre+'*'))
+            vols = sorted(tmpdir // (dicePrefix + '*'))
+            volsWarped = []
             for vol in vols:
                 if self.dwimask:
                     unu('3op','ifelse',self.dwimask,vol,'0','-o',vol)
@@ -47,10 +48,10 @@ class App(cli.Application):
                 WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
                                         self.xfm)
                 unu('convert', '-t', 'int16', '-i', volwarped, '-o', volwarped)
+                volsWarped.append(volwarped)
 
             logging.info("Join warped volumes together")
-            warpedvols = sorted(tmpdir.glob('*warped.nrrd'))
-            (unu['join', '-a', '3', '-i', warpedvols] | \
+            (unu['join', '-a', '3', '-i', volsWarped] | \
                 unu['save', '-e', 'gzip', '-f', 'nrrd'] | \
                 unu['data','-'] > 'tmpdwi.raw.gz') & FG
 
