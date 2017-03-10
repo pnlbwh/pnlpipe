@@ -46,7 +46,7 @@ def loadSubmodules(package):
     import pkgutil
     from os.path import isfile
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
-        if modname.startswith('pipe'):
+        if modname.startswith('pipeline_'):
             yield importer.find_module(modname).load_module(modname)
 
 class App(cli.Application):
@@ -70,32 +70,34 @@ def concat(l):
 def readParams(ymlfile):
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
-    if not isinstance(yml, list):
-        yml = [yml]
-    for idx, p in enumerate(yml):
-        if not p.get('caseid', None):
+
+    result = []
+    for idx, paramDict in enumerate(yml if isinstance(yml,list) else [yml]):
+        listValueDict = dict((k,v) if isinstance(v, list) else
+                             (k,[v]) for k,v in paramDict.items())
+        if not paramDict.get('caseid'):
             caselist = local.path('caselist.txt')
             if not caselist.exists():
                 print("Add 'caseid' to {} (or save a caselist.txt to this directory)".format(ymlfile))
                 sys.exit(1)
-            print("Found './caselist.txt, using that to get case id's")
-            yml[idx]['caseid'] = './' + str(caselist).replace(local.cwd, '')
-    return yml
+            print("Found './caselist.txt, using that for case id's")
+            listValueDict['caseid'] = ['./caselist.txt']
+        result.append(listValueDict)
+
+    print("Read parameter file '{}':".format(ymlfile))
+    pprint(result)
+    return result
 
 
-def expandParams(yml):
+def expandParams(params):
     paramsList = []
-    for paramsDict in yml:
-        flatDict = dict(paramsDict['software'], **{ k:v for k,v in paramsDict.items() if k != 'software'})
-        # Turn values into lists if not already
-        flatDict2 = dict((k,v) if isinstance(v, list) else (k,[v]) for k,v in flatDict.items())
+    for paramsDict in params:
         # Check if case ids are defined by a caselist
-        if '/' in flatDict2['caseid'][0]:
-            with open(flatDict2['caseid'][0],'r') as f:
-                flatDict2['caseid'] = f.read().splitlines()
-
-        keys = flatDict2.keys()
-        valueCombos = itertools.product(*flatDict2.values())
+        if '/' in paramsDict['caseid'][0]:
+            with open(paramsDict['caseid'][0],'r') as f:
+                paramsDict['caseid'] = f.read().splitlines()
+        keys = paramsDict.keys()
+        valueCombos = itertools.product(*paramsDict.values())
         ps = [dict(zip(keys, combo)) for combo in valueCombos]
         paramsList.append(ps)
     return concat(paramsList)
@@ -114,10 +116,15 @@ class Run(cli.Application):
     def main(self):
         readAndSetInputPaths()  # reads _inputPaths.yml into pipelib.INPUT_PATHS
 
-        paramsList = expandParams(readParams(self.parent.paramsFile))
+        params = readParams(self.parent.paramsFile)
+        if any('*mandatory*' in concat(p.values()) for p in params):
+            print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the pipeline.".format(self.parent.paramsFile))
+            sys.exit(1)
+
+        paramsList = expandParams(params)
 
         for params in paramsList:
-            print('Running {} pipeline with params:'.format(self.parent.__class__.__name__))
+            print('Running {} pipeline with paramaters:'.format(self.parent.__class__.__name__))
             pprint(params)
 
             pipeline = self.parent.makePipeline(**params)
@@ -128,10 +135,12 @@ class Run(cli.Application):
                 pipelib.update(pipeline[self.parent.want])
 
 class Make(cli.Application):
+    """ Builds necessary software for pipeline. """
+
     def main(self):
         yml = readParams(self.parent.paramsFile)
         for paramsDict in yml:
-            for softname, commits in paramsDict['software'].items():
+            for softname, commits in [(k[5:],v) for (k,v) in paramsDict.items() if k.startswith('hash_')]:
                 recipeFile = local.path('software') / (softname + '.py')
                 if not recipeFile.exists():
                     print("{} does not exist, maybe there is a typo in '{}'?".format(recipeFile, self.parent.paramsFile))
@@ -142,12 +151,50 @@ class Make(cli.Application):
                     m.make(commit)
         print('Done.')
 
+class Init(cli.Application):
+    """Makes parameter file that is used as input for this pipeline."""
 
-def classFactory(name, fn, BaseClass=PipelineSubcommand):
+    force = cli.Flag(['--force'], help='Force overwrite existing paramater file.')
+
+    def main(self):
+        paramsFile = 'params.' + self.parent.__class__.__name__
+        if local.path(paramsFile).exists() and not self.force:
+            print("'{}' already exists, won't overwrite (use '--force' to overwrite it).".format(paramsFile))
+            return
+        local.path(paramsFile).delete()
+        import inspect
+        from itertools import izip_longest
+        from collections import OrderedDict
+        args, _, _, defaults = inspect.getargspec(self.parent.makePipeline_orig)
+        x = izip_longest(reversed(args), reversed(defaults), fillvalue='*mandatory*')
+        x = OrderedDict(reversed(list(x)))
+        """ http://stackoverflow.com/a/8661021 """
+        represent_dict_order = lambda self, data:  self.represent_mapping('tag:yaml.org,2002:map', data.items())
+        yaml.add_representer(OrderedDict, represent_dict_order)
+        help_message = \
+"""# Note: 'caseid' can be removed if you have a caselist.txt file."
+# Otherwise, use the format of one of these examples:
+# caseid: 001
+# caseid: [001, 002, 003]
+# caseid:
+#    - 001
+#    - 002
+#    - 003
+# caseid: ./caselist-controls.txt
+
+"""
+        with open(paramsFile, 'w') as f:
+            f.write(help_message)
+            yaml.dump(x, f, default_flow_style=False)
+        print("Made '{}'".format(paramsFile))
+
+
+def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
     def wrapFunction(self, *args, **kwargs):
-        return fn( *args, **kwargs)
+        return makePipelineFn( *args, **kwargs)
     paramsFile = 'params.' + name
     newclass = type(name, (BaseClass,),{"makePipeline": wrapFunction
+                                        ,"makePipeline_orig": makePipelineFn
                                         ,"paramsFile": paramsFile})
     return newclass
 
@@ -160,4 +207,5 @@ if __name__ == '__main__':
         App.subcommand(name, SubcommandClass)
         SubcommandClass.subcommand("run", Run)
         SubcommandClass.subcommand("make", Make)
+        SubcommandClass.subcommand("init", Init)
     App.run()

@@ -3,14 +3,15 @@ from pipelib import Src
 import pipelib
 
 def makePipeline(caseid,
-                 UKFTractography,
-                 tract_querier,
-                 BRAINSTools,
-                 trainingDataT1AHCC,
                  dwiKey,
                  t1Key,
-                 dwimaskKey
+                 hash_UKFTractography='421a7ad',
+                 hash_tract_querier='e045eab',
+                 hash_BRAINSTools='41353e8',
+                 hash_trainingDataT1AHCC='d6e5990',
+                 dwimaskKey=''
                  ):
+
     """Makes the PNL's standard pipeline. """
     pipeline = { 'name' : "standard PNL pipeline" }
     assertInputKeys(pipeline['name'], [dwiKey, t1Key])
@@ -18,31 +19,31 @@ def makePipeline(caseid,
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
 
-    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], BRAINSTools)
+    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
     # run DwiXc first as it's able to convert a DWI nifti to nrrd
-    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], BRAINSTools)
-    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], BRAINSTools)
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], hash_BRAINSTools)
+    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
 
     pipeline['dwimask'] = Src(
         caseid, dwimaskKey) if pipelib.INPUT_PATHS.get(
-            dwimaskKey) else DwiMaskHcpBet(caseid, pipeline['dwied'], BRAINSTools)
+            dwimaskKey) else DwiMaskHcpBet(caseid, pipeline['dwied'], hash_BRAINSTools)
 
     pipeline['t1mask'] = Src(
         caseid,
         't1mask') if pipelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
-            caseid, pipeline['t1xc'], trainingDataT1AHCC, BRAINSTools)
+            caseid, pipeline['t1xc'], hash_trainingDataT1AHCC, hash_BRAINSTools)
 
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
                                          pipeline['t1mask'])
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
                                         pipeline['dwied'], pipeline['dwimask']
-                                        ,BRAINSTools)
+                                        ,hash_BRAINSTools)
 
     pipeline['ukf'] = UkfDefault(caseid, pipeline['dwied'],
-                                 pipeline['dwimask'], UKFTractography, BRAINSTools)
+                                 pipeline['dwimask'], hash_UKFTractography, hash_BRAINSTools)
 
     pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
-                            tract_querier)
+                            hash_tract_querier)
 
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
 
