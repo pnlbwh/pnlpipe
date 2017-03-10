@@ -23,11 +23,11 @@ $(CASELIST):
 ##############################################################################
 # Python Environments
 
-.PHONY: conda env nix
+.PHONY: conda virtualenv nix
 
-venv: _venv
+virutalenv: _venv
 nix: _pip_packages.nix
-conda: _environment.yml
+conda: environment.yml
 	conda env create -f $<
 	@echo "Now run `source activate pnlpipe`"
 
