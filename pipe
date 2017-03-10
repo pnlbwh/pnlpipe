@@ -55,6 +55,8 @@ class App(cli.Application):
     want = cli.SwitchAttr(
         ['-w', '--want'], help='target node to build, e.g. fsindwi')
 
+    caseid = cli.SwitchAttr(['--subjid', '-s'], help="Case/Subject id, will override the 'caseid' key in params.<pipeline> if it exists")
+
     writeGeneratedPathsYml = cli.Flag('--writePaths', default=False)
 
     def main(self, *args):
@@ -219,6 +221,11 @@ class Run(cli.Application):
         if any('*mandatory*' in concat(p.values()) for p in params):
             print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the pipeline.".format(self.parent.paramsFile))
             sys.exit(1)
+
+        if self.parent.parent.caseid:
+            for paramsDict in params:
+                if 'caseid' in paramsDict.keys():
+                    paramsDict['caseid'] = [self.parent.parent.caseid]
 
         paramsList = expandParams(params)
 
