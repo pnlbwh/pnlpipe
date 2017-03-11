@@ -6,31 +6,27 @@
 # Install
 
     cd /project/dir
-    git clone https://github.com/reckbo/pnlpipe.git
-    cd pnlpipe
+    git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
     export soft=<path/to/software/dir>  # where software will be installed
 
-# Examaple
-
-    ./pipe init  # define your input paths, makes inputPaths.yml
+# Example
 
 Run the standard PNL pipeline:
 
+    ./pipe init  # define your input paths for this project, makes 'inputPaths.yml'
     ./pipe std init # set parameters for 'std' pipeline, makes 'params.std'
-    ./pipe std make # builds 'std' pipeline's prequisite software
-    ./pipe std run # runs the 'std' pipeline with your parameters
+    # Edit params.std and fill in mandatory fields (i.e. replace '*mandatory*' strings)
+    ./pipe std make # builds the prerequisite software specified in 'params.std'
+    ./pipe std run # runs the 'std' pipeline using 'params.std'
 
-To run the EPI correctin pipeline, replace `std` with `epi`.
+All output will be generated in `_data/<caseid>/`, including the final tract
+measures csv. To run the EPI correction pipeline, replace `std` with `epi`.
 
 # Details
 
+## How it works
+
 TODO
-
-# Advanced
-
-You can make a custom pipeline by creating a file `pipelines/pipeline_<name>.py`
-and run it the same way you run the standard and EPI correction pipelines:
-
-    ./pipe <name> init
-    ./pipe <name> make
-    ./pipe <name> run
+* explain generally how it works
+* explain how params yaml can specify many parameters using lists
+* explain how to add custom pipeline and software modules
