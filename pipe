@@ -228,10 +228,15 @@ class Run(cli.Application):
                     paramsDict['caseid'] = [self.parent.parent.caseid]
 
         # Check all necessary software exists
+        missingSoftware = []
         for module, commit in getSoftwareModules(params):
             if not local.path(module.getPath(commit)).exists():
-                print("{} missing, run './pipe {} make' to build all prequisite software.".format(module.getPath(commit), self.parent.name))
-                sys.exit(1)
+                missingSoftware.append(module.getPath(commit))
+        if missingSoftware:
+            for soft in missingSoftware:
+                print("Missing: {}".format(soft))
+            print("Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(self.parent.__class__.__name__))
+            sys.exit(1)
 
         paramsList = expandParams(params)
 
@@ -264,6 +269,7 @@ class Make(cli.Application):
     def main(self):
         yml = readParams(self.parent.paramsFile)
         for module, commit in getSoftwareModules(yml):
+            print("Make {}".format(module.getPath(commit)))
             module.make(commit)
         print('Done.')
 
