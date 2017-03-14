@@ -330,6 +330,11 @@ class Make(cli.Application):
             module.make(commit)
         print('Done.')
 
+def groupDictsByCaseid(dicts):
+    from itertools import groupby
+    def keyfn(x):
+        return x['caseid']
+    return [(caseid, list(g)) for caseid,g in groupby(sorted(dicts, key=keyfn), keyfn)]
 
 class SymLinks(cli.Application):
     """Makes simple named symlinks to fully named nodes"""
@@ -344,20 +349,21 @@ class SymLinks(cli.Application):
             print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the command.".format(self.parent.paramsFile))
             sys.exit(1)
         paramsList = expandParams(paramDicts)
-        for i, params in enumerate(paramsList):
-            pipeline = self.parent.makePipeline(**params)
-            for key, node in pipeline.items():
-                if key == 'all' or key == 'name':
-                    continue
-                idx = '' if i == 0 else '_' + str(i+1)
-                src = local.path(pipelib.OUTDIR / params['caseid'] / (key + idx + ''.join(node.path().suffixes)))
-                if node.path().exists():
-                    if src.exists():
-                        print("'{}' already exists, skipping".format(src))
+        for caseid, params in groupDictsByCaseid(paramsList):
+            for i, paramDict in enumerate(params):
+                pipeline = self.parent.makePipeline(**paramDict)
+                for key, node in pipeline.items():
+                    if key == 'all' or key == 'name':
                         continue
-                    print("Make symlink '{}'".format(src))
-                    src.dirname.mkdir()
-                    node.path().symlink(src)
+                    idx = '' if i == 0 else '_' + str(i+1)
+                    src = local.path(pipelib.OUTDIR / caseid / (key + idx + ''.join(node.path().suffixes)))
+                    if node.path().exists():
+                        if src.exists():
+                            print("'{}' already exists, skipping".format(src))
+                            continue
+                        print("Make symlink '{}'".format(src))
+                        src.dirname.mkdir()
+                        node.path().symlink(src)
         print("Done.")
 
 
