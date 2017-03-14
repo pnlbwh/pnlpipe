@@ -300,6 +300,13 @@ class Init(cli.Application):
         if (not local.path('caselist.txt').exists()) and local.path(inputPathsFile).exists():
             with open(inputPathsFile, 'r') as f:
                 inputPaths = yaml.load(f)
+                if not isinstance(inputPaths, dict):
+                    print("Error reading {} as a dictionary, is it in the correct format?".format(inputPathsFile))
+                    print("E.g.")
+                    print("dwi: path/to/001-dwi.nrrd")
+                    print("t1: path/to/001-t1.nrrd")
+                    print("caseid: caseid")
+                    sys.exit(1)
                 paramDict['caseid'] = inputPaths.get('caseid', './caselist.txt')
         """ http://stackoverflow.com/a/8661021 """
         represent_dict_order = lambda self, data:  self.represent_mapping('tag:yaml.org,2002:map', data.items())
