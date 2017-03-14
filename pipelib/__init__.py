@@ -167,7 +167,7 @@ def readHash(filepath):
 
 
 def dbfile(node):
-    return DBDIR / (node.show() + '-' + node.caseid)
+    return DBDIR / (node.showShortened() + '-' + node.caseid)
 
 
 def readDB(node):

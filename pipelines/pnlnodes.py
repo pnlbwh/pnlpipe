@@ -89,7 +89,7 @@ class DwiEd(GeneratedNode):
     def build(self):
         needDeps(self)
         with brainsToolsEnv(self.bthash):
-            eddy_py['-i', self.dwi.path(), '-o', self.path()] & FG
+            eddy_py['-i', self.dwi.path(), '-o', self.path(), '--force'] & FG
 
 
 class DwiXc(GeneratedNode):
@@ -150,7 +150,7 @@ class UkfDefault(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(bthash), TemporaryDirectory() as tmpdir:
+        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
@@ -272,7 +272,7 @@ class TractMeasures(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        measureTracts_py = local['pnlscripts/measuretracts/measureTracts.py']
+        measureTracts_py = local['pipelines/pnlscripts/measuretracts/measureTracts.py']
         vtks = self.wmql.path().up() // '*.vtk'
-        measureTracts_py('-f', '-c', 'caseid', 'algo', '-v', self.caseid,
-                         self.wmql.show(), '-o', self.path(), '-i', vtks)
+        measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
+                         self.wmql.showShortened(), '-o', self.path(), '-i', vtks] & FG

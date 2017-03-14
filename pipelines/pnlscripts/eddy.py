@@ -17,9 +17,17 @@ class App(cli.Application):
     DESCRIPTION='Eddy current correction.'
     debug = cli.Flag('-d', help='Debug, saves registrations to eddy-debug-<pid>')
     dwi = cli.SwitchAttr('-i', cli.ExistingFile, help='DWI (nrrd)')
-    out = cli.SwitchAttr('-o', cli.NonexistentPath, help='Eddy corrected DWI')
+    out = cli.SwitchAttr('-o', help='Eddy corrected DWI')
+    overwrite = cli.Flag('--force', default=False, help='Force overwrite')
 
     def main(self):
+        self.out = local.path(self.out)
+        if self.out.exists():
+            if self.overwrite:
+                self.out.delete()
+            else:
+                logging.error("{} exists, use '--force' to overwrite it".format(self.out))
+                sys.exit(1)
         outxfms = self.out.dirname / self.out.stem+'-xfms.tgz'
         with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
        	    tmpdir = local.path(tmpdir)
