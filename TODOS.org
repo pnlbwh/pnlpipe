@@ -1,12 +1,12 @@
-* Make env.sh subcommand
-* STY: make bsub subcommand
-* STY: clean up pipe, maybe factor into lib
-* STY: add setupdata.sh generation and symlinks
 * add freesurfer version validator
+* ENH: add check for correct DWI axes permutation
+* STY: add setupdata.sh generation and symlinks
+* Make env.sh subcommand
 * ENH: add ukf params
 * STY: change pnlscripts.util to pnlscripts
 * ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
 * think about multi file nodes
+* ENH: add HCP preprocessing pipeline if we decide to use it
 * STY: add log file output to pnlscripts scripts
 * STY: use python logging correctly
-* ENH: add HCP preprocessing pipeline if we decide to use it
+* STY: clean up pipe, maybe factor into lib

@@ -241,7 +241,7 @@ class Run(cli.Application):
         paramsList = expandParams(params)
 
         for params in paramsList:
-            print('Running {} pipeline with paramaters:'.format(self.parent.__class__.__name__))
+            print('Running {} pipeline with parameters:'.format(self.parent.__class__.__name__))
             pprint(params)
 
             pipeline = self.parent.makePipeline(**params)
@@ -279,7 +279,7 @@ class Make(cli.Application):
 class Init(cli.Application):
     """Makes parameter file that is used as input for this pipeline."""
 
-    force = cli.Flag(['--force'], help='Force overwrite existing paramater file.')
+    force = cli.Flag(['--force'], help='Force overwrite existing parameter file.')
 
     def main(self):
 
