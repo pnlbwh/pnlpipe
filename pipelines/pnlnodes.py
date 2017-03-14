@@ -243,6 +243,7 @@ class FsInDwiDirect(GeneratedNode):
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             fs2dwi_py('-f', fssubjdir, '-t', self.dwi.path(), '-m',
                       self.dwimask.path(), '-o', tmpoutdir, 'direct')
+	    local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
 
 
 class Wmql(GeneratedNode):
