@@ -20,7 +20,7 @@ def makePipeline(caseid,
 
     pipeline['t1'] = Src(caseid, t1Key)
 
-    # get DWI
+    # get DWI, either it's in raw form or it's already been eddy corrected (by e.g. DRBUDDI or HCP pipeline)
     if dwiKey:
         pipeline['dwi'] = Src(caseid, dwiKey)
         pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], hash_BRAINSTools) # works on nrrd or nii
@@ -30,6 +30,7 @@ def makePipeline(caseid,
         pipeline['dwied'] = Src(caseid, dwiedKey)
     else:
         print("pipeline_std.py: Error: either 'dwiKey' or 'dwiedKey' must be provided in 'params.std'")
+        print("Use 'dwiKey' if you have a raw DWI, otherwise use 'dwiedKey' if you have an eddy corrected/preprocessed DWI.")
         sys.exit(1)
 
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)

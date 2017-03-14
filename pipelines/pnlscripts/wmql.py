@@ -28,7 +28,7 @@ class App(cli.Application):
     query = cli.SwitchAttr(
         ['-q', '--query'],
         help='tract_querier query file (e.g. wmql-2.0.qry)',
-        mandatory=False, 
+        mandatory=False,
         default=local.path(__file__).dirname / 'wmql-2.0.qry')
     out = cli.SwitchAttr(
         ['-o', '--out'], cli.NonexistentPath, help='output directory', mandatory=True)
@@ -56,7 +56,7 @@ class App(cli.Application):
 
             logging.info('Convert vtk field data to tensor data')
             for vtk in self.out.glob('*.vtk'):
-                vtknew = vtk.dirname / (vtk.stem[2:] + '.vtk')
+                vtknew = vtk.dirname / (vtk.stem[2:] + ''.join(vtk.suffixes))
                 activateTensors_py(vtk, vtknew)
                 vtk.delete()
 

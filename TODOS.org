@@ -1,3 +1,4 @@
+* bug: axisAlignAndCenter assumes 3d input
 * add freesurfer version validator
 * ENH: add check for correct DWI axes permutation
 * STY: add setupdata.sh generation and symlinks
