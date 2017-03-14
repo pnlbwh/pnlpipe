@@ -267,6 +267,9 @@ class Make(cli.Application):
     """ Builds necessary software for pipeline. """
 
     def main(self):
+        if not self.parent.paramsFile.exists():
+            print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
+            sys.exit(1)
         yml = readParams(self.parent.paramsFile)
         for module, commit in getSoftwareModules(yml):
             print("Make {}".format(module.getPath(commit)))
@@ -281,8 +284,8 @@ class Init(cli.Application):
     def main(self):
 
         pipelineName = self.parent.__class__.__name__
-        paramsFile = 'params.' + pipelineName
-        if local.path(paramsFile).exists() and not self.force:
+        paramsFile = self.parent.paramsFile
+        if paramsFile.exists() and not self.force:
             print("'{}' already exists, won't overwrite (use '--force' to overwrite it).".format(paramsFile))
             return
         local.path(paramsFile).delete()
@@ -324,7 +327,7 @@ class Init(cli.Application):
 def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
     def wrapFunction(self, *args, **kwargs):
         return makePipelineFn( *args, **kwargs)
-    paramsFile = 'params.' + name
+    paramsFile = local.path('params.' + name)
     newclass = type(name, (BaseClass,),{"makePipeline": wrapFunction
                                         ,"makePipeline_orig": makePipelineFn
                                         ,"paramsFile": paramsFile})
