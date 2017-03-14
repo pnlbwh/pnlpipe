@@ -336,6 +336,16 @@ def groupDictsByCaseid(dicts):
         return x['caseid']
     return [(caseid, list(g)) for caseid,g in groupby(sorted(dicts, key=keyfn), keyfn)]
 
+def makeRelativeSymlink(src, symlink):
+    import os
+    os.symlink(
+        os.path.relpath(
+            src,
+            os.path.dirname(symlink)
+        ),
+        symlink
+    )
+
 class SymLinks(cli.Application):
     """Makes simple named symlinks to fully named nodes"""
     # Assumes pipeline has a 'caseid' field
@@ -356,14 +366,14 @@ class SymLinks(cli.Application):
                     if key == 'all' or key == 'name':
                         continue
                     idx = '' if i == 0 else '_' + str(i+1)
-                    src = local.path(pipelib.OUTDIR / caseid / (key + idx + ''.join(node.path().suffixes)))
+                    symlink = local.path(pipelib.OUTDIR / caseid / (key + idx + ''.join(node.path().suffixes)))
                     if node.path().exists():
-                        if src.exists():
-                            print("'{}' already exists, skipping".format(src))
+                        if symlink.exists():
+                            print("'{}' already exists, skipping".format(symlink))
                             continue
-                        print("Make symlink '{}'".format(src))
-                        src.dirname.mkdir()
-                        node.path().symlink(src)
+                        print("Make symlink '{}'".format(symlink))
+                        symlink.dirname.mkdir()
+                        makeRelativeSymlink(node.path(), symlink)
         print("Done.")
 
 
