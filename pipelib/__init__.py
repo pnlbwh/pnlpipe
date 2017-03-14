@@ -147,11 +147,11 @@ def lookupPathKey(key, caseid, pathsDict):
         filepath = local.path(pathPattern.replace(caseid_string, caseid))
         if not filepath.exists():
             log.error(
-                str(filepath) + ' does not exist, maybe a typo in _inputPaths.yml?')
+                str(filepath) + ' does not exist, maybe a typo in inputPaths.yml?')
             sys.exit(1)
         return filepath
     except KeyError:
-        log.error("Key '{}' not in _inputPaths.yml, maybe a typo?".format(key))
+        log.error("Key '{}' not in inputPaths.yml, maybe a typo?".format(key))
         sys.exit(1)
 
 

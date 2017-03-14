@@ -23,7 +23,7 @@ def assertInputKeys(pipelineName, keys):
     absentKeys = [k for k in keys if not pipelib.INPUT_PATHS.get(k)]
     if absentKeys:
         for key in absentKeys:
-            print("{} requires '{}' set in _inputPaths.yml".format(
+            print("{} requires '{}' set in inputPaths.yml".format(
                 pipelineName, key))
         sys.exit(1)
 

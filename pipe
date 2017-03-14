@@ -263,19 +263,6 @@ def getSoftwareModules(yml):
                 yield (module, commit)
 
 
-class Make(cli.Application):
-    """ Builds necessary software for pipeline. """
-
-    def main(self):
-        if not self.parent.paramsFile.exists():
-            print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
-            sys.exit(1)
-        yml = readParams(self.parent.paramsFile)
-        for module, commit in getSoftwareModules(yml):
-            print("Make {}".format(module.getPath(commit)))
-            module.make(commit)
-        print('Done.')
-
 class Init(cli.Application):
     """Makes parameter file that is used as input for this pipeline."""
 
@@ -331,6 +318,49 @@ class Init(cli.Application):
         print("./pipe {} run".format(pipelineName))
 
 
+class Make(cli.Application):
+    """ Builds necessary software for pipeline. """
+    def main(self):
+        if not self.parent.paramsFile.exists():
+            print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
+            sys.exit(1)
+        yml = readParams(self.parent.paramsFile)
+        for module, commit in getSoftwareModules(yml):
+            print("Make {}".format(module.getPath(commit)))
+            module.make(commit)
+        print('Done.')
+
+
+class SymLinks(cli.Application):
+    """Makes simple named symlinks to fully named nodes"""
+    # Assumes pipeline has a 'caseid' field
+    def main(self):
+        readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
+        if not self.parent.paramsFile.exists():
+            print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
+            sys.exit(1)
+        paramDicts = readParams(self.parent.paramsFile)
+        if any('*mandatory*' in concat(p.values()) for p in paramDicts):
+            print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the command.".format(self.parent.paramsFile))
+            sys.exit(1)
+        paramsList = expandParams(paramDicts)
+        for i, params in enumerate(paramsList):
+            pipeline = self.parent.makePipeline(**params)
+            for key, node in pipeline.items():
+                if key == 'all' or key == 'name':
+                    continue
+                idx = '' if i == 0 else '_' + str(i+1)
+                src = local.path(pipelib.OUTDIR / params['caseid'] / (key + idx + ''.join(node.path().suffixes)))
+                if node.path().exists():
+                    if src.exists():
+                        print("'{}' already exists, skipping".format(src))
+                        continue
+                    print("Make symlink '{}'".format(src))
+                    src.dirname.mkdir()
+                    node.path().symlink(src)
+        print("Done.")
+
+
 def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
     def wrapFunction(self, *args, **kwargs):
         return makePipelineFn( *args, **kwargs)
@@ -350,4 +380,5 @@ if __name__ == '__main__':
         SubcommandClass.subcommand("run", Run)
         SubcommandClass.subcommand("make", Make)
         SubcommandClass.subcommand("init", Init)
+        SubcommandClass.subcommand("symlink", SymLinks)
     App.run()
