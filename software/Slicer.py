@@ -14,13 +14,14 @@ def make(version=DEFAULT_VERSION):
         sys.exit(1)
     checkExists(getPath(version))
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
+        tmpdir = local.path(tmpdir)
         wget[URL.get(version), '-O', 'slicer.tar.gz'] & FG
-        tar['xz', 'slicer.tar.gz'] & FG
-        (tmpdir / 'slicer').move(getDir(version))
+        tar['zxvf', 'slicer.tar.gz'] & FG
+        (tmpdir // 'Slicer-*')[0].move(getDir(version))
         logging.info("Made '{}'".format(getPath(version)))
 
 def getDir(version=DEFAULT_VERSION):
     return getSoftDir() / ('Slicer-' + version + '-linux-amd64')
 
 def getPath(version=DEFAULT_VERSION):
-    return getDir() / 'bin' / 'Slicer'
+    return getDir() / 'Slicer'
