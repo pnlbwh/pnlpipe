@@ -41,7 +41,14 @@ def readAndSetInputPaths():
             "Missing {}, first make one using 'pnlscripts/makepathsyml.py' or a text editor".format(inputPathsFile))
         sys.exit(1)
     with open(inputPathsFile, 'r') as f:
-        pipelib.INPUT_PATHS = yaml.load(f)
+        inputPathDict = yaml.load(f)
+    pipelib.INPUT_PATHS = {}
+    for key, val in inputPathDict.items():
+        if key == 'caseid' or key.startswith('version_') or key.startswith('hash_'):
+            continue
+        pipelib.INPUT_PATHS[key] = local.path(val)
+    print("Loaded inputPaths.yml:")
+    pprint(pipelib.INPUT_PATHS)
 
 def loadSubmodules(package):
     import pkgutil
@@ -245,6 +252,7 @@ class Run(cli.Application):
             pprint(params)
 
             pipeline = self.parent.makePipeline(**params)
+            print pipeline['dwimask'].params
 
             if not self.parent.parent.want:
                 pipelib.update(pipeline['all'])

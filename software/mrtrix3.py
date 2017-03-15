@@ -26,6 +26,6 @@ def getPath(hash=DEFAULT_HASH):
 
 
 def env(hash):
-    path = getPath(hash)
+    path = getPath(hash) / 'bin'
     newpath = ':'.join(str(p) for p in [path] + local.env.path)
     return local.env(PATH=newpath)

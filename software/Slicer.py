@@ -6,13 +6,16 @@ from plumbum.cmd import wget, tar
 
 DEFAULT_VERSION = '4.7.0'
 
-URL= { '4.7.0': 'http://download.slicer.org/bitstream/608873' }
+URL= { '4.7.0': 'http://download.slicer.org/bitstream/608873' ,
+        '4.5.0-1': ''
+        }
 
 def make(version=DEFAULT_VERSION):
     if not URL.get(version):
         logging.error("No download link set for '{}' in software/Slicer.py")
         sys.exit(1)
-    checkExists(getPath(version))
+    if checkExists(getPath(version)):
+        return
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
         tmpdir = local.path(tmpdir)
         wget[URL.get(version), '-O', 'slicer.tar.gz'] & FG
@@ -24,9 +27,4 @@ def getDir(version=DEFAULT_VERSION):
     return getSoftDir() / ('Slicer-' + version + '-linux-amd64')
 
 def getPath(version=DEFAULT_VERSION):
-    return getDir() / 'Slicer'
-
-def env(version):
-    path = getPath(version).dirname
-    newpath = ':'.join(str(p) for p in [path] + local.env.path)
-    return local.env(PATH=newpath)
+    return getDir(version) / 'Slicer'
