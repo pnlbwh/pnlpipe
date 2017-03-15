@@ -57,7 +57,7 @@ class TemporaryDirectory(object):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
 
     def __enter__(self):
-        return self.name
+        return local.path(self.name)
 
     def cleanup(self, _warn=False):
         if self.name and not self._closed:

@@ -25,3 +25,8 @@ def getDir(version=DEFAULT_VERSION):
 
 def getPath(version=DEFAULT_VERSION):
     return getDir() / 'Slicer'
+
+def env(version):
+    path = getPath(version).dirname
+    newpath = ':'.join(str(p) for p in [path] + local.env.path)
+    return local.env(PATH=newpath)
