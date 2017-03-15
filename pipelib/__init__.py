@@ -139,6 +139,8 @@ class Src(Node):
     def build(self):
         pass
 
+class MissingInputPathsKeyException(Exception):
+    pass
 
 def lookupPathKey(key, caseid, pathsDict):
     try:
@@ -146,13 +148,11 @@ def lookupPathKey(key, caseid, pathsDict):
         caseid_string = pathsDict.get('caseid', '{case}')
         filepath = local.path(pathPattern.replace(caseid_string, caseid))
         if not filepath.exists():
-            log.error(
-                "'{}' does not exist, maybe a typo in inputPaths.yml?".format(filepath))
-            sys.exit(1)
+            raise DoesNotExistException(
+                "pipelib: '{}' does not exist".format(filepath))
         return filepath
     except KeyError:
-        log.error("Key '{}' not in inputPaths.yml, maybe a typo?".format(key))
-        sys.exit(1)
+        raise MissingInputPathsKeyException("Key '{}' not in pipelib.INPUT_PATHS".format(key))
 
 
 def readHash(filepath):

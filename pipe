@@ -38,7 +38,7 @@ def writeGeneratedPathsYml(caseid, pipelines):
 def readAndSetInputPaths():
     if not local.path(inputPathsFile).exists():
         print(
-            "Missing {}, first make one using 'pnlscripts/makepathsyml.py' or a text editor".format(inputPathsFile))
+            "Missing {}, first make one using './pipe init' or a text editor".format(inputPathsFile))
         sys.exit(1)
     with open(inputPathsFile, 'r') as f:
         inputPathDict = yaml.load(f)
@@ -49,13 +49,6 @@ def readAndSetInputPaths():
         pipelib.INPUT_PATHS[key] = local.path(val)
     print("Loaded inputPaths.yml:")
     pprint(pipelib.INPUT_PATHS)
-
-def loadSubmodules(package):
-    import pkgutil
-    from os.path import isfile
-    for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
-        if modname.startswith('pipeline_'):
-            yield importer.find_module(modname).load_module(modname)
 
 class App(cli.Application):
 
@@ -198,7 +191,7 @@ def readParams(ymlfile):
 
 
 def expandParams(params):
-    paramsList = []
+    paramPoints = []
     for paramsDict in params:
         # Check if case ids are defined by a caselist
         if '/' in paramsDict['caseid'][0]:
@@ -207,8 +200,8 @@ def expandParams(params):
         keys = paramsDict.keys()
         valueCombos = itertools.product(*paramsDict.values())
         ps = [dict(zip(keys, combo)) for combo in valueCombos]
-        paramsList.append(ps)
-    return concat(paramsList)
+        paramPoints.append(ps)
+    return concat(paramPoints)
 
 
 class PipelineSubcommand(cli.Application):
@@ -224,19 +217,19 @@ class Run(cli.Application):
     def main(self):
         readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
 
-        params = readParams(self.parent.paramsFile)
-        if any('*mandatory*' in concat(p.values()) for p in params):
+        paramDicts = readParams(self.parent.paramsFile)
+        if any('*mandatory*' in concat(p.values()) for p in paramDicts):
             print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the pipeline.".format(self.parent.paramsFile))
             sys.exit(1)
 
         if self.parent.parent.caseid:
-            for paramsDict in params:
+            for paramsDict in paramDicts:
                 if 'caseid' in paramsDict.keys():
                     paramsDict['caseid'] = [self.parent.parent.caseid]
 
         # Check all necessary software exists
         missingSoftware = []
-        for module, commit in getRequiredSoftwareModules(params):
+        for module, commit in getRequiredSoftwareModules(paramDicts):
             if not local.path(module.getPath(commit)).exists():
                 missingSoftware.append(module.getPath(commit))
         if missingSoftware:
@@ -245,7 +238,7 @@ class Run(cli.Application):
             print("Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(self.parent.__class__.__name__))
             sys.exit(1)
 
-        paramsList = expandParams(params)
+        paramsList = expandParams(paramDicts)
 
         for params in paramsList:
             print('Running {} pipeline with parameters:'.format(self.parent.__class__.__name__))
@@ -258,14 +251,6 @@ class Run(cli.Application):
                 pipelib.update(pipeline['all'])
             else:
                 pipelib.update(pipeline[self.parent.want])
-
-def loadSoftwareModule(name):
-    moduleFile = local.path('software') / (name + '.py')
-    if not moduleFile.exists():
-        print("{} does not exist, is there a typo (e.g. in the params file?)".format(moduleFile))
-        sys.exit(1)
-    return importlib.import_module('software.' + name)
-
 
 def getRequiredSoftwareModules(yml):
     for paramsDict in yml:
@@ -349,17 +334,15 @@ class Make(cli.Application):
         if not self.parent.paramsFile.exists():
             print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
             sys.exit(1)
-        yml = readParams(self.parent.paramsFile)
-        for module, commit in getRequiredSoftwareModules(yml):
+        paramDicts = readParams(self.parent.paramsFile)
+        for module, commit in getRequiredSoftwareModules(paramDicts):
             print("Make {}".format(module.getPath(commit)))
             module.make(commit)
         print('Done.')
 
-def groupDictsByCaseid(dicts):
+def groupDicts(dicts, keyfn):
     from itertools import groupby
-    def keyfn(x):
-        return x['caseid']
-    return [(caseid, list(g)) for caseid,g in groupby(sorted(dicts, key=keyfn), keyfn)]
+    return [tuple(g) for g in groupby(sorted(dicts, key=keyfn), keyfn)]
 
 def makeRelativeSymlink(src, symlink):
     import os
@@ -371,12 +354,14 @@ def makeRelativeSymlink(src, symlink):
         symlink
     )
 
-def makeSetUpData(makePipelineFn, caseid, paramDicts):
+def makeSetUpData(makePipelineFn, caseid, paramPoints):
     def quote(s):
         return s.replace('(','\(').replace(')','\)')
     with open('SetUpData.sh', 'w') as f:
-        for i, paramDict in enumerate(paramDicts):
-            pipeline = makePipelineFn(**paramDict)
+        for i, param in enumerate(paramPoints):
+            print param
+            caseid = param['caseid']
+            pipeline = makePipelineFn(**param)
             for key, node in pipeline.items():
                 if key == 'all' or key == 'name':
                     continue
@@ -399,12 +384,12 @@ class SymLinks(cli.Application):
         if any('*mandatory*' in concat(p.values()) for p in paramDicts):
             print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the command.".format(self.parent.paramsFile))
             sys.exit(1)
-        paramsList = expandParams(paramDicts)
-        paramsByCaseid = groupDictsByCaseid(paramsList)
-        makeSetUpData(self.parent.makePipeline, *paramsByCaseid[0])
-        for caseid, params  in paramsByCaseid:
-            for i, paramDict in enumerate(params):
-                pipeline = self.parent.makePipeline(**paramDict)
+        paramPoints = expandParams(paramDicts)
+        paramPointsByCaseid = groupDicts(paramPoints, lambda x: x['caseid'])
+        makeSetUpData(self.parent.makePipeline, *paramPointsByCaseid[0])
+        for caseid, paramPoints in paramPointsByCaseid:
+            for i, param in enumerate(paramPoints):
+                pipeline = self.parent.makePipeline(**param)
                 for key, node in pipeline.items():
                     if key == 'all' or key == 'name':
                         continue
@@ -435,6 +420,15 @@ def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
                                         ,"paramsFile": paramsFile})
     return newclass
 
+
+def loadSoftwareModule(name):
+    moduleFile = local.path('software') / (name + '.py')
+    if not moduleFile.exists():
+        print("{} does not exist, is there a typo (e.g. in the params file?)".format(moduleFile))
+        sys.exit(1)
+    return importlib.import_module('software.' + name)
+
+
 @App.subcommand('soft')
 class SoftwareCommand(cli.Application):
     ver = cli.SwitchAttr(['-v', '--version'], help='Software version')
@@ -450,6 +444,13 @@ class SoftwareCommand(cli.Application):
             print("Make '{}'".format(softwareModule.getPath()))
             softwareModule.make()
 
+class Status(cli.Application):
+    def main(self):
+        readAndSetInputPaths()
+        paramDicts = readParams(self.parent.paramsFile)
+        paramsList = expandParams(paramDicts)
+        print paramsList
+
 
 def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
     def wrapFunction(self, *args, **kwargs):
@@ -458,9 +459,16 @@ def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
     return newclass
 
 
-if __name__ == '__main__':
+def pipelineModules():
+    import pkgutil
     import pipelines
-    for m in loadSubmodules(pipelines):
+    from os.path import isfile
+    for importer, modname, ispkg in pkgutil.iter_modules(pipelines.__path__):
+        if modname.startswith('pipeline_'):
+            yield importer.find_module(modname).load_module(modname)
+
+if __name__ == '__main__':
+    for m in pipelineModules():
         name = m.__name__[9:]
         SubcommandClass = classFactory(name, m.makePipeline)
         App.subcommand(name, SubcommandClass)
@@ -468,4 +476,5 @@ if __name__ == '__main__':
         SubcommandClass.subcommand("make", Make)
         SubcommandClass.subcommand("init", Init)
         SubcommandClass.subcommand("symlink", SymLinks)
+        SubcommandClass.subcommand("status", Status)
     App.run()

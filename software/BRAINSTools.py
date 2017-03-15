@@ -138,6 +138,6 @@ def getPath(bthash=DEFAULT_HASH):
     return btpath
 
 def env(bthash):
-    btpath = software.BRAINSTools.getPath(bthash)
+    btpath = getPath(bthash)
     newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
     return local.env(PATH=newpath, ANTSPATH=btpath)
