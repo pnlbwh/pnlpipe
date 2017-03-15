@@ -1,22 +1,25 @@
 import sys
 import os
-from software import getSoftDir, checkExists, TemporaryDirectory, downloadGithubRepo
+from software import getSoftDir, checkExists, TemporaryDirectory, downloadGithubRepo, getCommitInfo
 import logging
 from plumbum import local, FG
 from plumbum.cmd import wget, tar
 
-DEFAULT_VERSION = '97e4b3b'
+DEFAULT_HASH = '97e4b3b'
 
-def make(version=DEFAULT_VERSION):
-    if checkExists(getPath(version)):
+def make(hash=DEFAULT_HASH):
+    if checkExists(getPath(hash)):
         sys.exit(1)
+
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
         tmpdir = local.path(tmpdir)
-        repo = downloadGithubRepo('MRtrix3/mrtrix3', version)
+        repo = downloadGithubRepo('MRtrix3/mrtrix3', hash)
+        sha, date = getCommitInfo(repo)
         with local.cwd(repo):
             os.system('./configure')
             os.system('./build')
-            os.system('mv ./release {}'.format(getPath(version)))
+            os.system('mv ./release {}'.format(getPath(hash)))
+        getPath(hash).symlink(getPath(date))
 
-def getPath(version=DEFAULT_VERSION):
-    return getSoftDir() / ('mrtrix3-' + version)
+def getPath(hash=DEFAULT_HASH):
+    return getSoftDir() / ('mrtrix3-' + hash)
