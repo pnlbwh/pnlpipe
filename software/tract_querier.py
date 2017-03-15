@@ -3,7 +3,9 @@ from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
 
-def make(commit):
+DEFAULT_HASH = 'e045eab'
+
+def make(commit=DEFAULT_HASH):
     """Downloads a lean version of tract_querier. Output is '$soft/tract_querier-<commit>'."""
     dest = getSoftDir()
 
@@ -32,7 +34,7 @@ def make(commit):
     out.symlink(date_symlink)
 
 
-def getPath(hash):
+def getPath(hash=DEFAULT_HASH):
     path = getSoftDir() / ('tract_querier-' + hash)
     if not path.exists():
         raise DoesNotExistException(

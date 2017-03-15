@@ -3,7 +3,9 @@ from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
 
-def make(commit):
+DEFAULT_HASH = '41353e8'
+
+def make(commit=DEFAULT_HASH):
     """Downloads and compiles BRAINSTools binaries. Output is '$soft/BRAINSTools-bin-<hash>'."""
 
     dest = getSoftDir()
@@ -127,7 +129,7 @@ def make(commit):
     blddir.delete()
 
 
-def getPath(bthash):
+def getPath(bthash=DEFAULT_HASH):
     btpath = getSoftDir() / ('BRAINSTools-bin-' + bthash)
     if not btpath.exists():
         raise DoesNotExistException(

@@ -251,12 +251,20 @@ class Run(cli.Application):
             else:
                 pipelib.update(pipeline[self.parent.want])
 
+def loadSoftwareModule(name):
+    moduleFile = local.path('software') / (name + '.py')
+    if not moduleFile.exists():
+        print("{} does not exist, is there a typo (e.g. in the params file?)".format(moduleFile))
+        sys.exit(1)
+    return importlib.import_module('software.' + name)
+
+
 def getSoftwareModules(yml):
     for paramsDict in yml:
         for softname, commits in [(k[5:],v) for (k,v) in paramsDict.items() if k.startswith('hash_')]:
             moduleFile = local.path('software') / (softname + '.py')
             if not moduleFile.exists():
-                print("{} does not exist, maybe there is a typo in '{}'?".format(recipeFile, self.parent.paramsFile))
+                print("{} does not exist, maybe there is a typo in '{}'?".format(modeuleFile, self.parent.paramsFile))
                 sys.exit(1)
             module = importlib.import_module('software.' + softname)
             for commit in commits:
@@ -346,6 +354,22 @@ def makeRelativeSymlink(src, symlink):
         symlink
     )
 
+def makeSetUpData(makePipelineFn, caseid, paramDicts):
+    def quote(s):
+        return s.replace('(','\(').replace(')','\)')
+    with open('SetUpData.sh', 'w') as f:
+        for i, paramDict in enumerate(paramDicts):
+            pipeline = makePipelineFn(**paramDict)
+            for key, node in pipeline.items():
+                if key == 'all' or key == 'name':
+                    continue
+                idx = '' if i == 0 else str(i+1)
+                shortName = key + idx + ''.join(node.path().suffixes)
+                pathTemplate = quote(node.path().replace(caseid, '$case'))
+                line = "{}={}".format(key+idx, pathTemplate)
+                f.write(line + '\n')
+
+
 class SymLinks(cli.Application):
     """Makes simple named symlinks to fully named nodes"""
     # Assumes pipeline has a 'caseid' field
@@ -359,7 +383,9 @@ class SymLinks(cli.Application):
             print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the command.".format(self.parent.paramsFile))
             sys.exit(1)
         paramsList = expandParams(paramDicts)
-        for caseid, params in groupDictsByCaseid(paramsList):
+        paramsByCaseid = groupDictsByCaseid(paramsList)
+        makeSetUpData(self.parent.makePipeline, *paramsByCaseid[0])
+        for caseid, params  in paramsByCaseid:
             for i, paramDict in enumerate(params):
                 pipeline = self.parent.makePipeline(**paramDict)
                 for key, node in pipeline.items():
@@ -376,6 +402,12 @@ class SymLinks(cli.Application):
                         makeRelativeSymlink(node.path(), symlink)
         print("Done.")
 
+def getSoftwareModules():
+    import pkgutil
+    from os.path import isfile
+    import software
+    for importer, modname, ispkg in pkgutil.iter_modules(software.__path__):
+        yield importer.find_module(modname).load_module(modname)
 
 def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
     def wrapFunction(self, *args, **kwargs):
@@ -384,6 +416,28 @@ def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
     newclass = type(name, (BaseClass,),{"makePipeline": wrapFunction
                                         ,"makePipeline_orig": makePipelineFn
                                         ,"paramsFile": paramsFile})
+    return newclass
+
+@App.subcommand('soft')
+class SoftwareCommand(cli.Application):
+    ver = cli.SwitchAttr(['-v', '--version'], help='Software version')
+    def main(self, softname):
+        if not softname:
+            print("Missing software module argument, e.g. BRAINSTools")
+            return 1
+        softwareModule = loadSoftwareModule(softname)
+        if self.ver:
+            print("Make '{}'".format(softwareModule.getPath(self.ver)))
+            softwareModule.make(self.ver)
+        else:
+            print("Make '{}'".format(softwareModule.getPath()))
+            softwareModule.make()
+
+
+def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
+    def wrapFunction(self, *args, **kwargs):
+        return make( *args, **kwargs)
+    newclass = type(name, (BaseClass,),{"make": wrapFunction})
     return newclass
 
 

@@ -3,7 +3,9 @@ from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
 
-def make(commit):
+DEFAULT_HASH = '421a7ad'
+
+def make(commit=DEFAULT_HASH):
 
     dest = getSoftDir()
     if commit != 'master':
@@ -39,10 +41,8 @@ def make(commit):
     logging.info("Made '{}'".format(dateSymlink))
 
 
-def getPath(ukfhash):
+def getPath(ukfhash=DEFAULT_HASH):
     binary = getSoftDir() / ('UKFTractography-' + ukfhash)
     if not binary.exists():
-        raise DoesNotExistException(
-            '{} doesn\'t exist, make it first with \'pnlscripts/software.py --commit {} ukftractography\''.format(
-                binary, ukfhash))
+        raise DoesNotExistException('{} doesn\'t exist')
     return binary
