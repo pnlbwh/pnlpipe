@@ -22,6 +22,7 @@ require(data.table)
 args = commandArgs(trailingOnly=TRUE)
 d <- fread(args[1])
 ds <- d[grep("af|uf|slf|ioff",d$tract),.(FAmean_mean=mean(FA_mean),FAmean_sd=sd(FA_mean),num_mean=mean(num),num_sd=sd(num),count=length(caseid)),by=tract]
+setorder(ds tract)
 if (length(args) > 1) {
     cat(paste0("Make ", args[2]), "\n")
     write.csv(ds,args[2],row.names=F)

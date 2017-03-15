@@ -1,8 +1,8 @@
+* STY: add setupdata.sh generation and symlinks
 * sty: clarify when 'caseid' gets special treatment as a parameter
 * bug: axisAlignAndCenter assumes 3d input
 * add freesurfer version validator
 * ENH: add check for correct DWI axes permutation
-* STY: add setupdata.sh generation and symlinks
 * Make env.sh subcommand
 * ENH: add ukf params
 * STY: change pnlscripts.util to pnlscripts

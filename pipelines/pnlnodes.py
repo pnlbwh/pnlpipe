@@ -4,7 +4,6 @@ from pnlscripts.util.scripts import alignAndCenter_py, convertdwi_py, atlas_py, 
 from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
-from software import getSoftDir
 from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
