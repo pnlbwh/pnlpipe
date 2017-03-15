@@ -5,10 +5,7 @@ from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import getSoftDir
-import software.BRAINSTools
-import software.tract_querier
-import software.UKFTractography
-import software.trainingDataT1AHCC
+from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("numTensor", "2"), ("recordLength", "1.7"),
@@ -31,7 +28,7 @@ def assertInputKeys(pipelineName, keys):
 def convertImage(i, o, bthash):
     if i.suffixes == o.suffixes:
         i.copy(o)
-    with brainsToolsEnv(bthash):
+    with BRAINSTools.env(bthash):
         from plumbum.cmd import ConvertBetweenFileFormats
         ConvertBetweenFileFormats(i, o)
 
@@ -40,21 +37,6 @@ def formatParams(paramsList):
     formatted = [['--' + key, val] for key, val in paramsList]
     return [item for pair in formatted for item in pair]
 
-
-def brainsToolsEnv(bthash):
-    btpath = software.BRAINSTools.getPath(bthash)
-    newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
-    return local.env(PATH=newpath, ANTSPATH=btpath)
-
-
-def tractQuerierEnv(hash):
-    path = software.tract_querier.getPath(hash)
-    newPath = ':'.join(str(p) for p in [path/'scripts'] + local.env.path)
-    import os
-    pythonPath = os.environ.get('PYTHONPATH')
-    newPythonPath = path if not pythonPath else '{}:{}'.format(path,
-                                                               pythonPath)
-    return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
 
 def validateFreeSurfer(versionRequired):
     freesurferHome = os.environ.get('FREESURFER_HOME')
@@ -88,7 +70,7 @@ class DwiEd(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash):
+        with BRAINSTools.env(self.bthash):
             eddy_py['-i', self.dwi.path(), '-o', self.path(), '--force'] & FG
 
 
@@ -102,7 +84,7 @@ class DwiXc(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash):
+        with BRAINSTools.env(self.bthash):
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
             alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
 
@@ -117,7 +99,7 @@ class DwiEpi(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash):
+        with BRAINSTools.env(self.bthash):
             from pnlscripts.util.scripts import epi_py
             epi_py('--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
                    '--t2', self.t2.path(), '--t2mask', self.t2mask.path(),
@@ -133,7 +115,7 @@ class DwiMaskHcpBet(GeneratedNode):
     def build(self):
         needDeps(self)
         from plumbum.cmd import bet
-        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
+        with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             nii = tmpdir / 'dwi.nii.gz'
             convertdwi_py('-i', self.dwi.path(), '-o', nii)
@@ -150,7 +132,7 @@ class UkfDefault(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash), TemporaryDirectory() as tmpdir:
+        with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
@@ -159,7 +141,7 @@ class UkfDefault(GeneratedNode):
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
                       self.path()] + formatParams(defaultUkfParams)
-            ukfpath = software.UKFTractography.getPath(self.ukfhash)
+            ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
             ukfbin(*params)
@@ -173,7 +155,7 @@ class StrctXc(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash):
+        with BRAINSTools.env(self.bthash):
             alignAndCenter_py['-i', self.strct.path(), '-o', self.path()] & FG
 
 
@@ -185,7 +167,7 @@ class T2wMaskRigid(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with brainsToolsEnv(self.bthash):
+        with BRAINSTools.env(self.bthash):
             from pnlscripts.util.scripts import makeRigidMask_py
             makeRigidMask_py('-i', self.t1.path(), '--lablemap',
                              self.t1mask.path(), '--target', self.t2.path(),
@@ -200,14 +182,14 @@ class T1wMaskMabs(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
+        with TemporaryDirectory() as tmpdir, BRAINSTools.env(self.bthash):
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so
             # we need to pass in a conventionally named one
             tmpt1 = tmpdir / ('t1' + ''.join(self.t1.path().suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1.path(), tmpt1] & FG
-            trainingCsv = software.trainingDataT1AHCC.getPath(self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
+            trainingCsv = trainingDataT1AHCC.getPath(self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
             atlas_py['--mabs', '-t', tmpt1, '-o', tmpdir, 'csv',
                      trainingCsv ] & FG
             (tmpdir / 'mask.nrrd').copy(self.path())
@@ -238,7 +220,7 @@ class FsInDwiDirect(GeneratedNode):
     def build(self):
         needDeps(self)
         fssubjdir = self.fs.path().dirname.dirname
-        with TemporaryDirectory() as tmpdir, brainsToolsEnv(self.bthash):
+        with TemporaryDirectory() as tmpdir, BRAINSTools.env(self.bthash):
             tmpdir = local.path(tmpdir)
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             fs2dwi_py('-f', fssubjdir, '-t', self.dwi.path(), '-m',
@@ -259,7 +241,7 @@ class Wmql(GeneratedNode):
         needDeps(self)
         if self.path().up().exists():
             self.path().up().delete()
-        with tractQuerierEnv(self.tqhash):
+        with tract_querier.env(self.tqhash):
             from pnlscripts.util.scripts import wmql_py
             wmql_py('-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
                     '-o', self.path().dirname)

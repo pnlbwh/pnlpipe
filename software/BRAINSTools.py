@@ -136,3 +136,8 @@ def getPath(bthash=DEFAULT_HASH):
             "{} doesn\'t exist, make it first with './pipe <pipeline> make".format(
                 btpath))
     return btpath
+
+def env(bthash):
+    btpath = software.BRAINSTools.getPath(bthash)
+    newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
+    return local.env(PATH=newpath, ANTSPATH=btpath)

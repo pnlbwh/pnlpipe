@@ -41,3 +41,12 @@ def getPath(hash=DEFAULT_HASH):
             "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(
                 path, hash))
     return path
+
+def env(hash):
+    path = software.tract_querier.getPath(hash)
+    newPath = ':'.join(str(p) for p in [path/'scripts'] + local.env.path)
+    import os
+    pythonPath = os.environ.get('PYTHONPATH')
+    newPythonPath = path if not pythonPath else '{}:{}'.format(path,
+                                                               pythonPath)
+    return local.env(PATH=newPath, PYTHONPATH=newPythonPath)
