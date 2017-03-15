@@ -477,17 +477,6 @@ def getSoftwareModules():
         yield importer.find_module(modname).load_module(modname)
 
 
-def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
-    def wrapFunction(self, *args, **kwargs):
-        return makePipelineFn(*args, **kwargs)
-
-    paramsFile = local.path('params.' + name)
-    newclass = type(name, (BaseClass, ), {"makePipeline": wrapFunction,
-                                          "makePipeline_orig": makePipelineFn,
-                                          "paramsFile": paramsFile})
-    return newclass
-
-
 def loadSoftwareModule(name):
     moduleFile = local.path('software') / (name + '.py')
     if not moduleFile.exists():
@@ -525,10 +514,7 @@ def pipelineNodeItems(pipeline):
     return filter(lambda x: x[0] not in ['all', 'name'], pipeline.items())
 
 
-from collections import namedtuple
-SubjectPath = namedtuple('SubjectPath', 'caseid path')
-
-def pipelineComboPaths(paramsFile, makePipelineFn):
+def groupParamPointsByCombo(paramsFile):
     readAndSetInputPaths()
     paramDicts = readParams(paramsFile)
     checkParams(paramDicts)
@@ -540,11 +526,21 @@ def pipelineComboPaths(paramsFile, makePipelineFn):
     # running a smaller test set to see the effect of a change in one of
     # the parameters, e.g. a different software version
     paramPointsByCombo = sorted(paramPointsByCombo, key=lambda x: -len(x[1]))
+    return paramPointsByCombo
+
+
+from collections import namedtuple
+SubjectPath = namedtuple('SubjectPath', 'caseid path')
+
+
+def pipelineComboPaths(paramsFile, makePipelineFn):
+    paramPointsByCombo = groupParamPointsByCombo(paramsFile)
     result = []
     # for each parameter values combo
     for i, (paramCombo, paramPoints) in enumerate(paramPointsByCombo):
         iStr = '' if i == 0 else str(i)
         pipelinePaths = {'paramCombo': paramCombo,
+                         'paramPoints': paramPoints,
                          'paths': defaultdict(list),
                          'id': i,
                          'num': len(paramPoints)}
@@ -571,6 +567,11 @@ class Status(cli.Application):
                  for k, vs in comboPaths['paths'].iteritems()}
             printTable(d)
             print
+
+            # call pipeline's custom status
+            if hasattr(self.parent, 'status'):
+                print("{}'s custom status result:".format(self.parent.name))
+                self.parent.status(comboPaths['paramPoints'])
 
 
 class Ls(cli.Application):
@@ -614,10 +615,26 @@ def pipelineModules():
             yield importer.find_module(modname).load_module(modname)
 
 
+def classFactory(name, makePipelineFn, statusFn, BaseClass=PipelineSubcommand):
+    def wrappedMakePipeline(self, *args, **kwargs):
+        return makePipelineFn(*args, **kwargs)
+    paramsFile = local.path('params.' + name)
+    newclass = type(name, (BaseClass, ), {"name": name,
+                                          "makePipeline": wrappedMakePipeline,
+                                          "makePipeline_orig": makePipelineFn,
+                                          "paramsFile": paramsFile})
+
+    if statusFn:
+        def wrappedStatus(self, *args, **kwargs):
+            return statusFn(*args, **kwargs)
+        setattr(newclass,'status', wrappedStatus)
+    return newclass
+
+
 if __name__ == '__main__':
     for m in pipelineModules():
         name = m.__name__[9:]
-        SubcommandClass = classFactory(name, m.makePipeline)
+        SubcommandClass = classFactory(name, m.makePipeline, getattr(m,'status',None))
         App.subcommand(name, SubcommandClass)
         SubcommandClass.subcommand("run", Run)
         SubcommandClass.subcommand("make", Make)

@@ -61,3 +61,15 @@ def makePipeline(caseid,
     pipeline['all'] = pipeline['tractmeasures']  # default target to build
 
     return pipeline
+
+
+def status(paramPoints):
+    import pandas as pd
+    # pipeline = makePipeline(**pipelineArgs)
+    pipelines = [makePipeline(**paramPoint) for paramPoint in paramPoints]
+    csvs = [p['tractmeasures'].path() for p in pipelines if p['tractmeasures'].path().exists()]
+    df = pd.concat((pd.read_csv(csv) for csv in csvs))
+    mask = df.tract.str.lower().apply(
+       lambda x: any([ y in x for y in ['af','uf','slf','ioff']]))
+    df = df[mask]
+    print(df)
