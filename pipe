@@ -4,16 +4,31 @@ try:
 except ImportError:
     print('Couldn\'t import plumbum')
     print(
-        'Did you forget to load python environment? (e.g. source activate pnlpipe)')
+        'Did you forget to load python environment? (e.g. source activate pnlpipe)'
+    )
 import sys
 import yaml
 import pipelib
 import pipelib
 import itertools
 import importlib
+from collections import defaultdict
 from pprint import pprint
 
 inputPathsFile = "inputPaths.yml"
+
+def printTable(d):
+    for h in d.keys():
+        sys.stdout.write("{:<15}".format(h))
+    print
+    for v in d.values():
+        sys.stdout.write("{:<15}".format(v))
+    print
+
+def printVertical(d):
+    for k, v in d.items():
+        sys.stdout.write("{:<25} {:<15}".format(k, v) + '\n')
+
 
 def makeGeneratedPathsYml(caseid, pipelines):
     paths = {'caseid': caseid}
@@ -38,24 +53,31 @@ def writeGeneratedPathsYml(caseid, pipelines):
 def readAndSetInputPaths():
     if not local.path(inputPathsFile).exists():
         print(
-            "Missing {}, first make one using './pipe init' or a text editor".format(inputPathsFile))
+            "Missing {}, first make one using './pipe init' or a text editor".format(
+                inputPathsFile))
         sys.exit(1)
     with open(inputPathsFile, 'r') as f:
         inputPathDict = yaml.load(f)
     pipelib.INPUT_PATHS = {}
     for key, val in inputPathDict.items():
-        if key == 'caseid' or key.startswith('version_') or key.startswith('hash_'):
+        if key == 'caseid' or key.startswith('version_') or key.startswith(
+                'hash_'):
             continue
         pipelib.INPUT_PATHS[key] = local.path(val)
-    print("Loaded inputPaths.yml:")
-    pprint(pipelib.INPUT_PATHS)
+    print("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
+    printVertical(pipelib.INPUT_PATHS)
+    print
+    # pprint(pipelib.INPUT_PATHS)
+
 
 class App(cli.Application):
 
     want = cli.SwitchAttr(
         ['-w', '--want'], help='target node to build, e.g. fsindwi')
 
-    caseid = cli.SwitchAttr(['--subjid', '-s'], help="Case/Subject id, will override the 'caseid' key in params.<pipeline> if it exists")
+    caseid = cli.SwitchAttr(
+        ['--subjid', '-s'],
+        help="Case/Subject id, will override the 'caseid' key in params.<pipeline> if it exists")
 
     writeGeneratedPathsYml = cli.Flag('--writePaths', default=False)
 
@@ -67,25 +89,30 @@ class App(cli.Application):
             print("No command given")
             return 1  # error exit code
 
+
 def checkPaths(pathsDict):
     allexist = True
     print('Check keys')
     for key, path in pathsDict.items():
-        print('{}: {}'. format(key, path))
+        print('{}: {}'.format(key, path))
         if key == 'caseid':
             continue
         if not local.path(path).exists():
             print("'{}' does not exist, is this intended?".format(path))
             allexist = False
     if not pathsDict.get('caseid', None):
-        print("Error: 'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects.")
+        print(
+            "Error: 'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects."
+        )
         print("'{}' not made".format(inputPathsFile))
         sys.exit(1)
     print('')
     if allexist:
         print('All paths exist.')
         return
-    print("Warning: Some paths don't exist for the given caseid, so pipeline may fail to run.")
+    print(
+        "Warning: Some paths don't exist for the given caseid, so pipeline may fail to run."
+    )
 
 
 def writePaths(pathsDict, outfile):
@@ -94,26 +121,34 @@ def writePaths(pathsDict, outfile):
         yaml.safe_dump(pathsDict, f, default_flow_style=False)
     print("Made '{}'".format(outfile))
 
+
 def readPathsYml(pathsDir):
     pathsDict = {}
     with open(pathsDir / 'paths.yml', 'r') as f:
         try:
-            relativePaths = yaml.load(f,  Loader=yaml.loader.BaseLoader)
+            relativePaths = yaml.load(f, Loader=yaml.loader.BaseLoader)
         except yaml.parser.ParserError as err:
             print(err)
-            print('Error parsing {}, is there a typo? (And are the path templates in quotes?)'.format(pathsDir/'paths.yml'))
+            print(
+                'Error parsing {}, is there a typo? (And are the path templates in quotes?)'.format(
+                    pathsDir / 'paths.yml'))
             sys.exit(1)
     return relativePaths
+
 
 @App.subcommand("init")
 class PipeInit(cli.Application):
     """Creates input paths yaml file for this project."""
 
-    fromdir = cli.SwitchAttr('--fromdir', cli.ExistingDirectory, help='from data directory with existing paths.yml')
+    fromdir = cli.SwitchAttr(
+        '--fromdir',
+        cli.ExistingDirectory,
+        help='from data directory with existing paths.yml')
 
     def main(self):
         if local.path(inputPathsFile).exists():
-            print("'{}' already exists, won't overwrite.".format(inputPathsFile))
+            print(
+                "'{}' already exists, won't overwrite.".format(inputPathsFile))
             return
 
         # Copy from paths.yml in another project directory
@@ -125,7 +160,8 @@ class PipeInit(cli.Application):
                     inputPaths[key] = val
                 else:
                     absolutePath = local.path(dataDir / val)
-                    newPath = absolutePath.relative_to(local.path(inputPathsFile).dirname)
+                    newPath = absolutePath.relative_to(
+                        local.path(inputPathsFile).dirname)
                     inputPaths[key] = str(newPath)
             writePaths(inputPaths, inputPathsFile)
 
@@ -133,29 +169,38 @@ class PipeInit(cli.Application):
         else:
             try:
                 import npyscreen
+
                 class MakePathsApp(npyscreen.NPSApp):
                     def main(self):
-                        F  = npyscreen.Form(name = "Make a paths yaml file (TAB to autocomplete and ENTER/up/down to change fields",)
-                        self.dwi = F.add(npyscreen.TitleFilename, name = "dwi:", begin_entry_at=24)
-                        self.t1 = F.add(npyscreen.TitleFilename, name = "t1:", begin_entry_at=24)
+                        F = npyscreen.Form(
+                            name="Make a paths yaml file (TAB to autocomplete and ENTER/up/down to change fields", )
+                        self.dwi = F.add(npyscreen.TitleFilename,
+                                         name="dwi:",
+                                         begin_entry_at=24)
+                        self.t1 = F.add(npyscreen.TitleFilename,
+                                        name="t1:",
+                                        begin_entry_at=24)
                         #self.dwimask = F.add(npyscreen.TitleFilename, name = "dwimask:", begin_entry_at=24)
-                        self.t2 = F.add(npyscreen.TitleFilename, name = "t2:", begin_entry_at=24)
-                        self.caseid  = F.add(npyscreen.TitleText, name = "caseid:", begin_entry_at=24)
+                        self.t2 = F.add(npyscreen.TitleFilename,
+                                        name="t2:",
+                                        begin_entry_at=24)
+                        self.caseid = F.add(npyscreen.TitleText,
+                                            name="caseid:",
+                                            begin_entry_at=24)
 
                         # This lets the user interact with the Form.
                         F.edit()
-
 
                 NcursesApp = MakePathsApp()
                 NcursesApp.run()
                 inputPaths = {'caseid': NcursesApp.caseid.value}
                 for key in ['dwi', 't1', 't2']:
                     if getattr(NcursesApp, key).value:
-                        inputPaths[key] = getattr(NcursesApp,key).value
+                        inputPaths[key] = getattr(NcursesApp, key).value
                 writePaths(inputPaths, inputPathsFile)
             except ImportError:
                 print(
-"""Could not import npyscreen for ncurses interface, instead use a
+                    """Could not import npyscreen for ncurses interface, instead use a
 text editor to make the yaml file ({}), with this format:
 
     t1: /project/dir/001/001-t1.ext
@@ -164,44 +209,53 @@ text editor to make the yaml file ({}), with this format:
                 sys.exit(1)
 
 
-
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
+
 
 def readParams(ymlfile):
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
 
     result = []
-    for idx, paramDict in enumerate(yml if isinstance(yml,list) else [yml]):
-        listValueDict = dict((k,v) if isinstance(v, list) else
-                             (k,[v]) for k,v in paramDict.items())
+    for idx, paramDict in enumerate(yml if isinstance(yml, list) else [yml]):
+        listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
+                             for k, v in paramDict.items())
         if not paramDict.get('caseid'):
             caselist = local.path('caselist.txt')
             if not caselist.exists():
-                print("Add 'caseid' to {} (or save a caselist.txt to this directory)".format(ymlfile))
+                print(
+                    "Add 'caseid' to {} (or save a caselist.txt to this directory)".format(
+                        ymlfile))
                 sys.exit(1)
             print("Found './caselist.txt, using that for case id's")
             listValueDict['caseid'] = ['./caselist.txt']
         result.append(listValueDict)
 
     print("Read parameter file '{}':".format(ymlfile))
-    pprint(result)
+    for d in result:
+        printVertical(d)
+    print
     return result
 
+def checkParams(paramDicts):
+    if '*mandatory*' in concat([concat(d.values()) for d in paramDicts]):
+        print("First replace '*mandatory*' values in params file and then run again.")
+        sys.exit(1)
 
 def expandParams(params):
     paramPoints = []
     for paramsDict in params:
         # Check if case ids are defined by a caselist
         if '/' in paramsDict['caseid'][0]:
-            with open(paramsDict['caseid'][0],'r') as f:
+            with open(paramsDict['caseid'][0], 'r') as f:
                 paramsDict['caseid'] = f.read().splitlines()
         keys = paramsDict.keys()
-        valueCombos = itertools.product(*paramsDict.values())
+        valueCombos = list(itertools.product(*paramsDict.values()))
         ps = [dict(zip(keys, combo)) for combo in valueCombos]
         paramPoints.append(ps)
-    return concat(paramPoints)
+    # return list of unique parameters
+    return list({yaml.dump(p): p for p in concat(paramPoints)}.values())
 
 
 class PipelineSubcommand(cli.Application):
@@ -213,13 +267,16 @@ class PipelineSubcommand(cli.Application):
             print("No command given")
             return 1  # error exit code
 
+
 class Run(cli.Application):
     def main(self):
         readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
 
         paramDicts = readParams(self.parent.paramsFile)
         if any('*mandatory*' in concat(p.values()) for p in paramDicts):
-            print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the pipeline.".format(self.parent.paramsFile))
+            print(
+                "'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the pipeline.".format(
+                    self.parent.paramsFile))
             sys.exit(1)
 
         if self.parent.parent.caseid:
@@ -235,22 +292,26 @@ class Run(cli.Application):
         if missingSoftware:
             for soft in missingSoftware:
                 print("Missing: {}".format(soft))
-            print("Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(self.parent.__class__.__name__))
+            print(
+                "Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(
+                    self.parent.__class__.__name__))
             sys.exit(1)
 
         paramsList = expandParams(paramDicts)
 
         for params in paramsList:
-            print('Running {} pipeline with parameters:'.format(self.parent.__class__.__name__))
-            pprint(params)
+            print('Running {} pipeline with parameters:'.format(
+                self.parent.__class__.__name__))
+            printVertical(params)
+            print
 
             pipeline = self.parent.makePipeline(**params)
-            print pipeline['dwimask'].params
 
             if not self.parent.parent.want:
                 pipelib.update(pipeline['all'])
             else:
                 pipelib.update(pipeline[self.parent.want])
+
 
 def getRequiredSoftwareModules(yml):
     for paramsDict in yml:
@@ -273,40 +334,49 @@ def getRequiredSoftwareModules(yml):
 class Init(cli.Application):
     """Makes parameter file that is used as input for this pipeline."""
 
-    force = cli.Flag(['--force'], help='Force overwrite existing parameter file.')
+    force = cli.Flag(
+        ['--force'], help='Force overwrite existing parameter file.')
 
     def main(self):
 
         pipelineName = self.parent.__class__.__name__
         paramsFile = self.parent.paramsFile
         if paramsFile.exists() and not self.force:
-            print("'{}' already exists, won't overwrite (use '--force' to overwrite it).".format(paramsFile))
+            print(
+                "'{}' already exists, won't overwrite (use '--force' to overwrite it).".format(
+                    paramsFile))
             return
         local.path(paramsFile).delete()
         import inspect
         from itertools import izip_longest
         from collections import OrderedDict
-        args, _, _, defaults = inspect.getargspec(self.parent.makePipeline_orig)
+        args, _, _, defaults = inspect.getargspec(
+            self.parent.makePipeline_orig)
         if defaults:
-            x = izip_longest(reversed(args), reversed(defaults), fillvalue='*mandatory*')
+            x = izip_longest(
+                reversed(args), reversed(defaults), fillvalue='*mandatory*')
         else:
             x = izip_longest(reversed(args), [], fillvalue='*mandatory*')
         paramDict = OrderedDict(reversed(list(x)))
         # get a default caseid
         paramDict['caseid'] = './caselist.txt'
-        if (not local.path('caselist.txt').exists()) and local.path(inputPathsFile).exists():
+        if (not local.path('caselist.txt').exists()
+            ) and local.path(inputPathsFile).exists():
             with open(inputPathsFile, 'r') as f:
                 inputPaths = yaml.load(f)
                 if not isinstance(inputPaths, dict):
-                    print("Error reading {} as a dictionary, is it in the correct format?".format(inputPathsFile))
+                    print(
+                        "Error reading {} as a dictionary, is it in the correct format?".format(
+                            inputPathsFile))
                     print("E.g.")
                     print("dwi: path/to/001-dwi.nrrd")
                     print("t1: path/to/001-t1.nrrd")
                     print("caseid: caseid")
                     sys.exit(1)
-                paramDict['caseid'] = inputPaths.get('caseid', './caselist.txt')
+                paramDict['caseid'] = inputPaths.get('caseid',
+                                                     './caselist.txt')
         """ http://stackoverflow.com/a/8661021 """
-        represent_dict_order = lambda self, data:  self.represent_mapping('tag:yaml.org,2002:map', data.items())
+        represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
         help_message = \
 """# Use one of the following formats for 'caseid'
@@ -330,9 +400,12 @@ class Init(cli.Application):
 
 class Make(cli.Application):
     """ Builds necessary software for pipeline. """
+
     def main(self):
         if not self.parent.paramsFile.exists():
-            print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
+            print(
+                "'{}' doesn't exist, make it first with './pipe {} init'".format(
+                    self.parent.paramsFile, self.parent.__class__.__name__))
             sys.exit(1)
         paramDicts = readParams(self.parent.paramsFile)
         for module, commit in getRequiredSoftwareModules(paramDicts):
@@ -340,23 +413,21 @@ class Make(cli.Application):
             module.make(commit)
         print('Done.')
 
+
 def groupDicts(dicts, keyfn):
     from itertools import groupby
-    return [tuple(g) for g in groupby(sorted(dicts, key=keyfn), keyfn)]
+    return [(k, list(g)) for k, g in groupby(sorted(dicts, key=keyfn), keyfn)]
+
 
 def makeRelativeSymlink(src, symlink):
     import os
-    os.symlink(
-        os.path.relpath(
-            src,
-            os.path.dirname(symlink)
-        ),
-        symlink
-    )
+    os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+
 
 def makeSetUpData(makePipelineFn, caseid, paramPoints):
     def quote(s):
-        return s.replace('(','\(').replace(')','\)')
+        return s.replace('(', '\(').replace(')', '\)')
+
     with open('SetUpData.sh', 'w') as f:
         for i, param in enumerate(paramPoints):
             print param
@@ -365,24 +436,29 @@ def makeSetUpData(makePipelineFn, caseid, paramPoints):
             for key, node in pipeline.items():
                 if key == 'all' or key == 'name':
                     continue
-                idx = '' if i == 0 else str(i+1)
+                idx = '' if i == 0 else str(i + 1)
                 shortName = key + idx + ''.join(node.path().suffixes)
                 pathTemplate = quote(node.path().replace(caseid, '$case'))
-                line = "{}={}".format(key+idx, pathTemplate)
+                line = "{}={}".format(key + idx, pathTemplate)
                 f.write(line + '\n')
 
 
 class SymLinks(cli.Application):
     """Makes simple named symlinks to fully named nodes"""
+
     # Assumes pipeline has a 'caseid' field
     def main(self):
         readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
         if not self.parent.paramsFile.exists():
-            print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
+            print(
+                "'{}' doesn't exist, make it first with './pipe {} init'".format(
+                    self.parent.paramsFile, self.parent.__class__.__name__))
             sys.exit(1)
         paramDicts = readParams(self.parent.paramsFile)
         if any('*mandatory*' in concat(p.values()) for p in paramDicts):
-            print("'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the command.".format(self.parent.paramsFile))
+            print(
+                "'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the command.".format(
+                    self.parent.paramsFile))
             sys.exit(1)
         paramPoints = expandParams(paramDicts)
         paramPointsByCaseid = groupDicts(paramPoints, lambda x: x['caseid'])
@@ -393,16 +469,20 @@ class SymLinks(cli.Application):
                 for key, node in pipeline.items():
                     if key == 'all' or key == 'name':
                         continue
-                    idx = '' if i == 0 else '_' + str(i+1)
-                    symlink = local.path(pipelib.OUTDIR / caseid / (key + idx + ''.join(node.path().suffixes)))
+                    idx = '' if i == 0 else '_' + str(i + 1)
+                    symlink = local.path(pipelib.OUTDIR / caseid / (
+                        key + idx + ''.join(node.path().suffixes)))
                     if node.path().exists():
                         if symlink.exists():
-                            print("'{}' already exists, skipping".format(symlink))
+                            print(
+                                "'{}' already exists, skipping".format(symlink)
+                            )
                             continue
                         print("Make symlink '{}'".format(symlink))
                         symlink.dirname.mkdir()
                         makeRelativeSymlink(node.path(), symlink)
         print("Done.")
+
 
 def getSoftwareModules():
     import pkgutil
@@ -411,20 +491,24 @@ def getSoftwareModules():
     for importer, modname, ispkg in pkgutil.iter_modules(software.__path__):
         yield importer.find_module(modname).load_module(modname)
 
+
 def classFactory(name, makePipelineFn, BaseClass=PipelineSubcommand):
     def wrapFunction(self, *args, **kwargs):
-        return makePipelineFn( *args, **kwargs)
+        return makePipelineFn(*args, **kwargs)
+
     paramsFile = local.path('params.' + name)
-    newclass = type(name, (BaseClass,),{"makePipeline": wrapFunction
-                                        ,"makePipeline_orig": makePipelineFn
-                                        ,"paramsFile": paramsFile})
+    newclass = type(name, (BaseClass, ), {"makePipeline": wrapFunction,
+                                          "makePipeline_orig": makePipelineFn,
+                                          "paramsFile": paramsFile})
     return newclass
 
 
 def loadSoftwareModule(name):
     moduleFile = local.path('software') / (name + '.py')
     if not moduleFile.exists():
-        print("{} does not exist, is there a typo (e.g. in the params file?)".format(moduleFile))
+        print(
+            "{} does not exist, is there a typo (e.g. in the params file?)".format(
+                moduleFile))
         sys.exit(1)
     return importlib.import_module('software.' + name)
 
@@ -432,6 +516,7 @@ def loadSoftwareModule(name):
 @App.subcommand('soft')
 class SoftwareCommand(cli.Application):
     ver = cli.SwitchAttr(['-v', '--version'], help='Software version')
+
     def main(self, softname):
         if not softname:
             print("Missing software module argument, e.g. BRAINSTools")
@@ -444,18 +529,57 @@ class SoftwareCommand(cli.Application):
             print("Make '{}'".format(softwareModule.getPath()))
             softwareModule.make()
 
+# def
+#     for key, node in pipeline.items():
+#         if key == 'all' or key == 'name':
+#             continue
+#         idx = '' if i == 0 else '_' + str(i+1)
+
+
+def pipelineNodeItems(pipeline):
+    return filter(lambda x: x[0] not in ['all', 'name'], pipeline.items())
+
+
+
 class Status(cli.Application):
     def main(self):
         readAndSetInputPaths()
         paramDicts = readParams(self.parent.paramsFile)
-        paramsList = expandParams(paramDicts)
-        print paramsList
+        checkParams(paramDicts)
+        paramPoints = expandParams(paramDicts)
+        paramPointsByParamValues = groupDicts(paramPoints, lambda x: {k:v for k,v in x.items() if k != 'caseid'} )
+        # Sort by parameter points that have most caseids. This is an edge
+        # case, usually there will only be one parameter point, or if more than
+        # one they will be the same length. But, there is a use case hen
+        # running a smaller test set to see the effect of a change in one of
+        # the parameters, e.g. a different software version
+        paramPointsByParamValues = sorted(
+            paramPointsByParamValues, key=lambda x: -len(x[1]))
+        # for each parameter values type
+        for i, (paramCombo,
+                paramPoints) in enumerate(paramPointsByParamValues):
+            print
+            print("## Parameter Combination {} ({} subjects)".format(
+                i, len(paramPoints)))
+            printVertical(paramCombo)
+            print
+            # for each subject
+            pipelinePathCount = defaultdict(int)
+            for paramPoint in paramPoints:
+                pipeline = self.parent.makePipeline(**paramPoint)
+                for key, node in pipelineNodeItems(pipeline):
+                    if node.path().exists():
+                        pipelinePathCount[key] += 1
+                    else:
+                        pipelinePathCount[key] += 0
+            printTable(pipelinePathCount)
 
 
 def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
     def wrapFunction(self, *args, **kwargs):
-        return make( *args, **kwargs)
-    newclass = type(name, (BaseClass,),{"make": wrapFunction})
+        return make(*args, **kwargs)
+
+    newclass = type(name, (BaseClass, ), {"make": wrapFunction})
     return newclass
 
 
@@ -466,6 +590,7 @@ def pipelineModules():
     for importer, modname, ispkg in pkgutil.iter_modules(pipelines.__path__):
         if modname.startswith('pipeline_'):
             yield importer.find_module(modname).load_module(modname)
+
 
 if __name__ == '__main__':
     for m in pipelineModules():
