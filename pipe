@@ -18,10 +18,11 @@ from pprint import pprint
 inputPathsFile = "inputPaths.yml"
 
 def printTable(d):
-    for h in d.keys():
-        sys.stdout.write("{:<15}".format(h))
+    items = sorted(d.items())
+    for k,_ in items:
+        sys.stdout.write("{:<15}".format(k))
     print
-    for v in d.values():
+    for _,v in items:
         sys.stdout.write("{:<15}".format(v))
     print
 
@@ -30,24 +31,24 @@ def printVertical(d):
         sys.stdout.write("{:<25} {:<15}".format(k, v) + '\n')
 
 
-def makeGeneratedPathsYml(caseid, pipelines):
-    paths = {'caseid': caseid}
-    for idx, pipeline in enumerate(pipelines):
-        for key, node in pipeline.items():
-            if len(pipelines) == 1:
-                paths[key] = str(node.path())
-            else:
-                paths[key + str(idx)] = str(node.path())
-    return paths
+# def makeGeneratedPathsYml(caseid, pipelines):
+#     paths = {'caseid': caseid}
+#     for idx, pipeline in enumerate(pipelines):
+#         for key, node in pipeline.items():
+#             if len(pipelines) == 1:
+#                 paths[key] = str(node.path())
+#             else:
+#                 paths[key + str(idx)] = str(node.path())
+#     return paths
 
 
-def writeGeneratedPathsYml(caseid, pipelines):
-    print('Make {}/paths.yml'.format(pipelib.OUTDIR))
-    generatedPathsDict = makeGeneratedPathsYml(caseid, pipelines)
-    with open('_data/paths.yml', 'w') as f:
-        yaml.dump(generatedPathsDict, f, default_flow_style=False)
-    print('Made {}/paths.yml'.format(pipelib.OUTDIR))
-    print()
+# def writeGeneratedPathsYml(caseid, pipelines):
+#     print('Make {}/paths.yml'.format(pipelib.OUTDIR))
+#     generatedPathsDict = makeGeneratedPathsYml(caseid, pipelines)
+#     with open('_data/paths.yml', 'w') as f:
+#         yaml.dump(generatedPathsDict, f, default_flow_style=False)
+#     print('Made {}/paths.yml'.format(pipelib.OUTDIR))
+#     print()
 
 
 def readAndSetInputPaths():
@@ -541,38 +542,67 @@ def pipelineNodeItems(pipeline):
 
 
 
+def pipelineComboPaths(paramsFile, makePipelineFn):
+    readAndSetInputPaths()
+    paramDicts = readParams(paramsFile)
+    checkParams(paramDicts)
+    paramPoints = expandParams(paramDicts)
+    paramPointsByParamValues = groupDicts(paramPoints, lambda x: {k:v for k,v in x.items() if k != 'caseid'} )
+    # Sort by parameter points that have most caseids. This is an edge
+    # case, usually there will only be one parameter point, or if more than
+    # one they will be the same length. But, there is a use case hen
+    # running a smaller test set to see the effect of a change in one of
+    # the parameters, e.g. a different software version
+    paramPointsByParamValues = sorted(
+        paramPointsByParamValues, key=lambda x: -len(x[1]))
+    result = []
+    # for each parameter values combo
+    for i, (paramCombo, paramPoints) in enumerate(paramPointsByParamValues):
+        iStr = '' if i==0 else str(i)
+        pipelinePaths = {'paramCombo': paramCombo
+                         ,'paths': defaultdict(list)
+                         ,'id': i
+                         ,'num': len(paramPoints)}
+        # for each subject
+        for paramPoint in paramPoints:
+            pipeline = makePipelineFn(**paramPoint)
+            for key, node in pipelineNodeItems(pipeline):
+                pipelinePaths['paths'][key + iStr].append((node.path().exists(), node.path()))
+        result.append(pipelinePaths)
+    return result
+
 class Status(cli.Application):
     def main(self):
-        readAndSetInputPaths()
-        paramDicts = readParams(self.parent.paramsFile)
-        checkParams(paramDicts)
-        paramPoints = expandParams(paramDicts)
-        paramPointsByParamValues = groupDicts(paramPoints, lambda x: {k:v for k,v in x.items() if k != 'caseid'} )
-        # Sort by parameter points that have most caseids. This is an edge
-        # case, usually there will only be one parameter point, or if more than
-        # one they will be the same length. But, there is a use case hen
-        # running a smaller test set to see the effect of a change in one of
-        # the parameters, e.g. a different software version
-        paramPointsByParamValues = sorted(
-            paramPointsByParamValues, key=lambda x: -len(x[1]))
-        # for each parameter values type
-        for i, (paramCombo,
-                paramPoints) in enumerate(paramPointsByParamValues):
+        for comboPaths in pipelineComboPaths(self.parent.paramsFile, self.parent.makePipeline):
+            print("## Parameter Combination {} ({} subjects)".format(comboPaths['id']
+                                                                 , comboPaths['num']))
+
+            printVertical(comboPaths['paramCombo'])
             print
-            print("## Parameter Combination {} ({} subjects)".format(
-                i, len(paramPoints)))
-            printVertical(paramCombo)
+            d = {k:len(filter(lambda x: x[0], vs)) for k,vs in comboPaths['paths'].iteritems()}
+            printTable(d)
             print
-            # for each subject
-            pipelinePathCount = defaultdict(int)
-            for paramPoint in paramPoints:
-                pipeline = self.parent.makePipeline(**paramPoint)
-                for key, node in pipelineNodeItems(pipeline):
-                    if node.path().exists():
-                        pipelinePathCount[key] += 1
-                    else:
-                        pipelinePathCount[key] += 0
-            printTable(pipelinePathCount)
+
+class Ls(cli.Application):
+    def main(self, *keys):
+        for comboPaths in pipelineComboPaths(self.parent.paramsFile, self.parent.makePipeline):
+            for k,vs in comboPaths['paths'].iteritems():
+                if k not in keys:
+                    continue
+                existingPaths = [p for _,p in filter(lambda x: x[0], vs)]
+                for p in existingPaths:
+                    print('{}'.format(p))
+
+class Missing(cli.Application):
+    def main(self, *keys):
+        for comboPaths in pipelineComboPaths(self.parent.paramsFile, self.parent.makePipeline):
+            for k,vs in comboPaths['paths'].iteritems():
+                if k not in keys:
+                    continue
+                missingPaths = [p for _,p in filter(lambda x: not x[0], vs)]
+                for p in missingPaths:
+                    print('{}'.format(p))
+
 
 
 def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
@@ -602,4 +632,6 @@ if __name__ == '__main__':
         SubcommandClass.subcommand("init", Init)
         SubcommandClass.subcommand("symlink", SymLinks)
         SubcommandClass.subcommand("status", Status)
+        SubcommandClass.subcommand("ls", Ls)
+        SubcommandClass.subcommand("missing", Missing)
     App.run()
