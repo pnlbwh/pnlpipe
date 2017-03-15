@@ -229,7 +229,7 @@ class Run(cli.Application):
 
         # Check all necessary software exists
         missingSoftware = []
-        for module, commit in getSoftwareModules(params):
+        for module, commit in getRequiredSoftwareModules(params):
             if not local.path(module.getPath(commit)).exists():
                 missingSoftware.append(module.getPath(commit))
         if missingSoftware:
@@ -259,12 +259,18 @@ def loadSoftwareModule(name):
     return importlib.import_module('software.' + name)
 
 
-def getSoftwareModules(yml):
+def getRequiredSoftwareModules(yml):
     for paramsDict in yml:
-        for softname, commits in [(k[5:],v) for (k,v) in paramsDict.items() if k.startswith('hash_')]:
+        for key, commits in paramsDict.items():
+            if key.startswith('hash_'):
+                softname = key[5:]
+            elif key.startswith('version_'):
+                softname = key[8:]
+            else:
+                continue
             moduleFile = local.path('software') / (softname + '.py')
             if not moduleFile.exists():
-                print("{} does not exist, maybe there is a typo in '{}'?".format(modeuleFile, self.parent.paramsFile))
+                print("{} does not exist".format(moduleFile))
                 sys.exit(1)
             module = importlib.import_module('software.' + softname)
             for commit in commits:
@@ -288,7 +294,10 @@ class Init(cli.Application):
         from itertools import izip_longest
         from collections import OrderedDict
         args, _, _, defaults = inspect.getargspec(self.parent.makePipeline_orig)
-        x = izip_longest(reversed(args), reversed(defaults), fillvalue='*mandatory*')
+        if defaults:
+            x = izip_longest(reversed(args), reversed(defaults), fillvalue='*mandatory*')
+        else:
+            x = izip_longest(reversed(args), [], fillvalue='*mandatory*')
         paramDict = OrderedDict(reversed(list(x)))
         # get a default caseid
         paramDict['caseid'] = './caselist.txt'
@@ -333,7 +342,7 @@ class Make(cli.Application):
             print("'{}' doesn't exist, make it first with './pipe {} init'".format(self.parent.paramsFile, self.parent.__class__.__name__))
             sys.exit(1)
         yml = readParams(self.parent.paramsFile)
-        for module, commit in getSoftwareModules(yml):
+        for module, commit in getRequiredSoftwareModules(yml):
             print("Make {}".format(module.getPath(commit)))
             module.make(commit)
         print('Done.')
