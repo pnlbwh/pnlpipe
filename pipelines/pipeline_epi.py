@@ -3,9 +3,11 @@ from pipelib import Src
 import pipelib
 
 def makePipeline(caseid,
-                 dwiKey='dwi',
-                 t2Key='t2',
-                 t1Key='t1',
+                 dwiKey,
+                 t2Key,
+                 t1Key,
+                 t2maskKey='',
+                 t1maskKey='',
                  dwimaskKey='',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
@@ -28,17 +30,16 @@ def makePipeline(caseid,
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
 
     pipeline['dwimask'] = Src(
-        caseid, dwimaskKey) if pipelib.INPUT_PATHS.get(
-            dwimaskKey) else DwiMaskHcpBet(caseid, pipeline['dwied'], hash_BRAINSTools)
+        caseid, dwimaskKey) if dwimaskKey else DwiMaskHcpBet(caseid, pipeline['dwied'], hash_BRAINSTools)
 
     pipeline['t1mask'] = Src(
         caseid,
-        't1mask') if pipelib.INPUT_PATHS.get('t1mask') else T1wMaskMabs(
+        t1maskKey) if t1maskKey  else T1wMaskMabs(
             caseid, pipeline['t1xc'], hash_trainingDataT1AHCC, hash_BRAINSTools)
 
     pipeline['t2mask'] = Src(
         caseid,
-        't2mask') if pipelib.INPUT_PATHS.get('t2mask') else T2wMaskRigid(
+        t2maskKey) if t2maskKey else T2wMaskRigid(
             caseid, pipeline['t2xc'], pipeline['t1xc'], pipeline['t1mask'],hash_BRAINSTools)
 
     pipeline['dwiepi'] = DwiEpi(caseid, pipeline['dwied'], pipeline['dwimask'],

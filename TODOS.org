@@ -1,4 +1,4 @@
-* STY: add setupdata.sh generation and symlinks
+* add default key for 'missing' subcommand
 * sty: clarify when 'caseid' gets special treatment as a parameter
 * bug: axisAlignAndCenter assumes 3d input
 * add freesurfer version validator
@@ -11,4 +11,3 @@
 * ENH: add HCP preprocessing pipeline if we decide to use it
 * STY: add log file output to pnlscripts scripts
 * STY: use python logging correctly
-* STY: clean up pipe, maybe factor into lib
