@@ -46,11 +46,12 @@ def readAndSetInputPaths():
     with open(inputPathsFile, 'r') as f:
         inputPathDict = yaml.load(f)
     pipelib.INPUT_PATHS = {}
+    caseidPattern = inputPathDict.get('caseid', '{case}')
     for key, val in inputPathDict.items():
         if key == 'caseid' or key.startswith('version_') or key.startswith(
                 'hash_'):
             continue
-        pipelib.INPUT_PATHS[key] = local.path(val)
+        pipelib.INPUT_PATHS[key] = local.path(val.replace(caseidPattern, '{case}'))
     print("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
     printVertical(pipelib.INPUT_PATHS)
     print

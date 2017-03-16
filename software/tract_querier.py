@@ -43,7 +43,7 @@ def getPath(hash=DEFAULT_HASH):
     return path
 
 def env(hash):
-    path = software.tract_querier.getPath(hash)
+    path = getPath(hash)
     newPath = ':'.join(str(p) for p in [path/'scripts'] + local.env.path)
     import os
     pythonPath = os.environ.get('PYTHONPATH')
