@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+import sys
 from util import logfmt, ExistingNrrdOrNifti, TemporaryDirectory
 from plumbum import cli, FG, local
 from plumbum.cmd import unu, DWIConvert, ConvertBetweenFileFormats
@@ -39,7 +40,10 @@ class App(cli.Application):
 
         if self.force and out.exists():
             out.delete()
-        if nrrd(dwi) and nrrd(out):
+
+        if dwi.suffixes == out.suffixes:
+            dwi.copy(out)
+        elif nrrd(dwi) and nrrd(out):
             unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', dwi, '-o', out)
         elif nrrd(dwi) and nifti(out):
             DWIConvert('--conversionMode', 'NrrdToFSL', '--inputVolume', dwi,
@@ -54,6 +58,8 @@ class App(cli.Application):
             #(unu['permute', '-p','1','2','3','0', '-i', out] | \
                 #unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', out]) & FG
             (unu['save', '-e', 'gzip', '-f', 'nrrd', '-i', out, '-o', out]) & FG
+        elif nifti(dwi) and nifti(out):
+            ConvertBetweenFileFormats(dwi, out)
         else:
             logging.error('Dwi\'s must be nrrd or nifti.')
             sys.exit(1)
