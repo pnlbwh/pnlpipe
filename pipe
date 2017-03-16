@@ -299,20 +299,24 @@ class Run(cli.Application):
                 print("Missing: {}".format(soft))
             print(
                 "Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(
-                    self.parent.__class__.__name__))
+                    self.parent.name))
             sys.exit(1)
 
         paramsList = expandParams(paramDicts)
 
         for params in paramsList:
             print('Running {} pipeline with parameters:'.format(
-                self.parent.__class__.__name__))
+                self.parent.name))
             printVertical(params)
             print
 
             pipeline = self.parent.makePipeline(**params)
 
             if not self.parent.parent.want:
+                if not pipeline.get('all'):
+                    print("'pipelines/pipeline_{}.py' doesn't have 'all' defined as default target, set this in 'makePipeline(...)'.".format(self.parent.name, self.parent.name))
+                    print("E.g. pipeline['all'] = pipeline['tractmeasures]")
+                    sys.exit(1)
                 pipelib.update(pipeline['all'])
             else:
                 pipelib.update(pipeline[self.parent.want])
@@ -385,13 +389,21 @@ class Init(cli.Application):
         yaml.add_representer(OrderedDict, represent_dict_order)
         help_message = \
 """# Use one of the following formats for 'caseid'
-# caseid: 001
-# caseid: [001, 002, 003]
-# caseid:
-#    - 001
-#    - 002
-#    - 003
-# caseid: ./caselist-controls.txt  # The '/' tells pipe that this is a file
+#    caseid: 001
+#    caseid: [001, 002, 003]
+#    caseid:
+#       - 001
+#       - 002
+#       - 003
+#    caseid: ./caselist-controls.txt  # The '/' tells pipe that this is a file
+#
+# The values for keys like dwiKey come from the names in inputPaths.yml, e.g.
+#    dwiKey: ['dwiharmonized', 'dwi']
+# means that the pipeline will be run for the filepaths of 'dwiharmonized' and 'dwi'
+# in inputPaths.yml (caseid will automatically be substituted).  These are meant
+# to be descriptive names that describe the input and are used in naming the
+# generated output.
+
 """
         with open(paramsFile, 'w') as f:
             f.write(help_message)

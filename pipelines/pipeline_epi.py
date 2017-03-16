@@ -3,9 +3,9 @@ from pipelib import Src
 import pipelib
 
 def makePipeline(caseid,
-                 dwiKey,
-                 t2Key,
-                 t1Key,
+                 dwiKey='dwi',
+                 t2Key='t2',
+                 t1Key='t1',
                  dwimaskKey='',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
@@ -59,3 +59,15 @@ def makePipeline(caseid,
     pipeline['all'] = pipeline['tractmeasures']  # default target to build
 
     return pipeline
+
+
+def status(paramPoints):
+    import pandas as pd
+    from pipelines.pnlscripts.summarizeTractMeasures import summarize
+
+    pipelines = [makePipeline(**paramPoint) for paramPoint in paramPoints]
+    csvs = [p['tractmeasures'].path() for p in pipelines if p['tractmeasures'].path().exists()]
+
+    if csvs:
+        df = pd.concat((pd.read_csv(csv) for csv in csvs))
+        summarize(df)
