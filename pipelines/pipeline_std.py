@@ -3,20 +3,22 @@ from pipelines.pnlnodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMas
 from pipelib import Src
 import pipelib
 
+DEFAULT_TARGET = 'tractmeasures'
+
 def makePipeline(caseid,
                  t1Key,
                  dwiKey='',
+                 dwiedKey='',  # provide if hcp or buddi used
+                 dwimaskKey='',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
-                 hash_trainingDataT1AHCC='d6e5990',
-                 dwiedKey='',  # provide if hcp or buddi used
-                 dwimaskKey=''
+                 hash_trainingDataT1AHCC='d6e5990'
                  ):
 
     """Makes the PNL's standard pipeline. """
-    pipeline = { 'name' : "standard PNL pipeline" }
-    assertInputKeys(pipeline['name'], [t1Key])
+    pipeline = { '_name' : "standard PNL pipeline" }
+    assertInputKeys(pipeline['_name'], [t1Key])
 
     pipeline['t1'] = Src(caseid, t1Key)
 
@@ -57,8 +59,6 @@ def makePipeline(caseid,
                             hash_tract_querier)
 
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
-
-    pipeline['all'] = pipeline['tractmeasures']  # default target to build
 
     return pipeline
 

@@ -4,10 +4,10 @@ try:
 except ImportError:
     print('Couldn\'t import plumbum')
     print(
-        'Did you forget to load python environment? (e.g. source activate pnlpipe)')
+        'Did you forget to load python environment? (e.g. source activate pnlpipe)'
+    )
 import sys
 import yaml
-import pipelib
 import pipelib
 import itertools
 import importlib
@@ -51,7 +51,8 @@ def readAndSetInputPaths():
         if key == 'caseid' or key.startswith('version_') or key.startswith(
                 'hash_'):
             continue
-        pipelib.INPUT_PATHS[key] = local.path(val.replace(caseidPattern, '{case}'))
+        pipelib.INPUT_PATHS[key] = local.path(
+            val.replace(caseidPattern, '{case}'))
     print("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
     printVertical(pipelib.INPUT_PATHS)
     print
@@ -90,7 +91,8 @@ def checkPaths(pathsDict):
             allexist = False
     if not pathsDict.get('caseid', None):
         print(
-            "Error: 'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects.")
+            "Error: 'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects."
+        )
         print("'{}' not made".format(inputPathsFile))
         sys.exit(1)
     print('')
@@ -98,7 +100,8 @@ def checkPaths(pathsDict):
         print('All paths exist.')
         return
     print(
-        "Warning: Some paths don't exist for the given caseid, so pipeline may fail to run.")
+        "Warning: Some paths don't exist for the given caseid, so pipeline may fail to run."
+    )
 
 
 def writePaths(pathsDict, outfile):
@@ -133,8 +136,8 @@ class PipeInit(cli.Application):
 
     def main(self):
         if local.path(inputPathsFile).exists():
-            print("'{}' already exists, won't overwrite.".format(
-                inputPathsFile))
+            print(
+                "'{}' already exists, won't overwrite.".format(inputPathsFile))
             return
 
         # Copy from paths.yml in another project directory
@@ -203,7 +206,8 @@ def readParams(ymlfile):
 
     if not local.path(ymlfile).exists():
         pipeline = ymlfile.name.split('.')[1]
-        print("'{}' doesn't exist, run './pipe {} init' first".format(ymlfile, pipeline))
+        print("'{}' doesn't exist, run './pipe {} init' first".format(
+            ymlfile, pipeline))
         sys.exit(1)
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
@@ -233,7 +237,8 @@ def readParams(ymlfile):
 def checkParams(paramDicts):
     if '*mandatory*' in concat([concat(d.values()) for d in paramDicts]):
         print(
-            "First replace '*mandatory*' values in params file and then run again.")
+            "First replace '*mandatory*' values in params file and then run again."
+        )
         sys.exit(1)
 
 
@@ -294,8 +299,9 @@ class Run(cli.Application):
         paramsList = expandParams(paramDicts)
 
         for params in paramsList:
-            print('Running {} pipeline with parameters:'.format(
-                self.parent.name))
+            print(
+                'Running {} pipeline with parameters:'.format(self.parent.name)
+            )
             printVertical(params)
             print
 
@@ -308,7 +314,7 @@ class Run(cli.Application):
                             self.parent.name, self.parent.name))
                     print("E.g. pipeline['all'] = pipeline['tractmeasures]")
                     sys.exit(1)
-                pipelib.update(pipeline['all'])
+                pipelib.update(pipeline[pipeline['default']])
             else:
                 pipelib.update(pipeline[self.parent.want])
 
@@ -519,7 +525,14 @@ class SoftwareCommand(cli.Application):
 
 
 def pipelineNodeItems(pipeline):
-    return filter(lambda x: x[0] not in ['all', 'name'], pipeline.items())
+    items = filter(lambda x: not x[0].startswith('_'), pipeline.items())
+    for item in items:
+        if not hasattr(item[1], 'build') or not hasattr(item[1], 'path'):
+            print(
+                "The object at key '{}' is not a Node, are you missing a leading '_'?".format(
+                    item[0]))
+            sys.exit(1)
+    return items
 
 
 def groupParamPointsByCombo(paramsFile):
@@ -599,11 +612,28 @@ class Ls(cli.Application):
 class Missing(cli.Application):
     """Print missing generated output."""
 
-    caseids = cli.Flag(['-s', '--subjid'], help="Print subject ids instead of paths")
+    caseids = cli.Flag(
+        ['-s', '--subjid'], help="Print subject ids instead of paths")
 
     def main(self, *keys):
+
+        from itertools import cycle
+        defaultKeys = [a + str(
+            b) for a, b in zip(cycle([self.parent.defaultTarget]), range(1, 5))
+                       ] + [self.parent.defaultTarget]
+        keys = defaultKeys if not keys else keys
+        if not keys:
+            print(
+                "'DEFAULT_TARGET' not set in 'pipelines/pipeline_{}.py', so you must provide a key on the command line, e.g. ./pipe std missing fs".format(
+                    self.parent.name))
+            sys.exit(1)
+
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
+            print("## Parameter Combination {} ({} subjects)".format(
+                comboPaths['id'], comboPaths['num']))
+            print
+
             for k, vs in comboPaths['paths'].iteritems():
                 if k not in keys:
                     continue
@@ -615,6 +645,7 @@ class Missing(cli.Application):
                         print('{}'.format(p.caseid))
                     else:
                         print('{}'.format(p.path))
+            print
 
 
 def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
@@ -634,7 +665,11 @@ def pipelineModules():
             yield importer.find_module(modname).load_module(modname)
 
 
-def classFactory(name, makePipelineFn, statusFn, BaseClass=PipelineSubcommand):
+def classFactory(name,
+                 makePipelineFn,
+                 statusFn,
+                 defaultTarget,
+                 BaseClass=PipelineSubcommand):
     def wrappedMakePipeline(self, *args, **kwargs):
         return makePipelineFn(*args, **kwargs)
 
@@ -642,7 +677,8 @@ def classFactory(name, makePipelineFn, statusFn, BaseClass=PipelineSubcommand):
     newclass = type(name, (BaseClass, ), {"name": name,
                                           "makePipeline": wrappedMakePipeline,
                                           "makePipeline_orig": makePipelineFn,
-                                          "paramsFile": paramsFile})
+                                          "paramsFile": paramsFile,
+                                          "defaultTarget": defaultTarget})
 
     if statusFn:
 
@@ -656,8 +692,10 @@ def classFactory(name, makePipelineFn, statusFn, BaseClass=PipelineSubcommand):
 if __name__ == '__main__':
     for m in pipelineModules():
         name = m.__name__[9:]
-        SubcommandClass = classFactory(name, m.makePipeline, getattr(
-            m, 'status', None))
+        statusFn = getattr(m, 'status', None)
+        defaultTarget = getattr(m, 'DEFAULT_TARGET', None)
+        SubcommandClass = classFactory(name, m.makePipeline, statusFn,
+                                       defaultTarget)
         App.subcommand(name, SubcommandClass)
         SubcommandClass.subcommand("run", Run)
         SubcommandClass.subcommand("make", Make)

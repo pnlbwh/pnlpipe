@@ -2,6 +2,8 @@ from pipelines.pnlnodes import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMas
 from pipelib import Src
 import pipelib
 
+DEFAULT_TARGET = 'tractmeasures'
+
 def makePipeline(caseid,
                  dwiKey,
                  t2Key,
@@ -16,8 +18,8 @@ def makePipeline(caseid,
                 ):
     """Makes the PNL's standard pipeline with EPI distortion correction. """
 
-    pipeline = { 'name' :  "EPI correction pipeline" }
-    assertInputKeys(pipeline['name'], [dwiKey, t1Key, t2Key])
+    pipeline = { '_name' :  "EPI correction pipeline" }
+    assertInputKeys(pipeline['_name'], [dwiKey, t1Key, t2Key])
 
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
@@ -56,8 +58,6 @@ def makePipeline(caseid,
     pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
                             hash_tract_querier)
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])
-
-    pipeline['all'] = pipeline['tractmeasures']  # default target to build
 
     return pipeline
 
