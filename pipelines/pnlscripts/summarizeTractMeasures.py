@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from plumbum import local, cli, FG
 import pandas as pd
 import sys
@@ -21,6 +22,7 @@ uf.left,589.85265447185,42.8613369562814,195.744125326371,174.371158305798,383
 uf.right,565.9559476129,43.1105907847185,142.316883116883,126.637537840325,385""")
 
 def summarize(df):
+
     mask = df.tract.str.lower().apply( lambda x: any([ y in x for y in ['af','uf','slf','ioff']]))
     agg = {'FA_mean': {'FAmean_mean': 'mean' ,'FAmean_sd': 'std', 'count':'count'}
            ,'num': {'num_mean':'mean', 'num_sd': 'std'}
