@@ -220,10 +220,13 @@ class FsInDwiDirect(GeneratedNode):
         needDeps(self)
         fssubjdir = self.fs.path().dirname.dirname
         with TemporaryDirectory() as tmpdir, BRAINSTools.env(self.bthash):
-            tmpdir = local.path(tmpdir)
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
-            fs2dwi_py('-f', fssubjdir, '-t', self.dwi.path(), '-m',
-                      self.dwimask.path(), '-o', tmpoutdir, 'direct')
+            tmpdwi = tmpdir / 'dwi.nrrd'
+            tmpdwimask = tmpdir / 'dwimask.nrrd'
+            convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
+            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            fs2dwi_py['-f', fssubjdir, '-t', tmpdwi, '-m',
+                      tmpdwimask, '-o', tmpoutdir, 'direct'] & FG
 	    local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
 
 

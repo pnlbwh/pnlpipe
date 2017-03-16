@@ -308,13 +308,13 @@ class Run(cli.Application):
             pipeline = self.parent.makePipeline(**params)
 
             if not self.parent.parent.want:
-                if not pipeline.get('all'):
+                if not self.parent.defaultTarget:
                     print(
-                        "'pipelines/pipeline_{}.py' doesn't have 'all' defined as default target, set this in 'makePipeline(...)'.".format(
+                        "'pipelines/pipeline_{}.py' doesn't have 'DEFAULT_TARGET' defined, set this in 'makePipeline(...)'.".format(
                             self.parent.name, self.parent.name))
-                    print("E.g. pipeline['all'] = pipeline['tractmeasures]")
+                    print("E.g. DEFAULT_TARGET = 'tractmeasures")
                     sys.exit(1)
-                pipelib.update(pipeline[pipeline['default']])
+                pipelib.update(pipeline[self.parent.defaultTarget])
             else:
                 pipelib.update(pipeline[self.parent.want])
 
