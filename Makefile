@@ -19,8 +19,11 @@ bsub4: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe 
 %-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pipe --subjid $* $(SUBCMD)
 %-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pipe --subjid $* $(SUBCMD)
 
-caselist: $(CASELIST)
+caselist-bsub8: $(CASELIST)
 	while read subj; do make $$subj-bsub8; done < caselist.txt
+
+caselist-bsub4: $(CASELIST)
+	while read subj; do make $$subj-bsub4; done < caselist.txt
 
 $(CASELIST):
 	$(error First make $(CASELIST) with your subject ids, then run again)

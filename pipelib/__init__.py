@@ -237,6 +237,7 @@ def update(node):
         log.info(' File missing ({}), rebuild'.format(relativePath))
         rebuild = True
     elif db['value'] != currentValue:
+        log.debug('old value: {}, new value: {}'.format(db['value'], currentValue))
         log.info(' It\'s value has changed, rebuild')
         rebuild = True
     if rebuild:
