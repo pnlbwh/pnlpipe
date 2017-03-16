@@ -1,4 +1,5 @@
-* add default key for 'missing' subcommand
+* add missingl, lsl for symlinks
+* move '-s' and '-w' to subcommands
 * sty: clarify when 'caseid' gets special treatment as a parameter
 * bug: axisAlignAndCenter assumes 3d input
 * add freesurfer version validator

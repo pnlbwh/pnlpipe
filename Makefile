@@ -11,7 +11,7 @@ PARAMS := params.$(PIPELINE)
 all: inputPaths.yml $(PARAMS)
 	./pipe $(SUBCMD)
 
-%: 
+%:
 	./pipe -s $* $(SUBCMD)
 bsub16: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(SUBCMD)
 bsub8: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 ./pipe $(SUBCMD)
@@ -42,7 +42,7 @@ conda: environment.yml
 
 _venv: requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<
-	@echo "Now run `source $@/bin/activate`"
+	@echo "Now run 'source $@/bin/activate'"
 
 _pip_packages.nix: requirements.txt
 	if [ ! -d "_pip2nix" ]; then \
