@@ -570,7 +570,7 @@ class Status(cli.Application):
 
             # call pipeline's custom status
             if hasattr(self.parent, 'status'):
-                print("{}'s custom status result:".format(self.parent.name))
+                #print("{}'s custom status result:".format(self.parent.name))
                 self.parent.status(comboPaths['paramPoints'])
 
 
