@@ -591,6 +591,10 @@ class Ls(cli.Application):
 
 
 class Missing(cli.Application):
+    """Print missing generated output."""
+
+    caseids = cli.Flag(['-s', '--subjid'], help="Print subject ids instead of paths")
+
     def main(self, *keys):
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
@@ -598,10 +602,13 @@ class Missing(cli.Application):
                 if k not in keys:
                     continue
                 missingPaths = [
-                    p.path for p in filter(lambda x: not x.path.exists(), vs)
+                    p for p in filter(lambda x: not x.path.exists(), vs)
                 ]
                 for p in missingPaths:
-                    print('{}'.format(p))
+                    if self.caseids:
+                        print('{}'.format(p.caseid))
+                    else:
+                        print('{}'.format(p.path))
 
 
 def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
