@@ -200,6 +200,11 @@ def concat(l):
 
 
 def readParams(ymlfile):
+
+    if not local.path(ymlfile).exists():
+        pipeline = ymlfile.name.split('.')[1]
+        print("'{}' doesn't exist, run './pipe {} init' first".format(ymlfile, pipeline))
+        sys.exit(1)
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
 
