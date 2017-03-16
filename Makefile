@@ -2,9 +2,10 @@ ifeq ($(soft),)
   $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
+PIPELINE := epi
 CASELIST := caselist.txt
-SUBCMD := std run
-PARAMS := params.std
+SUBCMD := $(PIPELINE) run
+PARAMS := params.$(PIPELINE)
 
 .PHONY: all
 all: inputPaths.yml $(PARAMS)

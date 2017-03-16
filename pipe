@@ -316,7 +316,7 @@ class Run(cli.Application):
                     sys.exit(1)
                 pipelib.update(pipeline[self.parent.defaultTarget])
             else:
-                pipelib.update(pipeline[self.parent.want])
+                pipelib.update(pipeline[self.parent.parent.want])
 
 
 def getRequiredSoftwareModules(yml):
