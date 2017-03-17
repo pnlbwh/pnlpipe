@@ -92,6 +92,10 @@ class DwiHcp(GeneratedNode):
                     ,'--echospacing={}'.format(self.echoSpacing)
                     ,'--gdcoeffs=NONE'
                     ,'--dwiname='+self.path().with_suffix('')] & FG
+            hcpdir = OUTDIR / self.caseid / self.path().with_suffix('') / 'data'
+            (hcpdir / 'data.nii.gz').move(self.path())
+            (hcpdir / 'bvals').move(self.path().with_suffix('bval', depth=2))
+            (hcpdir / 'bvecs').move(self.path().with_suffix('bvec', depth=2))
 
 
 class DwiEd(GeneratedNode):
