@@ -609,6 +609,8 @@ class Missing(cli.Application):
 
     caseids = cli.Flag(
         ['-s', '--subjid'], help="Print subject ids instead of paths")
+    printFull = cli.Flag(
+        ['-p'], help="Print full paths instead of symlinks.")
 
     def main(self, *keys):
 
@@ -627,6 +629,7 @@ class Missing(cli.Application):
                                              self.parent.makePipeline):
             print("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['id'], comboPaths['num']))
+            printVertical(comboPaths['paramCombo'])
             print
 
             for k, vs in comboPaths['paths'].iteritems():
@@ -638,8 +641,12 @@ class Missing(cli.Application):
                 for p in missingPaths:
                     if self.caseids:
                         print('{}'.format(p.caseid))
+                    elif self.printFull:
+                        print(p.path)
                     else:
-                        print('{}'.format(p.path))
+                        symlink = local.path(pipelib.OUTDIR / p.caseid /
+                                         (k + ''.join(p.path.suffixes)))
+                        print(symlink)
             print
 
 
