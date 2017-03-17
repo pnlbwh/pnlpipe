@@ -142,6 +142,9 @@ class Src(Node):
 class MissingInputPathsKeyException(Exception):
     pass
 
+class DoesNotExistException(Exception):
+    pass
+
 def lookupPathKey(key, caseid, pathsDict):
     try:
         pathPattern = pathsDict[key]
@@ -152,7 +155,10 @@ def lookupPathKey(key, caseid, pathsDict):
                 "pipelib: '{}' does not exist".format(filepath))
         return filepath
     except KeyError:
-        raise MissingInputPathsKeyException("Key '{}' not in pipelib.INPUT_PATHS".format(key))
+        msg = """Key '{key}' not found in pipelib.INPUT_PATHS.
+Your pipeline has a node of type 'Src(caseid, {key})', but {key} and its path have not been set in your 'inputPaths.yml'.
+""".format(key=key)
+        raise MissingInputPathsKeyException(msg)
 
 
 def readHash(filepath):

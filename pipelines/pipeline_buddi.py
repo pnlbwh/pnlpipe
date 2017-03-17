@@ -9,33 +9,29 @@ def makePipeline(caseid,
                  t1Key,
                  dwiKey,
                  dwimaskKey='',
-                 t1maskKey='',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
-                 hash_trainingDataT1AHCC='d6e5990'
-                 ):
-    """Makes the PNL's standard pipeline. """
-    pipeline = {'_name': "standard PNL pipeline"}
+                 hash_trainingDataT1AHCC='d6e5990'):
+    """Makes the PNL's standard pipeline, given an eddy corrected DWI
+    (For example, a DRBUDDI processed DWI.). Same as 'std' except eddy
+    current correction is not performed."""
+    pipeline = {'_name': "standard PNL pipeline with no eddy correction"}
     pipeline['t1'] = Src(caseid, t1Key)
     pipeline['dwi'] = Src(caseid, dwiKey)
-    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'],
-                                hash_BRAINSTools)  # works on nrrd or nii
-    pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(caseid,
                               dwimaskKey) if dwimaskKey else DwiMaskHcpBet(
-                                  caseid, pipeline['dwied'], hash_BRAINSTools)
-    pipeline['t1mask'] = Src(caseid, 't1mask') if t1maskKey else T1wMaskMabs(
-        caseid, pipeline['t1xc'], hash_trainingDataT1AHCC, hash_BRAINSTools)
+                                  caseid, pipeline['dwi'], hash_BRAINSTools)
+    pipeline['t1mask'] = T1wMaskMabs(caseid, pipeline['t1xc'],
+                                     hash_trainingDataT1AHCC, hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
                                          pipeline['t1mask'])
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
-                                        pipeline['dwied'], pipeline['dwimask'],
+                                        pipeline['dwi'], pipeline['dwimask'],
                                         hash_BRAINSTools)
-    pipeline['ukf'] = UkfDefault(caseid, pipeline['dwied'],
-                                 pipeline['dwimask'], hash_UKFTractography,
-                                 hash_BRAINSTools)
+    pipeline['ukf'] = UkfDefault(caseid, pipeline['dwi'], pipeline['dwimask'],
+                                 hash_UKFTractography, hash_BRAINSTools)
     pipeline['wmql'] = Wmql(caseid, pipeline['fsindwi'], pipeline['ukf'],
                             hash_tract_querier)
     pipeline['tractmeasures'] = TractMeasures(caseid, pipeline['wmql'])

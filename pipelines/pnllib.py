@@ -23,6 +23,16 @@ def assertInputKeys(pipelineName, keys):
                 pipelineName, key))
         sys.exit(1)
 
+def tractMeasureStatus(paramPoints, makePipelineFn):
+    import pandas as pd
+    from pipelines.pnlscripts.summarizeTractMeasures import summarize
+    pipelines = [makePipelineFn(**paramPoint) for paramPoint in paramPoints]
+    csvs = [p['tractmeasures'].path() for p in pipelines
+            if p['tractmeasures'].path().exists()]
+    if csvs:
+        df = pd.concat((pd.read_csv(csv) for csv in csvs))
+        summarize(df)
+
 
 def convertImage(i, o, bthash):
     if i.suffixes == o.suffixes:
