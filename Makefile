@@ -2,23 +2,32 @@ ifeq ($(soft),)
   $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
-PIPELINE := epi
+PIPE := std
 CASELIST := caselist.txt
-SUBCMD := $(PIPELINE) run
-PARAMS := params.$(PIPELINE)
+PARAMS := params.$(PIPE)
 
+# Run pipeline
+# E.g. make
 .PHONY: all
-all: inputPaths.yml $(PARAMS)
-	./pipe $(SUBCMD)
+all:
+	./pipe $(PIPE) run
 
+# Run pipeline for given subject id
+# E.g. make 001
 %:
-	./pipe -s $* $(SUBCMD)
-bsub16: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(SUBCMD)
-bsub8: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 ./pipe $(SUBCMD)
-bsub4: ; bsub -J "$(SUBCMD)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe $(SUBCMD)
-%-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pipe --subjid $* $(SUBCMD)
-%-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pipe --subjid $* $(SUBCMD)
-%-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pipe --subjid $* $(SUBCMD)
+	./pipe $(PIPE) run --subjid $*
+
+# Run pipeline using lsf
+# E.g. make bsub8
+bsub16: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(PIPE) run
+bsub8: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 ./pipe $(PIPE) run
+bsub4: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe $(PIPE) run
+
+# Run pipeline for given subject id using lsf
+# E.g. make 001-bsub8
+%-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pipe $(PIPE) run --subjid $*
+%-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pipe $(PIPE) run --subjid $*
+%-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pipe $(PIPE) run --subjid $*
 
 caselist-bsub8: $(CASELIST)
 	while read subj; do make $$subj-bsub8; done < caselist.txt

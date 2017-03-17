@@ -60,16 +60,6 @@ def readAndSetInputPaths():
 
 
 class App(cli.Application):
-
-    want = cli.SwitchAttr(
-        ['-w', '--want'], help='target node to build, e.g. fsindwi')
-
-    caseid = cli.SwitchAttr(
-        ['--subjid', '-s'],
-        help="Case/Subject id, will override the 'caseid' key in params.<pipeline> if it exists")
-
-    writeGeneratedPathsYml = cli.Flag('--writePaths', default=False)
-
     def main(self, *args):
         if args:
             print("Unknown command {0!r}".format(args[0]))
@@ -268,6 +258,13 @@ class PipelineSubcommand(cli.Application):
 
 
 class Run(cli.Application):
+
+    want = cli.SwitchAttr(
+        ['-w', '--want'], help='target node to build, e.g. fsindwi')
+    caseid = cli.SwitchAttr(
+        ['--subjid', '-s'],
+        help="Case/Subject id, will override the 'caseid' key in params.<pipeline> if it exists")
+
     def main(self):
         readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
 
@@ -278,10 +275,10 @@ class Run(cli.Application):
                     self.parent.paramsFile))
             sys.exit(1)
 
-        if self.parent.parent.caseid:
+        if self.caseid:
             for paramsDict in paramDicts:
                 if 'caseid' in paramsDict.keys():
-                    paramsDict['caseid'] = [self.parent.parent.caseid]
+                    paramsDict['caseid'] = [self.caseid]
 
         # Check all necessary software exists
         missingSoftware = []
@@ -307,7 +304,7 @@ class Run(cli.Application):
 
             pipeline = self.parent.makePipeline(**params)
 
-            if not self.parent.parent.want:
+            if not self.want:
                 if not self.parent.defaultTarget:
                     print(
                         "'pipelines/pipeline_{}.py' doesn't have 'DEFAULT_TARGET' defined, set this in 'makePipeline(...)'.".format(
@@ -316,7 +313,7 @@ class Run(cli.Application):
                     sys.exit(1)
                 pipelib.update(pipeline[self.parent.defaultTarget])
             else:
-                pipelib.update(pipeline[self.parent.parent.want])
+                pipelib.update(pipeline[self.want])
 
 
 def getRequiredSoftwareModules(yml):
@@ -516,13 +513,6 @@ class SoftwareCommand(cli.Application):
         else:
             print("Make '{}'".format(softwareModule.getPath()))
             softwareModule.make()
-
-# def
-#     for key, node in pipeline.items():
-#         if key == 'all' or key == 'name':
-#             continue
-#         idx = '' if i == 0 else '_' + str(i+1)
-
 
 def pipelineNodeItems(pipeline):
     items = filter(lambda x: not x[0].startswith('_'), pipeline.items())
