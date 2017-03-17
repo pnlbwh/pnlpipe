@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from plumbum import local, FG, cli
-from pnlscripts.util.scripts import alignAndCenter_py, convertdwi_py, atlas_py, fs2dwi_py, eddy_py
+from pnlscripts.util.scripts import convertdwi_py, atlas_py, fs2dwi_py, eddy_py, alignAndCenter_py
 from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
@@ -84,7 +84,7 @@ class DwiEd(GeneratedNode):
 
 
 class DwiXc(GeneratedNode):
-    """ Axis align and center a dWI. Accepts nrrd or nifti. """
+    """ Axis align and center a DWI. Accepts nrrd or nifti. """
 
     def __init__(self, caseid, dwi, bthash):
         self.deps = [dwi]
@@ -93,9 +93,10 @@ class DwiXc(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with BRAINSTools.env(self.bthash):
-            convertdwi_py['-f', '-i', self.dwi.path(), '-o', self.path()] & FG
-            alignAndCenter_py['-i', self.path(), '-o', self.path()] & FG
+        with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
+            tmpdwi = tmpdir / (caseid + '-dwi.nrrd')
+            convertdwi_py['-f', '-i', self.dwi.path(), '-o', tmpdwi] & FG
+            alignAndCenter_py['-i', tmpdwi, '-o', self.path()] & FG
 
 
 class DwiEpi(GeneratedNode):

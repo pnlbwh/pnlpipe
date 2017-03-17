@@ -153,7 +153,7 @@ def main():
     argparser.add_argument('-p','--precision',
                            help='precision of computed rotation matrix for dwi gradients',
                           required=False, type=int, default=5)
-    argparser.add_argument('--overwrite', action='store_true', default=False,
+    argparser.add_argument('--force', action='store_true', default=False,
                            help='overwrite outfile if it exists')
     args = argparser.parse_args()
 
@@ -166,7 +166,7 @@ def main():
         #print image_in + ' is not a valid nrrd'
         #return
 
-    if exists(args.outfile) and not args.overwrite:
+    if exists(args.outfile) and not args.force:
         print args.outfile + ' already exists.'
         print 'Delete it first.'
         sys.exit(1)

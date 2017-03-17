@@ -13,7 +13,7 @@ class App(cli.Application):
 
     infile = cli.SwitchAttr(
         ['-i', '--input'],
-        ExistingNrrdOrNifti,
+        ExistingNrrd,
         help='Input volume ',
         mandatory=True)
     out = cli.SwitchAttr(
@@ -24,15 +24,8 @@ class App(cli.Application):
     def main(self):
         from util.scripts import axisalign_py, center_py
         from plumbum.cmd import ConvertBetweenFileFormats, unu
-        with TemporaryDirectory() as tmpdir:
-            tmpdir = local.path(tmpdir)
-            nrrd = tmpdir / 'img.nrrd'
-            if '.nii' in self.infile.suffixes:
-                ConvertBetweenFileFormats(self.infile, nrrd)
-            else:
-                unu['save', '-i',self.infile,'-e','gzip','-f','nrrd','-o',nrrd] & FG
-            axisalign_py('--overwrite', '-i', nrrd, '-o', nrrd)
-            center_py('-i', nrrd, '-o', self.out)
+        axisalign_py('--overwrite', '-i', self.infile, '-o', self.out)
+        center_py('-i', self.out, '-o', self.out)
 
 
 if __name__ == '__main__':
