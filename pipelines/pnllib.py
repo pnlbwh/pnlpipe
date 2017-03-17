@@ -210,7 +210,7 @@ class T2wMaskRigid(GeneratedNode):
         needDeps(self)
         with BRAINSTools.env(self.bthash):
             from pnlscripts.util.scripts import makeRigidMask_py
-            makeRigidMask_py('-i', self.t1.path(), '--lablemap',
+            makeRigidMask_py('-i', self.t1.path(), '--labelmap',
                              self.t1mask.path(), '--target', self.t2.path(),
                              '-o', self.path())
 
