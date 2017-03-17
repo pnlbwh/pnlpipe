@@ -360,9 +360,10 @@ class Init(cli.Application):
                 reversed(args), reversed(defaults), fillvalue='*mandatory*')
         else:
             x = izip_longest(reversed(args), [], fillvalue='*mandatory*')
-        paramDict = OrderedDict(reversed(list(x)))
+        # paramDict = OrderedDict(reversed(list(x)))
+        paramDict = OrderedDict(reversed(map(lambda y: (y[0],[y[1]]), x)))
         # get a default caseid
-        paramDict['caseid'] = './caselist.txt'
+        paramDict['caseid'] = ['./caselist.txt']
         if (not local.path('caselist.txt').exists()
             ) and local.path(inputPathsFile).exists():
             with open(inputPathsFile, 'r') as f:
@@ -376,8 +377,8 @@ class Init(cli.Application):
                     print("t1: path/to/001-t1.nrrd")
                     print("caseid: caseid")
                     sys.exit(1)
-                paramDict['caseid'] = inputPaths.get('caseid',
-                                                     './caselist.txt')
+                paramDict['caseid'] = [inputPaths.get('caseid',
+                                                     './caselist.txt')]
         """ http://stackoverflow.com/a/8661021 """
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
@@ -406,7 +407,7 @@ class Init(cli.Application):
 """
         with open(paramsFile, 'w') as f:
             f.write(help_message)
-            yaml.dump(paramDict, f, default_flow_style=False)
+            yaml.dump(paramDict, f, default_flow_style=None)
         print("Made '{}'".format(paramsFile))
         print("Before running the pipeline, replace the '*mandatory*' fields:")
         print("# Edit {}, add your parameters".format(paramsFile))

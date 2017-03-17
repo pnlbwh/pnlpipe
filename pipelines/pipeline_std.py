@@ -6,10 +6,10 @@ import pipelib
 DEFAULT_TARGET = 'tractmeasures'
 
 def makePipeline(caseid,
-                 t1Key,
-                 dwiKey,
-                 dwimaskKey='',
-                 t1maskKey='',
+                 t1PathKey='t1',
+                 dwiPathKey='dwi',
+                 dwimaskPathKey='',
+                 t1maskPathKey='',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
@@ -17,16 +17,16 @@ def makePipeline(caseid,
                  ):
     """Makes the PNL's standard pipeline. """
     pipeline = {'_name': "standard PNL pipeline"}
-    pipeline['t1'] = Src(caseid, t1Key)
-    pipeline['dwi'] = Src(caseid, dwiKey)
+    pipeline['t1'] = Src(caseid, t1PathKey)
+    pipeline['dwi'] = Src(caseid, dwiPathKey)
     pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'],
                                 hash_BRAINSTools)  # works on nrrd or nii
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(caseid,
-                              dwimaskKey) if dwimaskKey else DwiMaskHcpBet(
+                              dwimaskPathKey) if dwimaskPathKey else DwiMaskHcpBet(
                                   caseid, pipeline['dwied'], hash_BRAINSTools)
-    pipeline['t1mask'] = Src(caseid, 't1mask') if t1maskKey else T1wMaskMabs(
+    pipeline['t1mask'] = Src(caseid, 't1mask') if t1maskPathKey else T1wMaskMabs(
         caseid, pipeline['t1xc'], hash_trainingDataT1AHCC, hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
                                          pipeline['t1mask'])

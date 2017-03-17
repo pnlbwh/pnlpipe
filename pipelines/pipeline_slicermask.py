@@ -32,11 +32,11 @@ class DwiMaskSlicer(GeneratedNode):
 
 
 def makePipeline(caseid,
-                 dwiKey='dwi',
+                 dwiPathKey='dwi',
                  version_Slicer='4.7.0',
                  hash_mrtrix3='97e4b3b'):
     pipeline = {'_name': "dwi masking test"}
-    pipeline['dwi'] = Src(caseid, dwiKey)
+    pipeline['dwi'] = Src(caseid, dwiPathKey)
     pipeline['dwimask'] = DwiMaskSlicer(caseid, pipeline['dwi'],
                                         version_Slicer, hash_mrtrix3)
     return pipeline

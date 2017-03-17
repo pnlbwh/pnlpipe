@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from util import logfmt, TemporaryDirectory, ExistingNrrdOrNifti
+from util import logfmt, TemporaryDirectory, ExistingNrrd
 from plumbum import cli, local, FG
 
 import logging
@@ -24,7 +24,7 @@ class App(cli.Application):
     def main(self):
         from util.scripts import axisalign_py, center_py
         from plumbum.cmd import ConvertBetweenFileFormats, unu
-        axisalign_py('--overwrite', '-i', self.infile, '-o', self.out)
+        axisalign_py('--force', '-i', self.infile, '-o', self.out)
         center_py('-i', self.out, '-o', self.out)
 
 

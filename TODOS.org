@@ -1,11 +1,11 @@
+* ENH: add HCP pipeline
 * sty: clarify when 'caseid' gets special treatment as a parameter
-* add freesurfer version validator
+* add freesurfer version validator pipelines and fs node
 * ENH: add check for correct DWI axes permutation
-* Make env.sh subcommand
+* Make env subcommand
 * ENH: add ukf params
 * STY: change pnlscripts.util to pnlscripts
 * ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
 * think about multi file nodes
-* ENH: add HCP preprocessing pipeline if we decide to use it
 * STY: add log file output to pnlscripts scripts
 * STY: use python logging correctly

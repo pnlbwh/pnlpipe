@@ -17,3 +17,12 @@ def make(version=DEFAULT_VERSION):
 
 def getPath(version=DEFAULT_VERSION):
     return getSoftDir() / ('HCPPipelines-' + version)
+
+def env(version):
+    repo = getPath(version)
+    return local.env(
+        HCPPIPEDIR = repo,
+        HCPPIPEDIR_dMRI = repo/'DiffusionPreprocessing/scripts',
+        HCPPIPEDIR_Config = repo/'global/config',
+        HCPPIPEDIR_Global = repo/'global/scripts'
+        )

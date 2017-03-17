@@ -4,7 +4,7 @@ from pnlscripts.util.scripts import convertdwi_py, atlas_py, fs2dwi_py, eddy_py,
 from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
-from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC
+from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("numTensor", "2"), ("recordLength", "1.7"),
@@ -67,6 +67,31 @@ def validateFreeSurfer(versionRequired):
     else:
         log.error("FreeSurfer version {} at {} does not match the required version of {}, either change FREESURFER_HOME or change the version you require".format(version, freesurferHome, versionRequired))
         sys.exit(1)
+
+class DwiHcp(GeneratedNode):
+    """ Washington University HCP DWI preprocessing. """
+
+    def __init__(self, caseid, posDwis, negDwis, echoSpacing, peDir, version_HCPPipelines):
+        self.deps = posDwis + negDwis
+        self.params = [version_HCPPipelines]
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+        needDeps(self)
+        with HCPPipelines.env(self.version_HCPPipelines):
+            preproc = local[HCPPipelines.getPath(self.version_HCPPipelines) /
+                             'DiffusionPreprocessing/DiffPreprocPipeline.sh']
+            posPaths = [n.path() for n in self.posDwis]
+            negPaths = [n.path() for n in self.negDwis]
+            print preproc
+            preproc['--path={}'.format(OUTDIR)
+                    ,'--subject={}'.format(self.caseid)
+                    ,'--PEdir={}'.format(self.peDir)
+                    ,'--posData='+'@'.join(posPaths)
+                    ,'--negData='+'@'.join(negPaths)
+                    ,'--echospacing={}'.format(self.echoSpacing)
+                    ,'--gdcoeffs=NONE'
+                    ,'--dwiname='+self.path().with_suffix('')] & FG
 
 
 class DwiEd(GeneratedNode):
