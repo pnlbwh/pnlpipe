@@ -1,4 +1,3 @@
-* ENH: add HCP pipeline
 * sty: clarify when 'caseid' gets special treatment as a parameter
 * add freesurfer version validator pipelines and fs node
 * ENH: add check for correct DWI axes permutation

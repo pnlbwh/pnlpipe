@@ -261,11 +261,8 @@ class Run(cli.Application):
 
     want = cli.SwitchAttr(
         ['-w', '--want'], help='target node to build, e.g. fsindwi')
-    caseid = cli.SwitchAttr(
-        ['--subjid', '-s'],
-        help="Case/Subject id, will override the 'caseid' key in params.<pipeline> if it exists")
 
-    def main(self):
+    def main(self, *caseids):
         readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
 
         paramDicts = readParams(self.parent.paramsFile)
@@ -275,10 +272,10 @@ class Run(cli.Application):
                     self.parent.paramsFile))
             sys.exit(1)
 
-        if self.caseid:
+        if caseids:
             for paramsDict in paramDicts:
                 if 'caseid' in paramsDict.keys():
-                    paramsDict['caseid'] = [self.caseid]
+                    paramsDict['caseid'] = caseids
 
         # Check all necessary software exists
         missingSoftware = []
