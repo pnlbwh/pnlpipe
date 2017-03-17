@@ -17,7 +17,7 @@ def readFreeSurferVersion():
     import re
     p = re.compile('v\d\.\d\.\d(-\w+)?$')
     try:
-        version = p.search(buildStamp).group()
+        version = p.search(buildStamp).group()[1:]
     except:
         raise Exception("Couldn't extract FreeSurfer version from {}/build-stamp.txt, either that file is malformed or the regex used to extract the version is incorrect.".format(freesurferHome))
 
@@ -42,5 +42,6 @@ def make(version=DEFAULT_VERSION):
     validate(version)
 
 def getPath(version=DEFAULT_VERSION):
-    """Dummy path"""
-    return 'FreeSurfer-' + version
+    validate(version)
+    return os.environ.get('FREESURFER_HOME')
+

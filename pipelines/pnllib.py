@@ -83,7 +83,8 @@ class DwiHcp(GeneratedNode):
                              'DiffusionPreprocessing/DiffPreprocPipeline.sh']
             posPaths = [n.path() for n in self.posDwis]
             negPaths = [n.path() for n in self.negDwis]
-            print preproc
+            tmpout = 'hcp'
+            #'+self.path().with_suffix('')
             preproc['--path={}'.format(OUTDIR)
                     ,'--subject={}'.format(self.caseid)
                     ,'--PEdir={}'.format(self.peDir)
@@ -91,8 +92,8 @@ class DwiHcp(GeneratedNode):
                     ,'--negData='+'@'.join(negPaths)
                     ,'--echospacing={}'.format(self.echoSpacing)
                     ,'--gdcoeffs=NONE'
-                    ,'--dwiname='+self.path().with_suffix('')] & FG
-            hcpdir = OUTDIR / self.caseid / self.path().with_suffix('') / 'data'
+                    ,'--dwiname='+tmpout] & FG
+            hcpdir = OUTDIR / self.caseid / tmpout / 'data'
             (hcpdir / 'data.nii.gz').move(self.path())
             (hcpdir / 'bvals').move(self.path().with_suffix('bval', depth=2))
             (hcpdir / 'bvecs').move(self.path().with_suffix('bvec', depth=2))
