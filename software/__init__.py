@@ -27,17 +27,18 @@ def checkExists(target):
     return False
 
 
-def downloadGithubArchive(ownerrepo, commit='master'):
-    """Makes 'repo-<commit>' directory."""
-    url = 'https://github.com/{ownerrepo}/archive/{commit}.tar.gz'.format(
+def downloadGithubArchive(ownerrepo, version='master'):
+    """Makes 'repo-xxxx' directory."""
+    url = 'https://github.com/{ownerrepo}/archive/{version}.tar.gz'.format(
         **locals())
     repo = ownerrepo.split('/')[1]
     from plumbum.cmd import curl, tar
+    import os.path
     (curl['-L', url] | tar['xz']) & FG
     from glob import glob
-    downloadedPath = local.path(
-        glob(repo + '-' + commit + '*')[0])  # has full sha
-    return downloadedPath
+    repos = glob(repo + '*')
+    repos.sort(key=os.path.getmtime)
+    return local.path(repos[0])
 
 
 def getCommitInfo(repo_path):
