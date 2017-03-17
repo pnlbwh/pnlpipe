@@ -190,8 +190,10 @@ class StrctXc(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with BRAINSTools.env(self.bthash):
-            alignAndCenter_py['-i', self.strct.path(), '-o', self.path()] & FG
+        with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
+            nrrd = tmpdir / 'strct.nrrd'
+            convertImage(self.strct.path(), nrrd, self.bthash)
+            alignAndCenter_py['-i', nrrd, '-o', self.path()] & FG
 
 
 class T2wMaskRigid(GeneratedNode):
