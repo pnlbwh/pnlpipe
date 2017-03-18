@@ -209,11 +209,19 @@ class T2wMaskRigid(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with BRAINSTools.env(self.bthash):
+        with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             from pnlscripts.util.scripts import makeRigidMask_py
-            makeRigidMask_py('-i', self.t1.path(), '--lablemap',
-                             self.t1mask.path(), '--target', self.t2.path(),
-                             '-o', self.path())
+            t1 = tmpdir / 't1.nrrd'
+            t1mask = tmpdir / 't1mask.nrrd'
+            t2 = tmpdir / 't2.nrrd'
+            out = tmpdir / 't2mask.nrrd'
+            convertImage(self.t1.path(), t1, self.bthash)
+            convertImage(self.t1mask.path(), t1mask, self.bthash)
+            convertImage(self.t2.path(), t2, self.bthash)
+            makeRigidMask_py('-i', t1, '--labelmap',
+                             t1mask, '--target', t2,
+                             '-o', out)
+            out.move(self.path())
 
 
 class T1wMaskMabs(GeneratedNode):
