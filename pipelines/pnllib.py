@@ -123,7 +123,7 @@ class DwiXc(GeneratedNode):
     def build(self):
         needDeps(self)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
-            tmpdwi = tmpdir / (caseid + '-dwi.nrrd')
+            tmpdwi = tmpdir / (self.caseid + '-dwi.nrrd')
             convertdwi_py['-f', '-i', self.dwi.path(), '-o', tmpdwi] & FG
             alignAndCenter_py['-i', tmpdwi, '-o', self.path()] & FG
 
