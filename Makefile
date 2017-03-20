@@ -12,20 +12,17 @@ PARAMS := params.$(PIPE)
 all:
 	./pipe $(PIPE) run
 
-.PHONY: caselist-bsub8 caselist-bsub4
-caselist-bsub8: $(CASELIST)
-	while read subj; do make $$subj-bsub8; done < caselist.txt
+.PHONY: bclean
+bclean: 
+	rm *.err *.out
 
-caselist-bsub4: $(CASELIST)
-	while read subj; do make $$subj-bsub4; done < caselist.txt
-
-$(CASELIST):
-	$(error First make $(CASELIST) with your subject ids, then run again)
-
-# Run pipeline for given subject id
+# Run pipeline for given subject id, overrides caseid field in params.<pipe>
+# file for each parameter combo.
 # E.g. make 001
 %:
 	./pipe $(PIPE) run $*
+
+t: ; bsub -J "hcptest" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 bash t.sh
 
 # Run pipeline using lsf
 # E.g. make bsub8
@@ -38,6 +35,16 @@ bsub4: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe $(
 %-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pipe $(PIPE) run $*
 %-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pipe $(PIPE) run $*
 %-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pipe $(PIPE) run $*
+
+.PHONY: caselist-bsub8 caselist-bsub4
+caselist-bsub8: $(CASELIST)
+	while read subj; do make $$subj-bsub8; done < caselist.txt
+
+caselist-bsub4: $(CASELIST)
+	while read subj; do make $$subj-bsub4; done < caselist.txt
+
+$(CASELIST):
+	$(error First make $(CASELIST) with your subject ids, then run again)
 
 
 ##############################################################################

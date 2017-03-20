@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from plumbum import local, FG, cli
+from plumbum import local, FG, cli, ProcessExecutionError
 from pnlscripts.util.scripts import convertdwi_py, atlas_py, fs2dwi_py, eddy_py, alignAndCenter_py
 from pnlscripts.util import TemporaryDirectory
 import sys
@@ -74,29 +74,37 @@ class DwiHcp(GeneratedNode):
     def __init__(self, caseid, posDwis, negDwis, echoSpacing, peDir, version_HCPPipelines):
         self.deps = posDwis + negDwis
         self.params = [version_HCPPipelines]
+        self.ext = '.nii.gz'
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        with HCPPipelines.env(self.version_HCPPipelines):
+        with HCPPipelines.env(self.version_HCPPipelines), TemporaryDirectory() as tmpdir:
             preproc = local[HCPPipelines.getPath(self.version_HCPPipelines) /
                              'DiffusionPreprocessing/DiffPreprocPipeline.sh']
             posPaths = [n.path() for n in self.posDwis]
             negPaths = [n.path() for n in self.negDwis]
-            tmpout = 'hcp'
-            #'+self.path().with_suffix('')
-            preproc['--path={}'.format(OUTDIR)
-                    ,'--subject={}'.format(self.caseid)
-                    ,'--PEdir={}'.format(self.peDir)
-                    ,'--posData='+'@'.join(posPaths)
-                    ,'--negData='+'@'.join(negPaths)
-                    ,'--echospacing={}'.format(self.echoSpacing)
-                    ,'--gdcoeffs=NONE'
-                    ,'--dwiname='+tmpout] & FG
-            hcpdir = OUTDIR / self.caseid / tmpout / 'data'
-            (hcpdir / 'data.nii.gz').move(self.path())
-            (hcpdir / 'bvals').move(self.path().with_suffix('bval', depth=2))
-            (hcpdir / 'bvecs').move(self.path().with_suffix('bvec', depth=2))
+            datadir = tmpdir / 'hcp/data'
+            try:
+                preproc['--path={}'.format(tmpdir)
+                        ,'--subject={}'.format(self.caseid)
+                        ,'--PEdir={}'.format(self.peDir)
+                        ,'--posData='+'@'.join(posPaths)
+                        ,'--negData='+'@'.join(negPaths)
+                        ,'--echospacing={}'.format(self.echoSpacing)
+                        ,'--gdcoeffs=NONE'
+                        ,'--dwiname=hcp'] & FG
+            except ProcessExecutionError as e:
+                if not (datadir/'data.nii.gz').exists():
+                    print(e)
+                    log.error("HCP failed to make '{}'".format(datadir/'data.nii.gz'))
+                    #(OUTDIR / self.caseid / 'T1w').delete()
+                    sys.exit(1)
+            #(OUTDIR / self.caseid / 'T1w').delete()
+            (datadir / 'data.nii.gz').move(self.path())
+            (datadir / 'bvals').move(self.path().with_suffix('.bval', depth=2))
+            (datadir / 'bvecs').move(self.path().with_suffix('.bvec', depth=2))
+            (tmpdir / 'hcp').move(self.path()[:-7])
 
 
 class DwiEd(GeneratedNode):
