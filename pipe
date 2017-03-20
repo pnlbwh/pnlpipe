@@ -484,27 +484,31 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
     # first delete existing files in case they are stale
     for f in local.cwd.glob(name + '*.sh'):
         f.delete()
-    for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
-        envFile = name + str(comboPaths['id']) + '.sh'
-        print("Make '{}'".format(envFile))
-        with open(envFile, 'w') as f:
-            f.write('\n')
-            f.write('# Parameter combination {}\n'.format(comboPaths['id']))
-            printVertical(comboPaths['paramCombo'],'#  ', f)
+    with open('outputPaths.yml', 'w') as fyml:
+        for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
+            envFile = name + str(comboPaths['id']) + '.sh'
+            sys.stdout.write("Make '{}'...".format(envFile))
+            with open(envFile, 'w') as f:
+                f.write('\n')
+                f.write('# Parameter combination {}\n'.format(comboPaths['id']))
+                printVertical(comboPaths['paramCombo'],'#  ', f)
 
-            # Generated output paths
-            for key, subjectPaths in comboPaths['paths'].iteritems():
-                f.write('{}={}\n'.format(key, escapePath(subjectPaths[0].path)))
+                # Generated output paths
+                for key, subjectPaths in comboPaths['paths'].iteritems():
+                    f.write('{}={}\n'.format(key, escapePath(subjectPaths[0].path)))
+                    fyml.write('{}: {}\n'.format(key, subjectPaths[0].path))
 
-            # Software environment
-            envDicts = []
-            for softname, version, _ in softwareItems(comboPaths['paramCombo'].items()):
-                m = importlib.import_module('software.' + softname)
-                if hasattr(m, 'envDict'):
-                    envDicts.append(m.envDict(version))
-            softVars = software.composeEnvDicts(envDicts)
-            for var, val in softVars.items():
-                f.write('{}={}\n'.format(var, val))
+                # Software environment
+                envDicts = []
+                for softname, version, _ in softwareItems(comboPaths['paramCombo'].items()):
+                    m = importlib.import_module('software.' + softname)
+                    if hasattr(m, 'envDict'):
+                        envDicts.append(m.envDict(version))
+                softVars = software.composeEnvDicts(envDicts)
+                for var, val in softVars.items():
+                    f.write('{}={}\n'.format(var, val))
+            sys.stdout.write("Done.\n".format(envFile))
+    print("Made '{}'".format('outputPaths.yml'))
 
 
 class SymLink(cli.Application):
