@@ -1,4 +1,4 @@
-from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists
+from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict
 from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
@@ -131,13 +131,11 @@ def make(commit=DEFAULT_HASH):
 
 def getPath(bthash=DEFAULT_HASH):
     btpath = getSoftDir() / ('BRAINSTools-bin-' + bthash)
-    if not btpath.exists():
-        raise DoesNotExistException(
-            "{} doesn\'t exist, make it first with './pipe <pipeline> make".format(
-                btpath))
     return btpath
 
-def env(bthash):
+def envDict(bthash):
     btpath = getPath(bthash)
-    newpath = ':'.join(str(p) for p in [btpath] + local.env.path)
-    return local.env(PATH=newpath, ANTSPATH=btpath)
+    return { 'PATH': btpath, 'ANTSPATH': btpath}
+
+def env(bthash):
+    return envFromDict(envDict(bthash))

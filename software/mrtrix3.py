@@ -24,8 +24,8 @@ def make(hash=DEFAULT_HASH):
 def getPath(hash=DEFAULT_HASH):
     return getSoftDir() / ('mrtrix3-' + hash)
 
+def envDict(hash):
+    return {'PATH': getPath(hash) / 'bin' }
 
-def env(hash):
-    path = getPath(hash) / 'bin'
-    newpath = ':'.join(str(p) for p in [path] + local.env.path)
-    return local.env(PATH=newpath)
+def env(bthash):
+    return envFromDict(envDict(bthash))

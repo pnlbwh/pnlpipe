@@ -1,5 +1,5 @@
 import sys
-from software import getSoftDir, checkExists, TemporaryDirectory
+from software import getSoftDir, checkExists, TemporaryDirectory, prefixPATH, envFromDict
 import logging
 from plumbum import local, FG
 from plumbum.cmd import wget, tar
@@ -28,3 +28,9 @@ def getDir(version=DEFAULT_VERSION):
 
 def getPath(version=DEFAULT_VERSION):
     return getDir(version) / 'Slicer'
+
+def envDict(version):
+    return {'PATH': getDir(version)}
+
+def env(bthash):
+    return envFromDict(envDict(bthash))

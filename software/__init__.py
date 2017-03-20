@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import sys
+import os
 from os.path import dirname, basename, isfile
 import glob
 from tempfile import mkdtemp
@@ -19,6 +20,34 @@ import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
 
+def composeEnvDicts(envDicts):
+    result = {'PATH': [], 'PYTHONPATH': []}
+    for d in envDicts:
+        for var, val in d.items():
+            if var == 'PATH':
+                result['PATH'].insert(0, val)
+            elif var == 'PYTHONPATH':
+                result['PYTHONPATH'].insert(0, val)
+            else:
+                result[var] = val
+    if result.get('PATH'):
+        result['PATH'] = ':'.join(result['PATH'] + local.env.path)
+    if result.get('PYTHONPATH'):
+        result['PYTHONPATH'] = ':'.join(result['PYTHONPATH']) + os.environ.get('PYTHONPATH','')
+
+    return result
+
+def envFromDict(envDict):
+    d = composeEnvDicts([envDict])
+    return local.env(**d)
+
+
+def prefixPATH(paths):
+    return ':'.join(str(p) for p in paths + local.env.path)
+
+def prefixPYTHONPATH(paths):
+    PYTHONPATH = os.environ.get('PYTHONPATH','').split(':')
+    return ':'.join(str(p) for p in paths + PYTHONPATH)
 
 def checkExists(target):
     if target.exists():

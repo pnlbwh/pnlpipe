@@ -42,5 +42,5 @@ def make(version=DEFAULT_VERSION):
     validate(version)
 
 def getPath(version=DEFAULT_VERSION):
-    """Dummy path"""
-    return 'FreeSurfer-' + version
+    validate(version)
+    return os.environ.get('FREESURFER_HOME')
