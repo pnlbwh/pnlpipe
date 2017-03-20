@@ -1,4 +1,4 @@
-from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists
+from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, envFromDict
 from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging

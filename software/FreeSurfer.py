@@ -44,4 +44,3 @@ def make(version=DEFAULT_VERSION):
 def getPath(version=DEFAULT_VERSION):
     validate(version)
     return os.environ.get('FREESURFER_HOME')
-

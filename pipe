@@ -13,6 +13,7 @@ import itertools
 import importlib
 from collections import defaultdict
 from pprint import pprint
+import software
 
 inputPathsFile = "inputPaths.yml"
 
@@ -32,9 +33,9 @@ def printTable(myDict, colList=None):
         print(formatStr.format(*item))
 
 
-def printVertical(d):
+def printVertical(d, prepend='', fd=sys.stdout):
     for k, v in d.items():
-        sys.stdout.write("{:<25} {:<15}".format(k, v) + '\n')
+       fd.write("{}{:<25} {:<15}".format(prepend,k, v) + '\n')
 
 
 def readAndSetInputPaths():
@@ -277,20 +278,29 @@ class Run(cli.Application):
                 if 'caseid' in paramsDict.keys():
                     paramsDict['caseid'] = caseids
 
+        paramsList = expandParams(paramDicts)
+
         # Check all necessary software exists
+        missingSoftwareModules = []
         missingSoftware = []
-        for module, commit in getRequiredSoftwareModules(paramDicts):
-            if not local.path(module.getPath(commit)).exists():
-                missingSoftware.append(module.getPath(commit))
+        for softname, version, moduleFile in softwareItems(list(set(concat([p.items() for p in paramsList])))):
+            if not moduleFile.exists():
+                missingSoftwareModules.append(moduleFile)
+                continue
+            module = importlib.import_module('software.' + softname)
+            if not local.path(module.getPath(version)).exists():
+                missingSoftware.append(module.getPath(version))
+
+        for f in missingSoftwareModules:
+            print("Missing: {}".format(f))
+        for p in missingSoftware:
+            print("Missing: {}".format(p))
+        if missingSoftwareModules:
+            sys.exit(1)
         if missingSoftware:
-            for soft in missingSoftware:
-                print("Missing: {}".format(soft))
-            print(
-                "Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(
-                    self.parent.name))
+            print("Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(self.parent.name))
             sys.exit(1)
 
-        paramsList = expandParams(paramDicts)
 
         for params in paramsList:
             print(
@@ -313,16 +323,21 @@ class Run(cli.Application):
                 pipelib.update(pipeline[self.want])
 
 
+def softwareItems(items):
+    for key, val in items:
+        if key.startswith('hash_'):
+            softname = key[5:]
+        elif key.startswith('version_'):
+            softname = key[8:]
+        else:
+            continue
+        moduleFile = local.path('software') / (softname + '.py')
+        yield (softname, val, moduleFile)
+
+
 def getRequiredSoftwareModules(yml):
     for paramsDict in yml:
-        for key, commits in paramsDict.items():
-            if key.startswith('hash_'):
-                softname = key[5:]
-            elif key.startswith('version_'):
-                softname = key[8:]
-            else:
-                continue
-            moduleFile = local.path('software') / (softname + '.py')
+        for softname, commits, moduleFile in softwareItems(paramsDict.items()):
             if not moduleFile.exists():
                 print("{} does not exist".format(moduleFile))
                 sys.exit(1)
@@ -421,11 +436,18 @@ class Make(cli.Application):
                 "'{}' doesn't exist, make it first with './pipe {} init'".format(
                     self.parent.paramsFile, self.parent.__class__.__name__))
             sys.exit(1)
+
+        # Build prerequisite software
         paramDicts = readParams(self.parent.paramsFile)
         for module, commit in getRequiredSoftwareModules(paramDicts):
             print("Make {}".format(module.getPath(commit)))
             module.make(commit)
+
+        # Make shell environment files
+        makeEnvFiles(self.parent.name, self.parent.paramsFile, self.parent.makePipeline)
+
         print('Done.')
+
 
 
 def groupDicts(dicts, keyfn):
@@ -436,6 +458,9 @@ def groupDicts(dicts, keyfn):
 def makeRelativeSymlink(src, symlink):
     import os
     os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+
+def escapePath(filepath):
+    return filepath.__str__().replace('(', '\(').replace(')', '\)')
 
 # def makeSetUpData(makePipelineFn, caseid, paramPoints):
 #     def quote(s):
@@ -453,6 +478,37 @@ def makeRelativeSymlink(src, symlink):
 #                 pathTemplate = quote(node.path().replace(caseid, '$case'))
 #                 line = "{}={}".format(key + idx, pathTemplate)
 #                 f.write(line + '\n')
+
+
+def makeEnvFiles(name, paramsFile, makePipelineFn):
+    # first delete existing files in case they are stale
+    for f in local.cwd.glob(name + '*.sh'):
+        f.delete()
+    with open('outputPaths.yml', 'w') as fyml:
+        for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
+            envFile = name + str(comboPaths['id']) + '.sh'
+            sys.stdout.write("Make '{}'...".format(envFile))
+            with open(envFile, 'w') as f:
+                f.write('\n')
+                f.write('# Parameter combination {}\n'.format(comboPaths['id']))
+                printVertical(comboPaths['paramCombo'],'#  ', f)
+
+                # Generated output paths
+                for key, subjectPaths in comboPaths['paths'].iteritems():
+                    f.write('{}={}\n'.format(key, escapePath(subjectPaths[0].path)))
+                    fyml.write('{}: {}\n'.format(key, subjectPaths[0].path))
+
+                # Software environment
+                envDicts = []
+                for softname, version, _ in softwareItems(comboPaths['paramCombo'].items()):
+                    m = importlib.import_module('software.' + softname)
+                    if hasattr(m, 'envDict'):
+                        envDicts.append(m.envDict(version))
+                softVars = software.composeEnvDicts(envDicts)
+                for var, val in softVars.items():
+                    f.write('{}={}\n'.format(var, val))
+            sys.stdout.write("Done.\n".format(envFile))
+    print("Made '{}'".format('outputPaths.yml'))
 
 
 class SymLink(cli.Application):
@@ -550,7 +606,7 @@ SubjectPath = namedtuple('SubjectPath', 'caseid path')
 def pipelineComboPaths(paramsFile, makePipelineFn):
     paramPointsByCombo = groupParamPointsByCombo(paramsFile)
     result = []
-    # for each parameter values combo
+    # for each parameter values combo (a parameter point without caseid)
     for i, (paramCombo, paramPoints) in enumerate(paramPointsByCombo):
         iStr = '' if i == 0 else str(i)
         pipelinePaths = {'paramCombo': paramCombo,

@@ -1,11 +1,11 @@
 import sys
-from software import downloadGithubArchive
-from software import getSoftDir, checkExists, TemporaryDirectory
+from software import downloadGithubArchive, getSoftDir, checkExists, TemporaryDirectory, envFromDict
 import logging
 from plumbum import local, FG
 
 GITHUB_REPO = 'Washington-University/Pipelines'
-DEFAULT_VERSION = '3.21.0'
+DEFAULT_VERSION = '3.17.0'
+
 
 def make(version=DEFAULT_VERSION):
     if checkExists(getPath(version)):
@@ -15,14 +15,21 @@ def make(version=DEFAULT_VERSION):
         d.move(getPath(version))
         logging.info("Made '{}'".format(getPath(version)))
 
+
 def getPath(version=DEFAULT_VERSION):
     return getSoftDir() / ('HCPPipelines-' + version)
 
-def env(version):
+
+def envDict(version):
     repo = getPath(version)
-    return local.env(
-        HCPPIPEDIR = repo,
-        HCPPIPEDIR_dMRI = repo/'DiffusionPreprocessing/scripts',
-        HCPPIPEDIR_Config = repo/'global/config',
-        HCPPIPEDIR_Global = repo/'global/scripts'
-        )
+    return {
+        'PATH': repo / 'DiffusionPreprocessing',
+        'HCPPIPEDIR': repo,
+        'HCPPIPEDIR_dMRI': repo / 'DiffusionPreprocessing/scripts',
+        'HCPPIPEDIR_Config': repo / 'global/config',
+        'HCPPIPEDIR_Global': repo / 'global/scripts'
+    }
+
+
+def env(bthash):
+    return envFromDict(envDict(bthash))

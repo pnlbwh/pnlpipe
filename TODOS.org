@@ -1,3 +1,5 @@
+* software envs need to raise an exception if their paths don't exist, e.g could
+  be deleted during pipeline run
 * sty: clarify when 'caseid' gets special treatment as a parameter
 * add freesurfer version validator pipelines and fs node
 * ENH: add check for correct DWI axes permutation
