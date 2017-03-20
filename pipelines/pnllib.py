@@ -85,22 +85,25 @@ class DwiHcp(GeneratedNode):
             posPaths = [n.path() for n in self.posDwis]
             negPaths = [n.path() for n in self.negDwis]
             datadir = tmpdir / 'hcp/data'
+            from os import getpid
+            hcpdir = OUTDIR / self.caseid / 'hcp-{}'.format(getpid())
+            datadir = hcpdir / 'data'
             try:
-                preproc['--path={}'.format(tmpdir)
+                preproc['--path={}'.format(OUTDIR)
                         ,'--subject={}'.format(self.caseid)
                         ,'--PEdir={}'.format(self.peDir)
                         ,'--posData='+'@'.join(posPaths)
                         ,'--negData='+'@'.join(negPaths)
                         ,'--echospacing={}'.format(self.echoSpacing)
                         ,'--gdcoeffs=NONE'
-                        ,'--dwiname=hcp'] & FG
+                        ,'--dwiname=hcp-{}'.format(getpid())] & FG
             except ProcessExecutionError as e:
                 if not (datadir/'data.nii.gz').exists():
                     print(e)
                     log.error("HCP failed to make '{}'".format(datadir/'data.nii.gz'))
-                    #(OUTDIR / self.caseid / 'T1w').delete()
+                    (OUTDIR / self.caseid / 'T1w').delete()
                     sys.exit(1)
-            #(OUTDIR / self.caseid / 'T1w').delete()
+            (OUTDIR / self.caseid / 'T1w').delete()
             (datadir / 'data.nii.gz').move(self.path())
             (datadir / 'bvals').move(self.path().with_suffix('.bval', depth=2))
             (datadir / 'bvecs').move(self.path().with_suffix('.bvec', depth=2))

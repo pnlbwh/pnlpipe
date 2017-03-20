@@ -283,7 +283,7 @@ class Run(cli.Application):
         # Check all necessary software exists
         missingSoftwareModules = []
         missingSoftware = []
-        for softname, version, moduleFile in softwareItems(list(set(concat([p.items() for p in paramsList])))):
+        for softname, version, moduleFile in softwareItems(list(set(filter(lambda x: not isinstance(x[1],list), concat([p.items() for p in paramsList]))))):
             if not moduleFile.exists():
                 missingSoftwareModules.append(moduleFile)
                 continue
@@ -507,6 +507,7 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
                 softVars = software.composeEnvDicts(envDicts)
                 for var, val in softVars.items():
                     f.write('{}={}\n'.format(var, val))
+                f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
             sys.stdout.write("Done.\n".format(envFile))
     print("Made '{}'".format('outputPaths.yml'))
 
