@@ -5,7 +5,7 @@ from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
-import software
+import software.FreeSurfer
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("numTensor", "2"), ("recordLength", "1.7"),
@@ -263,7 +263,7 @@ class FreeSurferUsingMask(GeneratedNode):
     def build(self):
         needDeps(self)
         # make sure FREESURFER_HOME is set to right version
-        software.FreeSurfer.validate(version_FreeSurfer)
+        software.FreeSurfer.validate(self.version_FreeSurfer)
         from pnlscripts.util.scripts import fs_py
         fs_py['-i', self.t1.path(), '-m', self.t1mask.path(), '-f', '-o',
               self.path().dirname.dirname] & FG

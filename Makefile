@@ -36,7 +36,10 @@ bsub4: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe $(
 %-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pipe $(PIPE) run $*
 %-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pipe $(PIPE) run $*
 
-.PHONY: caselist-bsub8 caselist-bsub4
+.PHONY: caselist caselist-bsub8 caselist-bsub4
+caselist: $(CASELIST)
+	make caselist-bsub8
+	
 caselist-bsub8: $(CASELIST)
 	while read subj; do make $$subj-bsub8; done < caselist.txt
 
