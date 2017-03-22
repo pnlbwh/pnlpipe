@@ -46,11 +46,13 @@ class App(cli.Application):
         elif nrrd(dwi) and nrrd(out):
             unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', dwi, '-o', out)
         elif nrrd(dwi) and nifti(out):
-            DWIConvert('--conversionMode', 'NrrdToFSL', '--inputVolume', dwi,
-                       '-o', out)
+            with TemporaryDirectory() as tmpdir:
+                shortdwi = tmpdir / 'short.nrrd'
+                unu('convert', '-t', 'int16', '-i', dwi, '-o', shortdwi)
+                DWIConvert('--conversionMode', 'NrrdToFSL', '--inputVolume', shortdwi,
+                           '-o', out)
         elif nifti(dwi) and nrrd(out):
             with TemporaryDirectory() as t:
-                t = local.path(t)
                 ConvertBetweenFileFormats(dwi, t / 'short.nii.gz', 'short')
                 DWIConvert('--conversionMode', 'FSLToNrrd', '--inputBValues',
                            bval(dwi), '--inputBVectors', bvec(dwi),

@@ -17,13 +17,10 @@ class App(cli.Application):
     debug = cli.Flag(
         ['-d', '--debug'], help='Debug, save intermediate files in \'epidebug-<pid>\'')
     dwi = cli.SwitchAttr('--dwi', ExistingNrrd, help='DWI', mandatory=True)
-    dwimask = cli.SwitchAttr(
-        '--dwimask', ExistingNrrd, help='DWI mask', mandatory=True)
+    dwimask = cli.SwitchAttr( '--dwimask', ExistingNrrd, help='DWI mask', mandatory=True)
     t2 = cli.SwitchAttr('--t2', ExistingNrrd, help='T2w', mandatory=True)
-    t2mask = cli.SwitchAttr(
-        '--t2mask', ExistingNrrd, help='T2w mask', mandatory=True)
-    out = cli.SwitchAttr(
-        ['-o', '--out'], NonexistentNrrd, help='EPI corrected DWI', mandatory=True)
+    t2mask = cli.SwitchAttr( '--t2mask', ExistingNrrd, help='T2w mask', mandatory=True)
+    out = cli.SwitchAttr( ['-o', '--out'], NonexistentNrrd, help='EPI corrected DWI', mandatory=True)
 
     def main(self):
         with TemporaryDirectory() as tmpdir:

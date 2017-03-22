@@ -144,7 +144,7 @@ class DwiEpi(GeneratedNode):
     """Epi correction. """
 
     def __init__(self, caseid, dwi, dwimask, t2, t2mask, bthash):
-        self.deps = [dwi, t2, t2mask]
+        self.deps = [dwi, dwimask, t2, t2mask]
         self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
