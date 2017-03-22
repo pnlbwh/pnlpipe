@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 import operator
-from util import logfmt, ExistingNrrd
+from util import logfmt, ExistingNrrd, Nrrd
 from plumbum import local, cli, FG
 from plumbum.cmd import unu
 
@@ -46,7 +46,7 @@ the diffusion volumes are indexed by the last axis."""
         help='DWI nrrd image',
         mandatory=True)
     out = cli.SwitchAttr(
-        ['-o', '--out'], help='Extracted B0 nrrd image', mandatory=True)
+        ['-o', '--out'], Nrrd, help='Extracted B0 nrrd image', mandatory=True)
 
     def main(self):
         hdr = unu("head", self.dwi)[:-1]
