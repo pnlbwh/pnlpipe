@@ -484,34 +484,34 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
     # first delete existing files in case they are stale
     for f in local.cwd.glob(name + '*.sh'):
         f.delete()
-    with open('outputPaths.yml', 'w') as fyml:
-        for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
-            envFile = "_{}_env{}.sh".format(name, comboPaths['id'])
-            sys.stdout.write("Make '{}'...".format(envFile))
-            with open(envFile, 'w') as f:
-                f.write('# Parameter combination {}\n'.format(comboPaths['id']))
-                printVertical(comboPaths['paramCombo'],'#  ', f)
-                f.write('\n')
+    # with open('outputPaths.yml', 'w') as fyml:
+    for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
+        envFile = "_{}_env{}.sh".format(name, comboPaths['id'])
+        sys.stdout.write("Make '{}'...".format(envFile))
+        with open(envFile, 'w') as f:
+            f.write('# Parameter combination {}\n'.format(comboPaths['id']))
+            printVertical(comboPaths['paramCombo'],'#  ', f)
+            f.write('\n')
 
-                # Generated output paths
-                for key, subjectPaths in comboPaths['paths'].iteritems():
-                    f.write('{}={}\n\n'.format(key, escapePath(subjectPaths[0].path)))
-                    fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
-                f.write('caseid={}\n\n'.format(subjectPaths[0].caseid))
-                fyml.write('caseid: {}\n'.format(subjectPaths[0].caseid))
+            # Generated output paths
+            for key, subjectPaths in comboPaths['paths'].iteritems():
+                f.write('{}={}\n\n'.format(key, escapePath(subjectPaths[0].path)))
+                # fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
+            f.write('caseid={}\n\n'.format(subjectPaths[0].caseid))
+            # fyml.write('caseid: {}\n'.format(subjectPaths[0].caseid))
 
-                # Software environment
-                envDicts = []
-                for softname, version, _ in softwareItems(comboPaths['paramCombo'].items()):
-                    m = importlib.import_module('software.' + softname)
-                    if hasattr(m, 'envDict'):
-                        envDicts.append(m.envDict(version))
-                softVars = software.composeEnvDicts(envDicts)
-                for var, val in softVars.items():
-                    f.write('{}={}\n\n'.format(var, val))
-                f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
-            sys.stdout.write("Done.\n".format(envFile))
-    print("Made '{}'".format('outputPaths.yml'))
+            # Software environment
+            envDicts = []
+            for softname, version, _ in softwareItems(comboPaths['paramCombo'].items()):
+                m = importlib.import_module('software.' + softname)
+                if hasattr(m, 'envDict'):
+                    envDicts.append(m.envDict(version))
+            softVars = software.composeEnvDicts(envDicts)
+            for var, val in softVars.items():
+                f.write('{}={}\n\n'.format(var, val))
+            f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
+        sys.stdout.write("Done.\n".format(envFile))
+    # print("Made '{}'".format('outputPaths.yml'))
 
 
 class SymLink(cli.Application):
