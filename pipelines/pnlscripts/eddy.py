@@ -47,6 +47,7 @@ class App(cli.Application):
             ConvertBetweenFileFormats('b0.nrrd', 'b0.nii.gz', 'short')
 
             logging.info('Register each volume to the B0')
+            volsRegistered = []
             for vol in vols:
                 volnii = vol.with_suffix('.nii.gz')
                 ConvertBetweenFileFormats(vol, volnii, 'short')
@@ -60,7 +61,8 @@ class App(cli.Application):
                       ,'-o', volnii
                       ,'-omat', volnii.with_suffix('.txt', depth=2)
                       ,'-paddingsize', '1')
-            fslmerge('-t', 'EddyCorrect-DWI', tmpdir // 'Diffusion-G*.nii.gz')
+                volsRegistered.append(volnii)
+            fslmerge('-t', 'EddyCorrect-DWI', volsRegistered)
             transforms = tmpdir.glob('Diffusion-G*.txt')
             transforms.sort()
 

@@ -22,9 +22,9 @@ class App(cli.Application):
         mandatory=True)
 
     def main(self):
-        from util.scripts import axisalign_py, center_py
+        from util.scripts import axisAlign_py, center_py
         from plumbum.cmd import ConvertBetweenFileFormats, unu
-        axisalign_py('--force', '-i', self.infile, '-o', self.out)
+        axisAlign_py('--force', '-i', self.infile, '-o', self.out)
         center_py('-i', self.out, '-o', self.out)
 
 

@@ -39,7 +39,7 @@ class Node(object):
         return self.__class__.__name__
 
     def show(self):
-        depsString = ','.join([d.show() for d in self.deps] + self.params)
+        depsString = ','.join([d.show() for d in self.deps] + [str(p) for p in self.params])
         return '{}({})'.format(self.name(), depsString)
 
 def concat(l):
@@ -114,7 +114,8 @@ class GeneratedNode(Node):
             trimmedRepeats.append(trimmed)
 
         if repeatedNodes:
-            return '{}/{}({})'.format('-'.join(sorted(trimmedRepeats)), self.name(), ','.join(depStrings))
+            # return '{}/{}({})'.format('-'.join(sorted(trimmedRepeats)), self.name(), ','.join(depStrings))
+            return '{}({})-{}'.format(self.name(), ','.join(depStrings), '-'.join(sorted(trimmedRepeats)))
         return '{}({})'.format(self.name(), ','.join(depStrings))
 
 class Src(Node):

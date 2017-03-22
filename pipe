@@ -496,7 +496,9 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
                 # Generated output paths
                 for key, subjectPaths in comboPaths['paths'].iteritems():
                     f.write('{}={}\n'.format(key, escapePath(subjectPaths[0].path)))
-                    fyml.write('{}: {}\n'.format(key, subjectPaths[0].path))
+                    fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
+                f.write('caseid={}\n'.format(subjectPaths[0].caseid))
+                fyml.write('caseid: {}\n'.format(subjectPaths[0].caseid))
 
                 # Software environment
                 envDicts = []

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from plumbum import local, FG, cli, ProcessExecutionError
-from pnlscripts.util.scripts import convertdwi_py, atlas_py, fs2dwi_py, eddy_py, alignAndCenter_py
+from pnlscripts.util.scripts import convertdwi_py, atlas_py, fs2dwi_py, eddy_py, alignAndCenter_py, bet_py
 from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
@@ -143,7 +143,7 @@ class DwiEpi(GeneratedNode):
     """Epi correction. """
 
     def __init__(self, caseid, dwi, dwimask, t2, t2mask, bthash):
-        self.deps = [dwi, t2, t2mask]
+        self.deps = [dwi, dwimask, t2, t2mask]
         self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
@@ -151,26 +151,21 @@ class DwiEpi(GeneratedNode):
         needDeps(self)
         with BRAINSTools.env(self.bthash):
             from pnlscripts.util.scripts import epi_py
-            epi_py('--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
+            epi_py('--force', '--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
                    '--t2', self.t2.path(), '--t2mask', self.t2mask.path(),
                    '-o', self.path())
 
 
-class DwiMaskHcpBet(GeneratedNode):
-    def __init__(self, caseid, dwi, bthash):
+class DwiMaskBet(GeneratedNode):
+    def __init__(self, caseid, dwi, threshold, bthash):
         self.deps = [dwi]
-        self.params = [bthash]
+        self.params = [threshold, bthash]
         GeneratedNode.__init__(self, locals())
 
     def build(self):
         needDeps(self)
-        from plumbum.cmd import bet
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
-            tmpdir = local.path(tmpdir)
-            nii = tmpdir / 'dwi.nii.gz'
-            convertdwi_py('-i', self.dwi.path(), '-o', nii)
-            bet(nii, tmpdir / 'dwi', '-m', '-f', '0.1')
-            convertImage(tmpdir / 'dwi_mask.nii.gz', self.path(), self.bthash)
+            bet_py('--force', '-f', self.threshold, '-i', self.dwi.path(), '-o', self.path())
 
 
 class UkfDefault(GeneratedNode):

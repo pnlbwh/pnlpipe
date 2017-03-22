@@ -1,12 +1,17 @@
+* make symlinks same date as targets
+* show params with meaning
+* add permutation check to bse.py (currently assumes correct dwi permutation)
+* make env command have symlinks option
+* add env.sh files to software modules
+* make file argument non-list in caseid field of params config file
+* BUG: symlink: don't skip symlinks, remake them
 * software envs need to raise an exception if their paths don't exist, e.g could
   be deleted during pipeline run
-* sty: clarify when 'caseid' gets special treatment as a parameter
-* add freesurfer version validator pipelines and fs node
 * ENH: add check for correct DWI axes permutation
-* Make env subcommand
 * ENH: add ukf params
 * STY: change pnlscripts.util to pnlscripts
 * ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
 * think about multi file nodes
 * STY: add log file output to pnlscripts scripts
 * STY: use python logging correctly
+* sty: clarify when 'caseid' gets special treatment as a parameter

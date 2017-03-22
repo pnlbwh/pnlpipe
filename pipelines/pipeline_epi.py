@@ -1,4 +1,4 @@
-from pipelines.pnllib import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, DoesNotExistException
+from pipelines.pnllib import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, DoesNotExistException
 from pipelib import Src
 import pipelib
 
@@ -11,6 +11,7 @@ def makePipeline(caseid,
                  t2maskPathKey='',
                  t1maskPathKey='',
                  dwimaskPathKey='',
+                 betThreshold=0.1,
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
@@ -26,7 +27,7 @@ def makePipeline(caseid,
     pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], hash_BRAINSTools)
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(
-        caseid, dwimaskPathKey) if dwimaskPathKey else DwiMaskHcpBet(caseid, pipeline['dwied'], hash_BRAINSTools)
+        caseid, dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(caseid, pipeline['dwied'], betThreshold, hash_BRAINSTools)
     pipeline['t1mask'] = Src(
         caseid,
         t1maskPathKey) if t1maskPathKey  else T1wMaskMabs(

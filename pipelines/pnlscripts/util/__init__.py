@@ -18,21 +18,28 @@ from plumbum.cli.switches import Predicate
 @Predicate
 def ExistingNrrdOrNifti(val):
     p = local.path(val)
-    if '.nhdr' not in p.suffixes and '.nrrd' not in p.suffixes and '.nii' not in p.suffixes and not p.exists():
+    if ('.nhdr' not in p.suffixes and '.nrrd' not in p.suffixes and '.nii' not in p.suffixes) or not p.exists():
         raise ValueError("%r is not an existing nrrd or nifti file" % (val,))
+    return p
+
+@Predicate
+def Nrrd(val):
+    p = local.path(val)
+    if ('.nhdr' not in p.suffixes and '.nrrd' not in p.suffixes):
+        raise ValueError("%r must be in nrrd format, i.e. have .nhdr or .nrrd extension." % (val,))
     return p
 
 @Predicate
 def ExistingNrrd(val):
     p = local.path(val)
-    if '.nhdr' not in p.suffixes and '.nrrd' not in p.suffixes and not p.exists():
+    if ('.nhdr' not in p.suffixes and '.nrrd' not in p.suffixes) or not p.exists():
         raise ValueError("%r is not an existing nrrd file" % (val,))
     return p
 
 @Predicate
 def NonexistentNrrd(val):
     p = local.path(val)
-    if '.nhdr' not in p.suffixes and '.nrrd' not in p.suffixes and p.exists():
+    if ('.nhdr' not in p.suffixes and '.nrrd' not in p.suffixes) or p.exists():
         raise ValueError("%r must be a non-existent nrrd file" % (val,))
     return p
 

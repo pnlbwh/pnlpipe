@@ -1,5 +1,5 @@
 import sys
-from pipelines.pnllib import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskHcpBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, DoesNotExistException
+from pipelines.pnllib import StrctXc, DwiXc, FsInDwiDirect, FreeSurferUsingMask, T1wMaskMabs, DwiMaskBet, DwiEd, UkfDefault, Wmql, TractMeasures, T2wMaskRigid, DwiEpi, DoesNotExistException
 from pipelib import Src
 import pipelib
 
@@ -21,8 +21,7 @@ def makePipeline(caseid,
     pipeline['dwi'] = Src(caseid, dwiPathKey)
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(caseid,
-                              dwimaskPathKey) if dwimaskPathKey else DwiMaskHcpBet(
-                                  caseid, pipeline['dwi'], hash_BRAINSTools)
+                              dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(caseid, pipeline['dwi'], 0.1, hash_BRAINSTools)
     pipeline['t1mask'] = T1wMaskMabs(caseid, pipeline['t1xc'],
                                      hash_trainingDataT1AHCC, hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],

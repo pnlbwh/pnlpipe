@@ -30,12 +30,12 @@ clean: ; rm -rf *.err *.out
 # TODO add convertdwi test
 # TODO add makeRigidMask test
 
-_data/xcFromNii.nrrd: ../alignAndCenter.py ../center.py ../axisalign.py
+_data/xcFromNii.nrrd: ../alignAndCenter.py ../center.py ../axisAlign.py
 	$(call setup, t1)
 	ConvertBetweenFileFormats $(t1) /tmp/t1.nii.gz
 	../alignAndCenter.py -i /tmp/t1.nii.gz -o $@
 
-_data/xcFromNrrd.nrrd: ../alignAndCenter.py ../center.py ../axisalign.py
+_data/xcFromNrrd.nrrd: ../alignAndCenter.py ../center.py ../axisAlign.py
 	$(call setup, t1)
 	../alignAndCenter.py -i $(t1) -o $@
 
