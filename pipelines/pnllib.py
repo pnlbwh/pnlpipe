@@ -107,7 +107,6 @@ class DwiHcp(GeneratedNode):
             (datadir / 'data.nii.gz').move(self.path())
             (datadir / 'bvals').move(self.path().with_suffix('.bval', depth=2))
             (datadir / 'bvecs').move(self.path().with_suffix('.bvec', depth=2))
-            (tmpdir / 'hcp').move(self.path()[:-7])
 
 
 class DwiEd(GeneratedNode):
