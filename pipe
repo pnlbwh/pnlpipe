@@ -486,18 +486,18 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
         f.delete()
     with open('outputPaths.yml', 'w') as fyml:
         for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
-            envFile = name + str(comboPaths['id']) + '.sh'
+            envFile = "_{}_env{}.sh".format(name, comboPaths['id'])
             sys.stdout.write("Make '{}'...".format(envFile))
             with open(envFile, 'w') as f:
-                f.write('\n')
                 f.write('# Parameter combination {}\n'.format(comboPaths['id']))
                 printVertical(comboPaths['paramCombo'],'#  ', f)
+                f.write('\n')
 
                 # Generated output paths
                 for key, subjectPaths in comboPaths['paths'].iteritems():
-                    f.write('{}={}\n'.format(key, escapePath(subjectPaths[0].path)))
+                    f.write('{}={}\n\n'.format(key, escapePath(subjectPaths[0].path)))
                     fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
-                f.write('caseid={}\n'.format(subjectPaths[0].caseid))
+                f.write('caseid={}\n\n'.format(subjectPaths[0].caseid))
                 fyml.write('caseid: {}\n'.format(subjectPaths[0].caseid))
 
                 # Software environment
@@ -508,7 +508,7 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
                         envDicts.append(m.envDict(version))
                 softVars = software.composeEnvDicts(envDicts)
                 for var, val in softVars.items():
-                    f.write('{}={}\n'.format(var, val))
+                    f.write('{}={}\n\n'.format(var, val))
                 f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
             sys.stdout.write("Done.\n".format(envFile))
     print("Made '{}'".format('outputPaths.yml'))
@@ -732,7 +732,7 @@ def classFactory(name,
     def wrappedMakePipeline(self, *args, **kwargs):
         return makePipelineFn(*args, **kwargs)
 
-    paramsFile = local.path('params.' + name)
+    paramsFile = local.path(name + '.params')
     newclass = type(name, (BaseClass, ), {"name": name,
                                           "makePipeline": wrappedMakePipeline,
                                           "makePipeline_orig": makePipelineFn,
