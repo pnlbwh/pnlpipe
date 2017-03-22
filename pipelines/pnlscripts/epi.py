@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from os import getpid
-from util import logfmt, TemporaryDirectory, ExistingNrrd, NonexistentNrrd
+from util import logfmt, TemporaryDirectory, ExistingNrrd, NonexistentNrrd, Nrrd
 from util.scripts import bse_py, antsApplyTransformsDWI_py
 from util.antspath import antsRegistrationSyN_sh, antsApplyTransforms, antsRegistration
 from plumbum import local, cli
 from plumbum.cmd import unu
+import sys
 
 import logging
 logger = logging.getLogger()
@@ -16,13 +17,18 @@ class App(cli.Application):
 
     debug = cli.Flag(
         ['-d', '--debug'], help='Debug, save intermediate files in \'epidebug-<pid>\'')
+    force = cli.Flag(
+        ['-f', '--force'], help='Force overwrite if output already exists')
     dwi = cli.SwitchAttr('--dwi', ExistingNrrd, help='DWI', mandatory=True)
     dwimask = cli.SwitchAttr( '--dwimask', ExistingNrrd, help='DWI mask', mandatory=True)
     t2 = cli.SwitchAttr('--t2', ExistingNrrd, help='T2w', mandatory=True)
     t2mask = cli.SwitchAttr( '--t2mask', ExistingNrrd, help='T2w mask', mandatory=True)
-    out = cli.SwitchAttr( ['-o', '--out'], NonexistentNrrd, help='EPI corrected DWI', mandatory=True)
+    out = cli.SwitchAttr( ['-o', '--out'], Nrrd, help='EPI corrected DWI', mandatory=True)
 
     def main(self):
+        if not self.force and self.out.exists():
+            logging.error("'{}' already exists, use '--force' to force overwrite.".format(self.out))
+            sys.exit(1)
         with TemporaryDirectory() as tmpdir:
             tmpdir = local.path(tmpdir)
             bse = tmpdir / "maskedbse.nrrd"

@@ -152,7 +152,7 @@ class DwiEpi(GeneratedNode):
         needDeps(self)
         with BRAINSTools.env(self.bthash):
             from pnlscripts.util.scripts import epi_py
-            epi_py('--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
+            epi_py('--force', '--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
                    '--t2', self.t2.path(), '--t2mask', self.t2mask.path(),
                    '-o', self.path())
 
