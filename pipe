@@ -518,6 +518,9 @@ class SymLink(cli.Application):
     """Makes simply named symlinks to fully named nodes"""
 
     def main(self):
+        pipename = self.parent.name
+        for symlink in (pipelib.OUTDIR // '*/{}_*'.format(self.parent.name)):
+            symlink.delete()
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             print("# Make symlinks for parameter combination {}".format(
@@ -530,7 +533,7 @@ class SymLink(cli.Application):
                 ]
                 for p in existingPaths:
                     symlink = local.path(pipelib.OUTDIR / p.caseid /
-                                         (key + ''.join(p.path.suffixes)))
+                                         (pipename + '_' + key + ''.join(p.path.suffixes)))
                     sys.stdout.write("Make symlink '{}' --> '{}' ".format(
                         symlink, p.path))
                     if symlink.exists():
