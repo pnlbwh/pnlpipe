@@ -1,5 +1,5 @@
-* make symlinks same date as targets
-* show params with meaning
+* move atlas.py root flags to subcommands (otherwise help doesn't work)
+* show params with meaning in filenames
 * add permutation check to bse.py (currently assumes correct dwi permutation)
 * make env command have symlinks option
 * add env.sh files to software modules

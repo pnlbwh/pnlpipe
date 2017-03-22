@@ -157,7 +157,7 @@ def lookupPathKey(key, caseid, pathsDict):
         return filepath
     except KeyError:
         msg = """Key '{key}' not found in pipelib.INPUT_PATHS.
-Your pipeline has a node of type 'Src(caseid, {key})', but {key} and its path have not been set in your 'inputPaths.yml'.
+Your pipeline has a node of type 'Src(caseid, {key})', but {key} and its path have not been set in your 'srcpaths.yml'.
 """.format(key=key)
         raise MissingInputPathsKeyException(msg)
 

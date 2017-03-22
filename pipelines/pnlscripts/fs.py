@@ -48,7 +48,7 @@ class App(cli.Application):
 
         if not self.force and self.out.exists():
             logging.error(
-                'Output directory exists, use -f to force an overwrite.')
+                'Output directory exists, use -f/--force to force an overwrite.')
             sys.exit(1)
 
         with TemporaryDirectory() as tmpdir, local.env(SUBJECTS_DIR=tmpdir):

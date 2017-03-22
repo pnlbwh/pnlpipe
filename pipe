@@ -15,7 +15,7 @@ from collections import defaultdict
 from pprint import pprint
 import software
 
-inputPathsFile = "inputPaths.yml"
+inputPathsFile = "srcpaths.yml"
 
 
 def printTable(myDict, colList=None):
@@ -264,7 +264,7 @@ class Run(cli.Application):
         ['-w', '--want'], help='target node to build, e.g. fsindwi')
 
     def main(self, *caseids):
-        readAndSetInputPaths()  # reads inputPaths.yml into pipelib.INPUT_PATHS
+        readAndSetInputPaths()  # reads source paths into pipelib.INPUT_PATHS
 
         paramDicts = readParams(self.parent.paramsFile)
         if any('*mandatory*' in concat(p.values()) for p in paramDicts):
@@ -280,7 +280,7 @@ class Run(cli.Application):
 
         paramsList = expandParams(paramDicts)
 
-        # Check all necessary software exists
+        print('Check that prerequisite software exists')
         missingSoftwareModules = []
         missingSoftware = []
         for softname, version, moduleFile in softwareItems(list(set(filter(lambda x: not isinstance(x[1],list), concat([p.items() for p in paramsList]))))):
@@ -292,13 +292,14 @@ class Run(cli.Application):
                 missingSoftware.append(module.getPath(version))
 
         for f in missingSoftwareModules:
-            print("Missing: {}".format(f))
+            print("* WARNING: missing {}".format(f))
         for p in missingSoftware:
-            print("Missing: {}".format(p))
+            print("* WARNING: missing: {}".format(p))
         if missingSoftwareModules:
             sys.exit(1)
         if missingSoftware:
-            print("Run './pipe {} make' first to build all prequisite software before running the pipeline again".format(self.parent.name))
+            print("Some software components are missing so some parts of the pipeline won't run.")
+            print("Run './pipe {} make' to build all prequisite software.".format(self.parent.name))
             sys.exit(1)
 
 
@@ -408,11 +409,11 @@ class Init(cli.Application):
 # above, otherwise the yaml reader will read them as 1, 2, 3, etc. instead of
 # '001', '002', '003'.
 #
-# The values for keys like dwiKey come from the names in inputPaths.yml. For
+# The values for keys like dwiKey come from the names in srcpaths.yml. For
 # example,
 #    dwiKey: ['dwiharmonized', 'dwi']
 # means that the pipeline will be run for the filepaths of 'dwiharmonized' and
-# 'dwi' in inputPaths.yml (caseid will automatically be substituted). These are
+# 'dwi' in srcpaths.yml (caseid will automatically be substituted). These are
 # meant to be descriptive names that describe your input paths and are used in
 # naming the generated output.
 
@@ -442,6 +443,7 @@ class Make(cli.Application):
         for module, commit in getRequiredSoftwareModules(paramDicts):
             print("Make {}".format(module.getPath(commit)))
             module.make(commit)
+        print
 
         # Make shell environment files
         makeEnvFiles(self.parent.name, self.parent.paramsFile, self.parent.makePipeline)

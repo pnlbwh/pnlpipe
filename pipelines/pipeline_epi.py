@@ -5,13 +5,14 @@ import pipelib
 DEFAULT_TARGET = 'tractmeasures'
 
 def makePipeline(caseid,
-                 dwiPathKey='dwi',
-                 t2PathKey='t2',
-                 t1PathKey='t1',
+                 dwiPathKey='dwiraw',
+                 t2PathKey='t2raw',
+                 t1PathKey='t1raw',
                  t2maskPathKey='',
                  t1maskPathKey='',
                  dwimaskPathKey='',
                  betThreshold=0.1,
+                 version_FreeSurfer='5.3.0',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
@@ -19,12 +20,12 @@ def makePipeline(caseid,
                 ):
     """Makes the PNL's standard pipeline with EPI distortion correction. """
     pipeline = { '_name' :  "EPI correction pipeline" }
-    pipeline['t1'] = Src(caseid, t1PathKey)
-    pipeline['dwi'] = Src(caseid, dwiPathKey)
-    pipeline['t2'] = Src(caseid, 't2')
-    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
-    pipeline['t2xc'] = StrctXc(caseid, pipeline['t2'], hash_BRAINSTools)
-    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'], hash_BRAINSTools)
+    pipeline['t1raw'] = Src(caseid, t1PathKey)
+    pipeline['dwiraw'] = Src(caseid, dwiPathKey)
+    pipeline['t2raw'] = Src(caseid, 't2raw')
+    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1raw'], hash_BRAINSTools)
+    pipeline['t2xc'] = StrctXc(caseid, pipeline['t2raw'], hash_BRAINSTools)
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwiraw'], hash_BRAINSTools)
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(
         caseid, dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(caseid, pipeline['dwied'], betThreshold, hash_BRAINSTools)
@@ -39,7 +40,7 @@ def makePipeline(caseid,
     pipeline['dwiepi'] = DwiEpi(caseid, pipeline['dwied'], pipeline['dwimask'],
                                 pipeline['t2xc'], pipeline['t2mask'],hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
-                                         pipeline['t1mask'])
+                                         pipeline['t1mask'], version_FreeSurfer)
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
                                         pipeline['dwiepi'], pipeline['dwimask'], hash_BRAINSTools)
     pipeline['ukf'] = UkfDefault(caseid, pipeline['dwiepi'],

@@ -9,6 +9,7 @@ def makePipeline(caseid,
                  t1PathKey,
                  dwiPathKey,
                  dwimaskPathKey='',
+                 version_FreeSurfer='5.3.0',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
@@ -25,7 +26,7 @@ def makePipeline(caseid,
     pipeline['t1mask'] = T1wMaskMabs(caseid, pipeline['t1xc'],
                                      hash_trainingDataT1AHCC, hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
-                                         pipeline['t1mask'])
+                                         pipeline['t1mask'], version_FreeSurfer)
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
                                         pipeline['dwi'], pipeline['dwimask'],
                                         hash_BRAINSTools)
