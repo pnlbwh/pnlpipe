@@ -39,7 +39,7 @@ class Node(object):
         return self.__class__.__name__
 
     def show(self):
-        depsString = ','.join([d.show() for d in self.deps] + self.params)
+        depsString = ','.join([d.show() for d in self.deps] + [str(p) for p in self.params])
         return '{}({})'.format(self.name(), depsString)
 
 def concat(l):
