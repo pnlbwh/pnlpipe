@@ -41,7 +41,8 @@ class App(cli.Application):
         mandatory=True)
 
     def main(self):
-	fshome = local.path(os.getenv('FREESURFER_HOME'))
+        fshome = local.path(os.getenv('FREESURFER_HOME'))
+
         if not fshome:
             logging.error('Set FREESURFER_HOME first.')
             sys.exit(1)
@@ -52,10 +53,10 @@ class App(cli.Application):
             sys.exit(1)
 
         with TemporaryDirectory() as tmpdir, local.env(SUBJECTS_DIR=tmpdir):
-            t = local.path(tmpdir)
+
             if '.nrrd' in self.t1.suffixes or '.nhdr' in self.t1.suffixes:
                 logging.info('t1 is in nrrd format, convert to nifti')
-                t1 = t / 't1.nii.gz'
+                t1 = tmpdir / 't1.nii.gz'
                 ConvertBetweenFileFormats(self.t1, t1)
             else:
                 t1 = self.t1
@@ -63,23 +64,23 @@ class App(cli.Application):
             if self.t1mask:
                 logging.info('Mask the t1')
                 ImageMath('3', t / 't1masked.nii.gz', 'm', t1, self.t1mask)
-                t1 = t / 't1masked.nii.gz'
+                t1 = tmpdir / 't1masked.nii.gz'
                 skullstrip = '-noskullstrip'
-	    else:
-		skullstrip = None
+            else:
+                skullstrip = None
 
-	    logging.info("Run freesurfer on " + t1)
-	    subjid = t1.stem
+            logging.info("Run freesurfer on " + t1)
+            subjid = t1.stem
 
-	    from plumbum.cmd import bash
-	    bash('-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -s '+subjid+' -i '+t1+' -autorecon1')
-	    (t / subjid / 'mri/T1.mgz').copy(t / subjid / 'mri/brainmask.mgz')
-	    bash('-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon2 -subjid '+subjid)
-	    bash('-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon3 -subjid '+subjid)
-	    logging.info("Freesurfer done.")
+            from plumbum.cmd import bash
+            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -s '+subjid+' -i '+t1+' -autorecon1'] & FG
+            (tmpdir / subjid / 'mri/T1.mgz').copy(tmpdir / subjid / 'mri/brainmask.mgz')
+            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon2 -subjid '+subjid] & FG
+            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon3 -subjid '+subjid] & FG
+            logging.info("Freesurfer done.")
 
-	    (t / subjid).copy(self.out, override=True)  # overwrites existing
-	    logging.info("Made " + self.out)
+            (tmpdir / subjid).copy(self.out, override=True)  # overwrites existing
+            logging.info("Made " + self.out)
 
 
 if __name__ == '__main__':
