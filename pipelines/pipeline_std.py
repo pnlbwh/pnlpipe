@@ -6,10 +6,11 @@ import pipelib
 DEFAULT_TARGET = 'tractmeasures'
 
 def makePipeline(caseid,
-                 t1PathKey='t1',
-                 dwiPathKey='dwi',
+                 t1PathKey='t1raw',
+                 dwiPathKey='dwiraw',
                  dwimaskPathKey='',
                  t1maskPathKey='',
+                 version_FreeSurfer='5.3.0',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
@@ -17,19 +18,19 @@ def makePipeline(caseid,
                  ):
     """Makes the PNL's standard pipeline. """
     pipeline = {'_name': "standard PNL pipeline"}
-    pipeline['t1'] = Src(caseid, t1PathKey)
-    pipeline['dwi'] = Src(caseid, dwiPathKey)
-    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'],
+    pipeline['t1raw'] = Src(caseid, t1PathKey)
+    pipeline['dwiraw'] = Src(caseid, dwiPathKey)
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwiraw'],
                                 hash_BRAINSTools)  # works on nrrd or nii
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
-    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
+    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1raw'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(caseid,
                               dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(
                                   caseid, pipeline['dwied'], 0.1, hash_BRAINSTools)
-    pipeline['t1mask'] = Src(caseid, 't1mask') if t1maskPathKey else T1wMaskMabs(
+    pipeline['t1mask'] = Src(caseid, t1maskPathKey) if t1maskPathKey else T1wMaskMabs(
         caseid, pipeline['t1xc'], hash_trainingDataT1AHCC, hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
-                                         pipeline['t1mask'])
+                                         pipeline['t1mask'], version_FreeSurfer)
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
                                         pipeline['dwied'], pipeline['dwimask'],
                                         hash_BRAINSTools)

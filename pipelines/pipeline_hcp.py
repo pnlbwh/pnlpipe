@@ -31,7 +31,7 @@ def makePipeline(caseid,
     pipeline['t1mask'] = T1wMaskMabs(caseid, pipeline['t1xc'],
                                      hash_trainingDataT1AHCC, hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
-                                         pipeline['t1mask'])
+                                         pipeline['t1mask'], version_FreeSurfer)
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
                                         pipeline['dwi'], pipeline['dwimask'],
                                         hash_BRAINSTools)

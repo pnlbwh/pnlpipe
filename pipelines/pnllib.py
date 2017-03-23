@@ -5,6 +5,7 @@ from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
+import software.FreeSurfer
 
 defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
                     ("numTensor", "2"), ("recordLength", "1.7"),
@@ -25,12 +26,12 @@ def assertInputKeys(pipelineName, keys):
 
 def tractMeasureStatus(paramPoints, makePipelineFn):
     import pandas as pd
-    from pipelines.pnlscripts.summarizeTractMeasures import summarize
     pipelines = [makePipelineFn(**paramPoint) for paramPoint in paramPoints]
     csvs = [p['tractmeasures'].path() for p in pipelines
             if p['tractmeasures'].path().exists()]
     if csvs:
         df = pd.concat((pd.read_csv(csv) for csv in csvs))
+        from pipelines.pnlscripts.summarizeTractMeasures import summarize
         summarize(df)
 
 
@@ -251,8 +252,9 @@ class T1wMaskMabs(GeneratedNode):
 
 
 class FreeSurferUsingMask(GeneratedNode):
-    def __init__(self, caseid, t1, t1mask):
+    def __init__(self, caseid, t1, t1mask, version_FreeSurfer):
         self.deps = [t1, t1mask]
+        self.params = [version_FreeSurfer]
         GeneratedNode.__init__(self, locals())
 
     def path(self):
@@ -260,6 +262,8 @@ class FreeSurferUsingMask(GeneratedNode):
 
     def build(self):
         needDeps(self)
+        # make sure FREESURFER_HOME is set to right version
+        software.FreeSurfer.validate(self.version_FreeSurfer)
         from pnlscripts.util.scripts import fs_py
         fs_py['-i', self.t1.path(), '-m', self.t1mask.path(), '-f', '-o',
               self.path().dirname.dirname] & FG

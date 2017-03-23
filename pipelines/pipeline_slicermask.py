@@ -30,16 +30,50 @@ class DwiMaskSlicer(GeneratedNode):
             maskfilter['-scale', 2, self.path(), 'clean', 'otsumask.nii',
                        '-force'] & FG
 
+class DiceCoefficient(GeneratedNode):
+    def __init__(self, caseid, maskManual, mask, hash_BRAINSTools):
+        self.deps = [maskManual, mask]
+        self.params = [hash_BRAINSTools]
+        self.ext = '.txt'
+        GeneratedNode.__init__(self, locals())
+
+    def build(self):
+        from plumbum.cmd import ImageMath
+        needDeps(self)
+        with TemporaryDirectory() as tmpdir, software.BRAINSTools(self.hash_BRAINSTools):
+            tmptxt = tmpdir / 'dice.txt'
+            ImageMath[3, tmptxt, "DiceAndMinDistSum", self.maskManual, self.mask]
+            with open(tmptxt, 'r') as f:
+                coeff = f.read().split('')[-1]
+            with open(self.path(), 'w') as f:
+                f.write(coeff)
+
 
 def makePipeline(caseid,
                  dwiPathKey='dwi',
+                 dwimaskManualPathKey='dwimaskManual',
                  version_Slicer='4.7.0',
+                 hash_BRAINSTools='41353e8',
                  hash_mrtrix3='97e4b3b'):
     pipeline = {'_name': "dwi masking test"}
     pipeline['dwi'] = Src(caseid, dwiPathKey)
+    pipeline['dwimaskManual'] = Src(caseid, dwimaskManualPathKey)
     pipeline['dwimask'] = DwiMaskSlicer(caseid, pipeline['dwi'],
                                         version_Slicer, hash_mrtrix3)
+    pipeline['dice'] = DiceCoefficient(caseid, pipeline['dwimaskManual'], pipeline['dwimask'], hash_BRAINSTools)
     return pipeline
+
+
+def status(paramPoints):
+    pipelines = [makePipeline(**paramPoint) for paramPoint in paramPoints]
+    coeff_paths = [p['dice'].path() for p in pipelines
+            if p['dice'].path().exists()]
+    coeffs = map(lambda f: open(f,'r').read(), coeff_paths)
+    if coeffs:
+        avg = sum(coeffs) / len(coeffs)
+        print("Average dice coefficient: {}".format(avg))
+    else:
+        print("No dice coefficients computed yet.")
 
 # /rfanfs/pnl-zorro/projects/Lyall_R03/Slicer-build2/Slicer-build/Slicer --launch DiffusionWeightedVolumeMasking  dwi.nhdr dwi_b0.nrrd dwi_OTSUtensormask.nrrd --baselineBValueThreshold 1000 --removeislands
 # /rfanfs/pnl-zorro/projects/Lyall_R03/Slicer-build2/Slicer-build/Slicer --launch  ResampleScalarVolume dwi_OTSUtensormask.nrrd dwi_OTSUtensormask.nii

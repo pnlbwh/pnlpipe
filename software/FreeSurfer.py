@@ -27,20 +27,23 @@ def readFreeSurferVersion():
 def validate(version):
     currentVersion = readFreeSurferVersion()
     if not currentVersion:
-        print("You need to make sure FreeSurfer version {} is installed \
+        raise Exception("You need to make sure FreeSurfer version {} is installed \
 and FREESURFER_HOME is set (currently unset).".format(version))
-        sys.exit(1)
     if currentVersion != version:
-        print("You need to make sure FreeSurfer version {} is installed \
+        raise Exception("You need to make sure FreeSurfer version {} is installed \
 and FREESURFER_HOME is set (currently set to version {}).".format(version,
                                                                           currentVersion))
-        sys.exit(1)
 
     print("Correct version ({}) of FreeSurfer is set in FREESURFER_HOME.".format(version))
 
 def make(version=DEFAULT_VERSION):
-    validate(version)
+    try:
+        validate(version)
+    except Exception as e:
+        print('')
+        print('**WARNING**')
+        print(e)
+        print('')
 
 def getPath(version=DEFAULT_VERSION):
-    validate(version)
-    return os.environ.get('FREESURFER_HOME')
+    return os.environ.get('FREESURFER_HOME', '(FREESURFER_HOME not set)')

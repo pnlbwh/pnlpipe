@@ -1,6 +1,6 @@
 import sys
 import os
-from software import getSoftDir, checkExists, TemporaryDirectory, downloadGithubRepo, getCommitInfo
+from software import getSoftDir, checkExists, TemporaryDirectory, downloadGithubRepo, getCommitInfo, envFromDict
 import logging
 from plumbum import local, FG
 from plumbum.cmd import wget, tar
