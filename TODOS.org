@@ -1,3 +1,4 @@
+* replace ConvertBetweenFileFormat calls with allowLossyConversion in DWIConvert
 * move atlas.py root flags to subcommands (otherwise help doesn't work)
 * show params with meaning in filenames
 * add permutation check to bse.py (currently assumes correct dwi permutation)

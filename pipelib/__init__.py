@@ -5,14 +5,8 @@ import pickle
 # import hashlib
 # from abc import abstractmethod, abstractproperty
 from collections import Counter
-
-def logfmt(scriptname):
-    return '%(asctime)s ' + local.path(scriptname).name + ' %(levelname)s  %(message)s'
-
 import logging
-logger = logging.getLogger()
-#logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
-logging.basicConfig(level=logging.INFO, format=logfmt(__file__))
+logger = logging.getLogger(__name__)
 from python_log_indenter import IndentedLoggerAdapter
 log = IndentedLoggerAdapter(logger, indent_char='.')
 

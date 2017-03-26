@@ -8,15 +8,18 @@ except ImportError:
     )
 import sys
 import yaml
-import pipelib
 import itertools
 import importlib
 from collections import defaultdict
 from pprint import pprint
+import logging
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)5s - %(name)s %(message)s', datefmt="%Y-%m-%d %H:%M")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s', datefmt="%Y-%m-%d %H:%M")
+logger = logging.getLogger(__name__)
+import pipelib
 import software
 
 inputPathsFile = "srcpaths.yml"
-
 
 def printTable(myDict, colList=None):
     """ Pretty print a list of dictionaries (myDict) as a dynamically sized table.
@@ -33,17 +36,16 @@ def printTable(myDict, colList=None):
         print(formatStr.format(*item))
 
 
-def printVertical(d, prepend='', fd=sys.stdout):
+def printVertical(d, prepend='', fd=sys.stderr):
     for k, v in d.items():
        fd.write("{}{:<25} {:<15}".format(prepend,k, v) + '\n')
 
 
 def readAndSetInputPaths():
     if not local.path(inputPathsFile).exists():
-        print(
+        raise Exception(
             "Missing {}, first make one using './pipe init' or a text editor".format(
                 inputPathsFile))
-        sys.exit(1)
     with open(inputPathsFile, 'r') as f:
         inputPathDict = yaml.load(f)
     pipelib.INPUT_PATHS = {}
@@ -54,9 +56,8 @@ def readAndSetInputPaths():
             continue
         pipelib.INPUT_PATHS[key] = local.path(
             val.replace(caseidPattern, '{case}'))
-    print("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
+    logging.info("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
     printVertical(pipelib.INPUT_PATHS)
-    print
     # pprint(pipelib.INPUT_PATHS)
 
 
@@ -72,25 +73,22 @@ class App(cli.Application):
 
 def checkPaths(pathsDict):
     allexist = True
-    print('Check keys')
+    logging.info('Check keys')
     for key, path in pathsDict.items():
-        print('{}: {}'.format(key, path))
+        logging.info('{}: {}'.format(key, path))
         if key == 'caseid':
             continue
         if not local.path(path).exists():
-            print("'{}' does not exist, is this intended?".format(path))
+            logging.warning("'{}' does not exist, is this intended?".format(path))
             allexist = False
     if not pathsDict.get('caseid', None):
-        print(
-            "Error: 'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects."
-        )
-        print("'{}' not made".format(inputPathsFile))
-        sys.exit(1)
-    print('')
+        errmsg = """'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects.
+'{}' not made""".format(inputPathsFile)
+        raise Exception(errmsg)
     if allexist:
-        print('All paths exist.')
+        logging.info('All paths exist.')
         return
-    print(
+    logging.warning(
         "Warning: Some paths don't exist for the given caseid, so pipeline may fail to run."
     )
 
@@ -99,7 +97,7 @@ def writePaths(pathsDict, outfile):
     checkPaths(pathsDict)
     with open(outfile, 'w') as f:
         yaml.safe_dump(pathsDict, f, default_flow_style=False)
-    print("Made '{}'".format(outfile))
+    logging.info("Made '{}'".format(outfile))
 
 
 def readPathsYml(pathsDir):
@@ -107,11 +105,10 @@ def readPathsYml(pathsDir):
     with open(pathsDir / 'paths.yml', 'r') as f:
         try:
             relativePaths = yaml.load(f, Loader=yaml.loader.BaseLoader)
-        except yaml.parser.ParserError as err:
-            print(err)
-            print(
+        except yaml.parser.ParserError, e:
+            loggin.error(
                 'Error parsing {}, is there a typo? (And are the path templates in quotes?)'.format(
-                    pathsDir / 'paths.yml'))
+                    pathsDir / 'paths.yml'), exc_info=True)
             sys.exit(1)
     return relativePaths
 
@@ -127,7 +124,7 @@ class PipeInit(cli.Application):
 
     def main(self):
         if local.path(inputPathsFile).exists():
-            print(
+            logging.info(
                 "'{}' already exists, won't overwrite.".format(inputPathsFile))
             return
 
@@ -179,14 +176,13 @@ class PipeInit(cli.Application):
                         inputPaths[key] = getattr(NcursesApp, key).value
                 writePaths(inputPaths, inputPathsFile)
             except ImportError:
-                print(
+                raise Exception(
                     """Could not import npyscreen for ncurses interface, instead use a
 text editor to make the yaml file ({}), with this format:
 
     t1: /project/dir/001/001-t1.ext
     dwi: /project/dir/001/001-dwi.ext
     caseid: 001""".format(inputPathsFile))
-                sys.exit(1)
 
 
 def concat(l):
@@ -197,9 +193,8 @@ def readParams(ymlfile):
 
     if not local.path(ymlfile).exists():
         pipeline = ymlfile.name.split('.')[1]
-        print("'{}' doesn't exist, run './pipe {} init' first".format(
+        raise Exception("'{}' doesn't exist, run './pipe {} init' first".format(
             ymlfile, pipeline))
-        sys.exit(1)
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
 
@@ -210,27 +205,24 @@ def readParams(ymlfile):
         if not paramDict.get('caseid'):
             caselist = local.path('caselist.txt')
             if not caselist.exists():
-                print(
+                raise Exception(
                     "Add 'caseid' to {} (or save a caselist.txt to this directory)".format(
                         ymlfile))
-                sys.exit(1)
-            print("Found './caselist.txt, using that for case id's")
+            logging.info("Found './caselist.txt, using that for case id's")
             listValueDict['caseid'] = ['./caselist.txt']
         result.append(listValueDict)
 
-    print("Read parameter file '{}':".format(ymlfile))
+    logging.info("Read parameter file '{}':".format(ymlfile))
     for d in result:
         printVertical(d)
-    print
     return result
 
 
 def checkParams(paramDicts):
     if '*mandatory*' in concat([concat(d.values()) for d in paramDicts]):
-        print(
+        raise Exception(
             "First replace '*mandatory*' values in params file and then run again."
         )
-        sys.exit(1)
 
 
 def expandParams(params):
@@ -239,7 +231,7 @@ def expandParams(params):
         # Check if case ids are defined by a caselist
         if '/' in paramsDict['caseid'][0]:
             with open(paramsDict['caseid'][0], 'r') as f:
-                paramsDict['caseid'] = [line for line in f.read().splitlines() if not line.startswith('#')]
+                paramsDict['caseid'] = f.read().splitlines()
         keys = paramsDict.keys()
         valueCombos = list(itertools.product(*paramsDict.values()))
         ps = [dict(zip(keys, combo)) for combo in valueCombos]
@@ -268,10 +260,9 @@ class Run(cli.Application):
 
         paramDicts = readParams(self.parent.paramsFile)
         if any('*mandatory*' in concat(p.values()) for p in paramDicts):
-            print(
+            raise Exception(
                 "'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the pipeline.".format(
                     self.parent.paramsFile))
-            sys.exit(1)
 
         if caseids:
             for paramsDict in paramDicts:
@@ -280,7 +271,7 @@ class Run(cli.Application):
 
         paramsList = expandParams(paramDicts)
 
-        print('Check that prerequisite software exists')
+        logging.info('Check that prerequisite software exists')
         missingSoftwareModules = []
         missingSoftware = []
         for softname, version, moduleFile in softwareItems(list(set(filter(lambda x: not isinstance(x[1],list), concat([p.items() for p in paramsList]))))):
@@ -292,33 +283,32 @@ class Run(cli.Application):
                 missingSoftware.append(module.getPath(version))
 
         for f in missingSoftwareModules:
-            print("* WARNING: missing {}".format(f))
+            logging.warning("missing {}".format(f))
         for p in missingSoftware:
-            print("* WARNING: missing: {}".format(p))
+            logging.warning("missing: {}".format(p))
         if missingSoftwareModules:
             sys.exit(1)
         if missingSoftware:
-            print("Some software components are missing so some parts of the pipeline won't run.")
-            print("Run './pipe {} make' to build all prequisite software.".format(self.parent.name))
-            sys.exit(1)
-
+            errmsg = """
+Some software components are missing so some parts of the pipeline won't run.
+Run './pipe {} make' to build all prequisite software.".format(self.parent.name
+            """.format(self.parent.name)
+            raise Exception(errmsg)
 
         for params in paramsList:
-            print(
+            logging.info(
                 'Running {} pipeline with parameters:'.format(self.parent.name)
             )
             printVertical(params)
-            print
 
             pipeline = self.parent.makePipeline(**params)
 
             if not self.want:
                 if not self.parent.defaultTarget:
-                    print(
-                        "'pipelines/pipeline_{}.py' doesn't have 'DEFAULT_TARGET' defined, set this in 'makePipeline(...)'.".format(
-                            self.parent.name, self.parent.name))
-                    print("E.g. DEFAULT_TARGET = 'tractmeasures")
-                    sys.exit(1)
+                    errmsg = """
+'pipelines/pipeline_{}.py' doesn't have 'DEFAULT_TARGET' defined, set this in 'makePipeline(...)'."
+E.g. DEFAULT_TARGET = 'tractmeasures'""" .format(self.parent.name, self.parent.name)
+                    raise Exception(errmsg)
                 pipelib.update(pipeline[self.parent.defaultTarget])
             else:
                 pipelib.update(pipeline[self.want])
@@ -340,8 +330,7 @@ def getRequiredSoftwareModules(yml):
     for paramsDict in yml:
         for softname, commits, moduleFile in softwareItems(paramsDict.items()):
             if not moduleFile.exists():
-                print("{} does not exist".format(moduleFile))
-                sys.exit(1)
+                raise Exception("{} does not exist".format(moduleFile))
             module = importlib.import_module('software.' + softname)
             for commit in commits:
                 yield (module, commit)
@@ -382,14 +371,11 @@ class Init(cli.Application):
             with open(inputPathsFile, 'r') as f:
                 inputPaths = yaml.load(f)
                 if not isinstance(inputPaths, dict):
-                    print(
-                        "Error reading {} as a dictionary, is it in the correct format?".format(
-                            inputPathsFile))
-                    print("E.g.")
-                    print("dwi: path/to/001-dwi.nrrd")
-                    print("t1: path/to/001-t1.nrrd")
-                    print("caseid: caseid")
-                    sys.exit(1)
+                    errmsg = """Error reading {} as a dictionary, is it in the correct format?                    E.g.
+dwi: path/to/001-dwi.nrrd
+t1: path/to/001-t1.nrrd
+caseid: caseid""" .format(inputPathsFile)
+                    raise Exception(errmsg)
                 paramDict['caseid'] = [inputPaths.get('caseid',
                                                      './caselist.txt')]
         """ http://stackoverflow.com/a/8661021 """
@@ -433,23 +419,19 @@ class Make(cli.Application):
 
     def main(self):
         if not self.parent.paramsFile.exists():
-            print(
+            raise Exception(
                 "'{}' doesn't exist, make it first with './pipe {} init'".format(
                     self.parent.paramsFile, self.parent.__class__.__name__))
-            sys.exit(1)
 
         # Build prerequisite software
         paramDicts = readParams(self.parent.paramsFile)
         for module, commit in getRequiredSoftwareModules(paramDicts):
-            print("Make {}".format(module.getPath(commit)))
+            logging.info("Make {}".format(module.getPath(commit)))
             module.make(commit)
-        print
 
         # Make shell environment files
+        logging.info("Make shell environment files")
         makeEnvFiles(self.parent.name, self.parent.paramsFile, self.parent.makePipeline)
-
-        print('Done.')
-
 
 
 def groupDicts(dicts, keyfn):
@@ -489,7 +471,7 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
     # with open('outputPaths.yml', 'w') as fyml:
     for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
         envFile = "_{}_env{}.sh".format(name, comboPaths['id'])
-        sys.stdout.write("Make '{}'...".format(envFile))
+        logging.info("Make '{}'".format(envFile))
         with open(envFile, 'w') as f:
             f.write('# Parameter combination {}\n'.format(comboPaths['id']))
             printVertical(comboPaths['paramCombo'],'#  ', f)
@@ -512,7 +494,8 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
             for var, val in softVars.items():
                 f.write('{}={}\n\n'.format(var, val))
             f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
-        sys.stdout.write("Done.\n".format(envFile))
+        # sys.stdout.write("Done.\n".format(envFile))
+        logging.info("Made '{}'".format(envFile))
     # print("Made '{}'".format('outputPaths.yml'))
 
 
@@ -525,10 +508,9 @@ class SymLink(cli.Application):
             symlink.delete()
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
-            print("# Make symlinks for parameter combination {}".format(
+            logging.info("# Make symlinks for parameter combination {}".format(
                 comboPaths['id']))
             printVertical(comboPaths['paramCombo'])
-            print
             for key, subjectPaths in comboPaths['paths'].iteritems():
                 existingPaths = [
                     p for p in filter(lambda x: x.path.exists(), subjectPaths)
@@ -544,7 +526,6 @@ class SymLink(cli.Application):
                     sys.stdout.write('\n')
                     symlink.dirname.mkdir()
                     makeRelativeSymlink(p.path, symlink)
-            print
 
 
 def getSoftwareModules():
@@ -558,10 +539,9 @@ def getSoftwareModules():
 def loadSoftwareModule(name):
     moduleFile = local.path('software') / (name + '.py')
     if not moduleFile.exists():
-        print(
+        raise Exception(
             "{} does not exist, is there a typo (e.g. in the params file?)".format(
                 moduleFile))
-        sys.exit(1)
     return importlib.import_module('software.' + name)
 
 
@@ -571,24 +551,23 @@ class SoftwareCommand(cli.Application):
 
     def main(self, softname):
         if not softname:
-            print("Missing software module argument, e.g. BRAINSTools")
+            logging.info("Missing software module argument, e.g. BRAINSTools")
             return 1
         softwareModule = loadSoftwareModule(softname)
         if self.ver:
-            print("Make '{}'".format(softwareModule.getPath(self.ver)))
+            logging.info("Make '{}'".format(softwareModule.getPath(self.ver)))
             softwareModule.make(self.ver)
         else:
-            print("Make '{}'".format(softwareModule.getPath()))
+            logging.info("Make '{}'".format(softwareModule.getPath()))
             softwareModule.make()
 
 def pipelineNodeItems(pipeline):
     items = filter(lambda x: not x[0].startswith('_'), pipeline.items())
     for item in items:
         if not hasattr(item[1], 'build') or not hasattr(item[1], 'path'):
-            print(
+            raise Exception(
                 "The object at key '{}' is not a Node, are you missing a leading '_'?".format(
                     item[0]))
-            sys.exit(1)
     return items
 
 
@@ -636,15 +615,13 @@ class Status(cli.Application):
     def main(self):
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
-            print("## Parameter Combination {} ({} subjects)".format(
+            logging.info("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['id'], comboPaths['num']))
 
             printVertical(comboPaths['paramCombo'])
-            print
             d = {k: len(filter(lambda x: x.path.exists(), vs))
                  for k, vs in comboPaths['paths'].iteritems()}
             printTable([d])
-            print
 
             # call pipeline's custom status
             if hasattr(self.parent, 'status'):
@@ -653,17 +630,31 @@ class Status(cli.Application):
 
 
 class Ls(cli.Application):
+    caseids = cli.Flag(
+        ['-s', '--subjid'], help="Print subject ids instead of paths")
+    printFull = cli.Flag(
+        ['-p'], help="Print full paths instead of symlinks.")
     def main(self, *keys):
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
+            logging.info("## Parameter Combination {} ({} subjects)".format(
+                comboPaths['id'], comboPaths['num']))
+            printVertical(comboPaths['paramCombo'])
             for k, vs in comboPaths['paths'].iteritems():
-                if k not in keys:
+                if keys and k not in keys:
                     continue
-                existingPaths = [p.path
+                existingPaths = [p
                                  for p in filter(lambda x: x.path.exists(), vs)
                                  ]
                 for p in existingPaths:
-                    print('{}'.format(p))
+                    if self.caseids:
+                        print('{}'.format(p.caseid))
+                    elif self.printFull:
+                        print(p.path)
+                    else:
+                        symlink = local.path(pipelib.OUTDIR / p.caseid /
+                                         (self.parent.name + '_' + k + ''.join(p.path.suffixes)))
+                        print(symlink)
 
 
 class Missing(cli.Application):
@@ -682,17 +673,15 @@ class Missing(cli.Application):
                        ] + [self.parent.defaultTarget]
         keys = defaultKeys if not keys else keys
         if not keys:
-            print(
+            raise Exception(
                 "'DEFAULT_TARGET' not set in 'pipelines/pipeline_{}.py', so you must provide a key on the command line, e.g. ./pipe std missing fs".format(
                     self.parent.name))
-            sys.exit(1)
 
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
-            print("## Parameter Combination {} ({} subjects)".format(
+            logging.info("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['id'], comboPaths['num']))
             printVertical(comboPaths['paramCombo'])
-            print
 
             for k, vs in comboPaths['paths'].iteritems():
                 if k not in keys:
@@ -707,9 +696,8 @@ class Missing(cli.Application):
                         print(p.path)
                     else:
                         symlink = local.path(pipelib.OUTDIR / p.caseid /
-                                         (k + ''.join(p.path.suffixes)))
+                                         (self.parent.name + '_' + k + ''.join(p.path.suffixes)))
                         print(symlink)
-            print
 
 
 def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):

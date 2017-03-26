@@ -17,8 +17,7 @@ except ImportError:
     sys.exit(1)
 from plumbum.cmd import git, cmake, make, chmod
 import logging
-logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 def composeEnvDicts(envDicts):
     result = {'PATH': [], 'PYTHONPATH': []}
