@@ -239,7 +239,7 @@ def expandParams(params):
         # Check if case ids are defined by a caselist
         if '/' in paramsDict['caseid'][0]:
             with open(paramsDict['caseid'][0], 'r') as f:
-                paramsDict['caseid'] = f.read().splitlines()
+                paramsDict['caseid'] = [line for line in f.read().splitlines() if not line.startswith('#')]
         keys = paramsDict.keys()
         valueCombos = list(itertools.product(*paramsDict.values()))
         ps = [dict(zip(keys, combo)) for combo in valueCombos]

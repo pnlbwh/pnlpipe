@@ -305,8 +305,8 @@ class Wmql(GeneratedNode):
             self.path().up().delete()
         with tract_querier.env(self.tqhash):
             from pnlscripts.util.scripts import wmql_py
-            wmql_py('-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
-                    '-o', self.path().dirname)
+            wmql_py['-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
+                    '-o', self.path().dirname] & FG
 
 class TractMeasures(GeneratedNode):
     def __init__(self, caseid, wmql):
