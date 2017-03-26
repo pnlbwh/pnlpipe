@@ -63,7 +63,7 @@ class App(cli.Application):
 
             if self.t1mask:
                 logging.info('Mask the t1')
-                ImageMath('3', t / 't1masked.nii.gz', 'm', t1, self.t1mask)
+                ImageMath('3', tmpdir / 't1masked.nii.gz', 'm', t1, self.t1mask)
                 t1 = tmpdir / 't1masked.nii.gz'
                 skullstrip = '-noskullstrip'
             else:

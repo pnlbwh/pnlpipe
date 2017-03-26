@@ -39,12 +39,12 @@ bsub4: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe $(
 .PHONY: caselist caselist-bsub8 caselist-bsub4
 caselist: $(CASELIST)
 	make caselist-bsub8
-	
+
 caselist-bsub8: $(CASELIST)
-	while read subj; do make $$subj-bsub8; done < caselist.txt
+	cat caselist.txt | grep -Ev '^#' | while read subj; do make $$subj-bsub8; done
 
 caselist-bsub4: $(CASELIST)
-	while read subj; do make $$subj-bsub4; done < caselist.txt
+	cat caselist.txt | grep -Ev '^#' | while read subj; do make $$subj-bsub4; done
 
 $(CASELIST):
 	$(error First make $(CASELIST) with your subject ids, then run again)
