@@ -498,6 +498,15 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
         logging.info("Made '{}'".format(envFile))
     # print("Made '{}'".format('outputPaths.yml'))
 
+def toSymlink(caseid, pipename, key, path):
+    path = local.path(path)
+    suffixes = path.suffixes[-2:]
+    print suffixes
+    if not '.nii' in suffixes:
+        suffixes = suffixes[-1:]
+    return local.path(pipelib.OUTDIR / caseid /
+                         (pipename + '_' + key + ''.join(suffixes)))
+
 
 class SymLink(cli.Application):
     """Makes simply named symlinks to fully named nodes"""
@@ -516,8 +525,7 @@ class SymLink(cli.Application):
                     p for p in filter(lambda x: x.path.exists(), subjectPaths)
                 ]
                 for p in existingPaths:
-                    symlink = local.path(pipelib.OUTDIR / p.caseid /
-                                         (pipename + '_' + key + ''.join(p.path.suffixes)))
+                    symlink = toSymlink(p.caseid, pipename, key, p.path)
                     sys.stdout.write("Make symlink '{}' --> '{}' ".format(
                         symlink, p.path))
                     if symlink.exists():
@@ -652,8 +660,7 @@ class Ls(cli.Application):
                     elif self.printFull:
                         print(p.path)
                     else:
-                        symlink = local.path(pipelib.OUTDIR / p.caseid /
-                                         (self.parent.name + '_' + k + ''.join(p.path.suffixes)))
+                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
                         print(symlink)
 
 
@@ -695,8 +702,7 @@ class Missing(cli.Application):
                     elif self.printFull:
                         print(p.path)
                     else:
-                        symlink = local.path(pipelib.OUTDIR / p.caseid /
-                                         (self.parent.name + '_' + k + ''.join(p.path.suffixes)))
+                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
                         print(symlink)
 
 
