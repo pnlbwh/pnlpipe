@@ -501,7 +501,6 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
 def toSymlink(caseid, pipename, key, path):
     path = local.path(path)
     suffixes = path.suffixes[-2:]
-    print suffixes
     if not '.nii' in suffixes:
         suffixes = suffixes[-1:]
     return local.path(pipelib.OUTDIR / caseid /
