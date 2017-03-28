@@ -440,7 +440,11 @@ def groupDicts(dicts, keyfn):
 
 def makeRelativeSymlink(src, symlink):
     import os
-    os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+    #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+    #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+    src.symlink(symlink)
+    if '.nhdr' in src.suffixes:
+        src.with_suffix('.raw.gz').symlink(symlink.dirname / src.with_suffix('.raw.gz').name)
 
 def escapePath(filepath):
     return filepath.__str__().replace('(', '\(').replace(')', '\)')
@@ -636,10 +640,12 @@ class Status(cli.Application):
 
 
 class Ls(cli.Application):
+    csv = cli.Flag(
+        ['-c', '--csv'], excludes=['-s'], help="Print subject ids and paths separated by comma")
     caseids = cli.Flag(
-        ['-s', '--subjid'], help="Print subject ids instead of paths")
+        ['-s', '--subjid'], excludes=['-c'], help="Print subject ids instead of paths")
     printFull = cli.Flag(
-        ['-p'], help="Print full paths instead of symlinks.")
+        ['-p'], excludes=['-s'], help="Print full paths instead of symlinks.")
     def main(self, *keys):
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
@@ -655,11 +661,14 @@ class Ls(cli.Application):
                 for p in existingPaths:
                     if self.caseids:
                         print('{}'.format(p.caseid))
-                    elif self.printFull:
-                        print(p.path)
-                    else:
-                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
-                        print(symlink)
+                        continue
+                    elif self.csv: 
+                        sys.stdout.write('{},'.format(p.caseid))
+                        if self.printFull:
+                            print(p.path)
+                        else:
+                            symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
+                            print(symlink)
 
 
 class Missing(cli.Application):
