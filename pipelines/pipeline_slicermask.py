@@ -6,7 +6,7 @@ import software
 import plumbum
 from plumbum import local, FG
 
-DEFAULT_TARGET = 'dwimask'
+DEFAULT_TARGET = 'dice'
 
 
 class DwiMaskSlicer(GeneratedNode):
@@ -21,13 +21,12 @@ class DwiMaskSlicer(GeneratedNode):
         with TemporaryDirectory() as tmpdir, local.cwd(
                 tmpdir), software.mrtrix3.env(self.hash_mrtrix3):
             from plumbum.cmd import maskfilter
-            Slicer = local[software.Slicer.getPath(self.version_Slicer)]
-            Slicer['--launch', 'DiffusionWeightedVolumeMasking', self.dwi.path(
-            ), 'b0.nrrd', 'otsumask.nrrd', '--baselineBValueThreshold', '1000',
-                   '--removeislands'] & FG
-            Slicer['--launch', 'ResampleScalarVolume', 'otsumask.nrrd',
-                   'otsumask.nii'] & FG
-            maskfilter['-scale', 2, self.path(), 'clean', 'otsumask.nii',
+            slicerDir = software.Slicer.getPath(self.version_Slicer).dirname
+            Slicer = local[slicerDir / 'Slicer']
+            Slicer['--launch', slicerDir / 'DiffusionWeightedVolumeMasking', self.dwi.path(),
+                   'b0.nrrd', 'otsumask.nrrd', '--baselineBValueThreshold', '1000', '--removeislands'] & FG
+            Slicer['--launch', 'ResampleScalarVolume', 'otsumask.nrrd', 'otsumask.nii'] & FG
+            maskfilter['-scale', 2, 'otsumask.nii', 'clean', self.path(),
                        '-force'] & FG
 
 class DiceCoefficient(GeneratedNode):
@@ -40,11 +39,11 @@ class DiceCoefficient(GeneratedNode):
     def build(self):
         from plumbum.cmd import ImageMath
         needDeps(self)
-        with TemporaryDirectory() as tmpdir, software.BRAINSTools(self.hash_BRAINSTools):
+        with TemporaryDirectory() as tmpdir, software.BRAINSTools.env(self.hash_BRAINSTools):
             tmptxt = tmpdir / 'dice.txt'
-            ImageMath[3, tmptxt, "DiceAndMinDistSum", self.maskManual, self.mask]
+            ImageMath[3, tmptxt, "DiceAndMinDistSum", self.maskManual.path(), self.mask.path()] & FG
             with open(tmptxt, 'r') as f:
-                coeff = f.read().split('')[-1]
+                coeff = f.read().split(' ')[-1]
             with open(self.path(), 'w') as f:
                 f.write(coeff)
 
@@ -68,7 +67,7 @@ def status(paramPoints):
     pipelines = [makePipeline(**paramPoint) for paramPoint in paramPoints]
     coeff_paths = [p['dice'].path() for p in pipelines
             if p['dice'].path().exists()]
-    coeffs = map(lambda f: open(f,'r').read(), coeff_paths)
+    coeffs = map(lambda f: float(open(f,'r').read()), coeff_paths)
     if coeffs:
         avg = sum(coeffs) / len(coeffs)
         print("Average dice coefficient: {}".format(avg))

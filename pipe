@@ -423,13 +423,12 @@ class Make(cli.Application):
                 "'{}' doesn't exist, make it first with './pipe {} init'".format(
                     self.parent.paramsFile, self.parent.__class__.__name__))
 
-        # Build prerequisite software
+        logging.info("Build prerequisite software")
         paramDicts = readParams(self.parent.paramsFile)
         for module, commit in getRequiredSoftwareModules(paramDicts):
             logging.info("Make {}".format(module.getPath(commit)))
             module.make(commit)
 
-        # Make shell environment files
         logging.info("Make shell environment files")
         makeEnvFiles(self.parent.name, self.parent.paramsFile, self.parent.makePipeline)
 
@@ -495,7 +494,7 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
                 f.write('{}={}\n\n'.format(var, val))
             f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
         # sys.stdout.write("Done.\n".format(envFile))
-        logging.info("Made '{}'".format(envFile))
+        #logging.info("Made '{}'".format(envFile))
     # print("Made '{}'".format('outputPaths.yml'))
 
 def toSymlink(caseid, pipename, key, path):
