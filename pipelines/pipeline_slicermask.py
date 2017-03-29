@@ -64,11 +64,14 @@ def makePipeline(caseid,
 
 
 def status(paramPoints):
-    pipelines = [makePipeline(**paramPoint) for paramPoint in paramPoints]
+    pps = sorted(paramPoints, key = lambda x: x['caseid'])
+    pipelines = [makePipeline(**paramPoint) for paramPoint in pps]
     coeff_paths = [p['dice'].path() for p in pipelines
             if p['dice'].path().exists()]
     coeffs = map(lambda f: float(open(f,'r').read()), coeff_paths)
     if coeffs:
+        for f, coeff in zip(coeff_paths, coeffs):
+            print("{}|{}".format(coeff, f - local.cwd))
         avg = sum(coeffs) / len(coeffs)
         print("Average dice coefficient: {}".format(avg))
     else:

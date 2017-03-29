@@ -612,7 +612,7 @@ def pipelineComboPaths(paramsFile, makePipelineFn):
                          'id': i,
                          'num': len(paramPoints)}
         # for each subject
-        for paramPoint in paramPoints:
+        for paramPoint in sorted(paramPoints, key=lambda x: x['caseid']):
             pipeline = makePipelineFn(**paramPoint)
             for key, node in pipelineNodeItems(pipeline):
                 p = SubjectPath(caseid=paramPoint['caseid'], path=node.path())
