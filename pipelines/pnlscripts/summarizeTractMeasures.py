@@ -7,7 +7,8 @@ if sys.version_info[0] < 3:
 else:
     from io import StringIO
 
-INTRUST=StringIO(""""tract","FAmean_mean","FAmean_sd","num_mean","num_sd","count"
+def summarize(df):
+    INTRUST=StringIO(""""tract","FAmean_mean","FAmean_sd","num_mean","num_sd","count"
 af.left,714.182544932399,30.4676278440711,433.140625,257.950520516233,384
 af.right,696.470852774055,34.8401036745462,441.361038961039,290.948014111773,385
 ioff.left,714.685249908589,30.4187930443161,131.124675324675,105.584410539235,385
@@ -20,8 +21,6 @@ slf_iii.left,666.308324741928,29.5571559220112,656.311688311688,344.504930863216
 slf_iii.right,660.472731188003,30.0607433890063,856.412987012987,439.223181852611,385
 uf.left,589.85265447185,42.8613369562814,195.744125326371,174.371158305798,383
 uf.right,565.9559476129,43.1105907847185,142.316883116883,126.637537840325,385""")
-
-def summarize(df):
 
     mask = df.tract.str.lower().apply( lambda x: any([ y in x for y in ['af','uf','slf','ioff']]))
     agg = {'FA_mean': {'FAmean_mean': 'mean' ,'FAmean_sd': 'std', 'count':'count'}
