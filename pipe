@@ -56,8 +56,8 @@ def readAndSetInputPaths():
             continue
         pipelib.INPUT_PATHS[key] = local.path(
             val.replace(caseidPattern, '{case}'))
-    logging.info("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
-    printVertical(pipelib.INPUT_PATHS)
+    logging.debug("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
+    #printVertical(pipelib.INPUT_PATHS)
     # pprint(pipelib.INPUT_PATHS)
 
 
@@ -212,9 +212,9 @@ def readParams(ymlfile):
             listValueDict['caseid'] = ['./caselist.txt']
         result.append(listValueDict)
 
-    logging.info("Read parameter file '{}':".format(ymlfile))
-    for d in result:
-        printVertical(d)
+    logging.debug("Read parameter file '{}':".format(ymlfile))
+    #for d in result:
+        #printVertical(d)
     return result
 
 
@@ -625,7 +625,8 @@ class Status(cli.Application):
     def main(self):
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
-            logging.info("## Parameter Combination {} ({} subjects)".format(
+            print
+            print("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['id'], comboPaths['num']))
 
             printVertical(comboPaths['paramCombo'])
