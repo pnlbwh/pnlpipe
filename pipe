@@ -501,13 +501,13 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
         #logging.info("Made '{}'".format(envFile))
     # print("Made '{}'".format('outputPaths.yml'))
 
-def toSymlink(caseid, pipename, key, path):
+def toSymlink(caseid, pipename, key, path, paramId):
     path = local.path(path)
     suffixes = path.suffixes[-2:]
     if not '.nii' in suffixes:
         suffixes = suffixes[-1:]
     return local.path(pipelib.OUTDIR / caseid /
-                         (pipename + '_' + key + ''.join(suffixes)))
+                         (pipename + '_' + key + str(paramId) + ''.join(suffixes)))
 
 
 class SymLink(cli.Application):
@@ -527,7 +527,7 @@ class SymLink(cli.Application):
                     p for p in filter(lambda x: x.path.exists(), subjectPaths)
                 ]
                 for p in existingPaths:
-                    symlink = toSymlink(p.caseid, pipename, key, p.path)
+                    symlink = toSymlink(p.caseid, pipename, key, p.path, comboPaths['id'])
                     sys.stdout.write("Make symlink '{}' --> '{}' ".format(
                         symlink, p.path))
                     if symlink.exists():
@@ -637,8 +637,10 @@ class Status(cli.Application):
         # print("## Parameter Combination {} ({} subjects)".format(
         #         comboPaths['id'], comboPaths['num']))
 
-        paramDescrips = [stripKeys(dict(p['paramCombo'],paramid=p['id']), ['hash_', 'version_']) for p in combos]
-        printTable(paramDescrips, ['paramid'] + [k for k in paramDescrips[0].keys() if k!='paramid'])
+        #paramDescrips = [stripKeys(dict(p['paramCombo'],paramid=p['id']), ['hash_', 'version_']) for p in combos]
+        paramDescrips = [stripKeys(dict(p['paramCombo']), ['hash_', 'version_']) for p in combos]
+        #printTable(paramDescrips, ['paramid'] + [k for k in paramDescrips[0].keys() if k!='paramid'])
+        printTable(paramDescrips)
         print
         pathCounts = []
         for combo in combos:
@@ -682,11 +684,11 @@ class Ls(cli.Application):
                         continue
                     elif self.csv:
                         sys.stdout.write('{},'.format(p.caseid))
-                        if self.printFull:
-                            print(p.path)
-                        else:
-                            symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
-                            print(symlink)
+                    if self.printFull:
+                        print(p.path)
+                    else:
+                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path, comboPaths['id'])
+                        print(symlink)
 
 
 class Missing(cli.Application):
@@ -727,7 +729,7 @@ class Missing(cli.Application):
                     elif self.printFull:
                         print(p.path)
                     else:
-                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
+                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path, comboPaths['id'])
                         print(symlink)
 
 
