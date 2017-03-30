@@ -41,7 +41,7 @@ caselist: $(CASELIST)
 	make caselist-bsub8
 
 caselist-bsub8: $(CASELIST)
-	cat caselist.txt | grep -Ev '^#' | while read subj; do make $$subj-bsub8; done
+	cat caselist.txt | grep -Ev '^#' | while read subj; do if ! bjobs | grep $$subj >/dev/null; then make $$subj-bsub8; fi; done
 
 caselist-bsub4: $(CASELIST)
 	cat caselist.txt | grep -Ev '^#' | while read subj; do make $$subj-bsub4; done
