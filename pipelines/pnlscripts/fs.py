@@ -54,26 +54,23 @@ class App(cli.Application):
 
         with TemporaryDirectory() as tmpdir, local.env(SUBJECTS_DIR=tmpdir):
 
-            if '.nrrd' in self.t1.suffixes or '.nhdr' in self.t1.suffixes:
-                logging.info('t1 is in nrrd format, convert to nifti')
-                t1 = tmpdir / 't1.nii.gz'
-                ConvertBetweenFileFormats(self.t1, t1)
-            else:
-                t1 = self.t1
-
             if self.t1mask:
                 logging.info('Mask the t1')
-                ImageMath('3', tmpdir / 't1masked.nii.gz', 'm', t1, self.t1mask)
+                ImageMath('3', tmpdir / 't1masked.nii.gz', 'm', self.t1, self.t1mask)
                 t1 = tmpdir / 't1masked.nii.gz'
                 skullstrip = '-noskullstrip'
             else:
-                skullstrip = None
+                skullstrip = ''
+                if '.nrrd' in self.t1.suffixes or '.nhdr' in self.t1.suffixes:
+                    logging.info('t1 is in nrrd format, convert to nifti')
+                    t1 = tmpdir / 't1.nii.gz'
+                    ConvertBetweenFileFormats(self.t1, t1)
 
             logging.info("Run freesurfer on " + t1)
             subjid = t1.stem
 
             from plumbum.cmd import bash
-            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -s '+subjid+' -i '+t1+' -autorecon1'] & FG
+            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -s '+subjid+' -i '+t1+' -autorecon1 ' +skullstrip] & FG
             (tmpdir / subjid / 'mri/T1.mgz').copy(tmpdir / subjid / 'mri/brainmask.mgz')
             bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon2 -subjid '+subjid] & FG
             bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon3 -subjid '+subjid] & FG
