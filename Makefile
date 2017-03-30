@@ -2,15 +2,18 @@ ifeq ($(soft),)
   $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
-PIPE := hcp
+PIPE := epi
 CASELIST := caselist.txt
 PARAMS := params.$(PIPE)
 
 # Run pipeline
 # E.g. make
-.PHONY: all
+.PHONY: all clean
 all:
 	./pipe $(PIPE) run
+
+clean:
+	@echo "Not implemented yet (did you mean bclean?)"
 
 .PHONY: bclean
 bclean: 
