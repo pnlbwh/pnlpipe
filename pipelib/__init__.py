@@ -234,6 +234,7 @@ def update(node):
     rebuild = False
     if db == None:
         log.info(' doesn\'t exist (has no db), build'.format(node.path()))
+        node.db = {'value': None, 'deps': {}}
         rebuild = True
     elif currentValue == None:
         log.info(' File missing ({}), rebuild'.format(relativePath))
