@@ -63,8 +63,8 @@ def makePipeline(caseid,
     return pipeline
 
 
-def status(paramPoints):
-    pps = sorted(paramPoints, key = lambda x: x['caseid'])
+def status(combos):
+    pps = sorted(combos, key = lambda x: x['caseid'])
     pipelines = [makePipeline(**paramPoint) for paramPoint in pps]
     coeff_paths = [p['dice'].path() for p in pipelines
             if p['dice'].path().exists()]
