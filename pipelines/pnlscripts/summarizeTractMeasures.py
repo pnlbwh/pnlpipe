@@ -26,7 +26,7 @@ uf.right,565.9559476129,43.1105907847185,142.316883116883,126.637537840325,385""
     agg = {'FA_mean': {'FAmean_mean': 'mean' ,'FAmean_sd': 'std', 'count':'count'}
            ,'num': {'num_mean':'mean', 'num_sd': 'std'}
     }
-    df = df[mask].filter(items=['FA_mean','num','tract']).groupby('tract').agg(agg)
+    df = df[mask].filter(items=['FA_mean','num','tract']).groupby(['algo','tract']).agg(agg)
     df.columns = df.columns.droplevel()
     df = df[['FAmean_mean','FAmean_sd','num_mean','num_sd','count']]
 

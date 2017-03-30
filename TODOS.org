@@ -1,3 +1,5 @@
+* BUG: deleting files then running gives "node does not have attribute db"
+* STy: add keys subcommand
 * replace ConvertBetweenFileFormat calls with allowLossyConversion in DWIConvert
 * move atlas.py root flags to subcommands (otherwise help doesn't work)
 * show params with meaning in filenames

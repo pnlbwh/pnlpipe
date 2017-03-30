@@ -605,7 +605,8 @@ def pipelineComboPaths(paramsFile, makePipelineFn):
     result = []
     # for each parameter values combo (a parameter point without caseid)
     for i, (paramCombo, paramPoints) in enumerate(paramPointsByCombo):
-        iStr = '' if i == 0 else str(i)
+        # iStr = '' if i == 0 else str(i)
+        iStr = str(i)
         pipelinePaths = {'paramCombo': paramCombo,
                          'paramPoints': paramPoints,
                          'paths': defaultdict(list),
@@ -616,28 +617,61 @@ def pipelineComboPaths(paramsFile, makePipelineFn):
             pipeline = makePipelineFn(**paramPoint)
             for key, node in pipelineNodeItems(pipeline):
                 p = SubjectPath(caseid=paramPoint['caseid'], path=node.path())
-                pipelinePaths['paths'][key + iStr].append(p)
+                # pipelinePaths['paths'][key + iStr].append(p)
+                pipelinePaths['paths'][key].append(p)
         result.append(pipelinePaths)
     return result
 
+def stripKeys(dic, strs):
+    def strip(s, strs):
+        if not strs:
+            return s
+        else:
+            return strip(s.replace(strs[0],''), strs[1:])
+    return {strip(k,strs):v for k,v in dic.items()}
 
 class Status(cli.Application):
     def main(self):
-        for comboPaths in pipelineComboPaths(self.parent.paramsFile,
-                                             self.parent.makePipeline):
-            print
-            print("## Parameter Combination {} ({} subjects)".format(
-                comboPaths['id'], comboPaths['num']))
+        combos = pipelineComboPaths(self.parent.paramsFile,
+                                             self.parent.makePipeline)
+        # print("## Parameter Combination {} ({} subjects)".format(
+        #         comboPaths['id'], comboPaths['num']))
 
-            printVertical(comboPaths['paramCombo'])
+        paramDescrips = [stripKeys(dict(p['paramCombo'],paramid=p['id']), ['hash_', 'version_']) for p in combos]
+        printTable(paramDescrips, ['paramid'] + [k for k in paramDescrips[0].keys() if k!='paramid'])
+        print
+        pathCounts = []
+        for combo in combos:
             d = {k: len(filter(lambda x: x.path.exists(), vs))
-                 for k, vs in comboPaths['paths'].iteritems()}
-            printTable([d])
+                    for k, vs in combo['paths'].iteritems()}
+            pathCounts.append(dict(d, paramid=combo['id'], numcases=combo['num']))
+        cols = pathCounts[0].keys()
+        cols.remove('paramid')
+        cols.remove('numcases')
+        printTable(pathCounts, ['paramid'] + cols + ['numcases'])
 
-            # call pipeline's custom status
-            if hasattr(self.parent, 'status'):
-                #print("{}'s custom status result:".format(self.parent.name))
-                self.parent.status(comboPaths['paramPoints'])
+        # call pipeline's custom status
+        if hasattr(self.parent, 'status'):
+            self.parent.status(concat([combo['paramPoints'] for combo in combos]))
+
+
+# class Status(cli.Application):
+#     def main(self):
+#         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
+#                                              self.parent.makePipeline):
+#             print
+#             print("## Parameter Combination {} ({} subjects)".format(
+#                 comboPaths['id'], comboPaths['num']))
+
+#             printVertical(comboPaths['paramCombo'])
+#             d = {k: len(filter(lambda x: x.path.exists(), vs))
+#                  for k, vs in comboPaths['paths'].iteritems()}
+#             printTable([d])
+
+#             # call pipeline's custom status
+#             if hasattr(self.parent, 'status'):
+#                 #print("{}'s custom status result:".format(self.parent.name))
+#                 self.parent.status(comboPaths['paramPoints'])
 
 
 class Ls(cli.Application):
@@ -663,7 +697,7 @@ class Ls(cli.Application):
                     if self.caseids:
                         print('{}'.format(p.caseid))
                         continue
-                    elif self.csv: 
+                    elif self.csv:
                         sys.stdout.write('{},'.format(p.caseid))
                         if self.printFull:
                             print(p.path)

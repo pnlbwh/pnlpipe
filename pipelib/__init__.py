@@ -206,8 +206,7 @@ def buildNode(node):
     node.path().dirname.mkdir()
     node.build()
     if not node.path().exists():
-        log.error('{}: output wasn\'t created'.format(node.path()))
-        sys.exit(1)
+        raise Exception('{}: output wasn\'t created'.format(node.path()))
     db = node.db
     db['value'] = readCurrentValue(node)
     del node.db
