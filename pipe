@@ -652,26 +652,9 @@ class Status(cli.Application):
 
         # call pipeline's custom status
         if hasattr(self.parent, 'status'):
-            self.parent.status(concat([combo['paramPoints'] for combo in combos]))
-
-
-# class Status(cli.Application):
-#     def main(self):
-#         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
-#                                              self.parent.makePipeline):
-#             print
-#             print("## Parameter Combination {} ({} subjects)".format(
-#                 comboPaths['id'], comboPaths['num']))
-
-#             printVertical(comboPaths['paramCombo'])
-#             d = {k: len(filter(lambda x: x.path.exists(), vs))
-#                  for k, vs in comboPaths['paths'].iteritems()}
-#             printTable([d])
-
-#             # call pipeline's custom status
-#             if hasattr(self.parent, 'status'):
-#                 #print("{}'s custom status result:".format(self.parent.name))
-#                 self.parent.status(comboPaths['paramPoints'])
+            # self.parent.status(concat([combo['paramPoints'] for combo in combos]))
+            print
+            self.parent.status(combos)
 
 
 class Ls(cli.Application):

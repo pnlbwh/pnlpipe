@@ -38,6 +38,6 @@ def makePipeline(caseid,
     return pipeline
 
 
-def status(paramPoints):
+def status(combos):
     import pipelines.pnllib
-    pipelines.pnllib.tractMeasureStatus(paramPoints, makePipeline)
+    pipelines.pnllib.tractMeasureStatus(combos, makePipeline)
