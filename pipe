@@ -56,8 +56,8 @@ def readAndSetInputPaths():
             continue
         pipelib.INPUT_PATHS[key] = local.path(
             val.replace(caseidPattern, '{case}'))
-    logging.info("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
-    printVertical(pipelib.INPUT_PATHS)
+    logging.debug("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
+    #printVertical(pipelib.INPUT_PATHS)
     # pprint(pipelib.INPUT_PATHS)
 
 
@@ -212,9 +212,9 @@ def readParams(ymlfile):
             listValueDict['caseid'] = ['./caselist.txt']
         result.append(listValueDict)
 
-    logging.info("Read parameter file '{}':".format(ymlfile))
-    for d in result:
-        printVertical(d)
+    logging.debug("Read parameter file '{}':".format(ymlfile))
+    #for d in result:
+        #printVertical(d)
     return result
 
 
@@ -423,13 +423,12 @@ class Make(cli.Application):
                 "'{}' doesn't exist, make it first with './pipe {} init'".format(
                     self.parent.paramsFile, self.parent.__class__.__name__))
 
-        # Build prerequisite software
+        logging.info("Build prerequisite software")
         paramDicts = readParams(self.parent.paramsFile)
         for module, commit in getRequiredSoftwareModules(paramDicts):
             logging.info("Make {}".format(module.getPath(commit)))
             module.make(commit)
 
-        # Make shell environment files
         logging.info("Make shell environment files")
         makeEnvFiles(self.parent.name, self.parent.paramsFile, self.parent.makePipeline)
 
@@ -441,7 +440,11 @@ def groupDicts(dicts, keyfn):
 
 def makeRelativeSymlink(src, symlink):
     import os
-    os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+    #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+    #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
+    src.symlink(symlink)
+    if '.nhdr' in src.suffixes:
+        src.with_suffix('.raw.gz').symlink(symlink.dirname / src.with_suffix('.raw.gz').name)
 
 def escapePath(filepath):
     return filepath.__str__().replace('(', '\(').replace(')', '\)')
@@ -495,7 +498,7 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
                 f.write('{}={}\n\n'.format(var, val))
             f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
         # sys.stdout.write("Done.\n".format(envFile))
-        logging.info("Made '{}'".format(envFile))
+        #logging.info("Made '{}'".format(envFile))
     # print("Made '{}'".format('outputPaths.yml'))
 
 def toSymlink(caseid, pipename, key, path):
@@ -602,45 +605,82 @@ def pipelineComboPaths(paramsFile, makePipelineFn):
     result = []
     # for each parameter values combo (a parameter point without caseid)
     for i, (paramCombo, paramPoints) in enumerate(paramPointsByCombo):
-        iStr = '' if i == 0 else str(i)
+        # iStr = '' if i == 0 else str(i)
+        iStr = str(i)
         pipelinePaths = {'paramCombo': paramCombo,
                          'paramPoints': paramPoints,
                          'paths': defaultdict(list),
                          'id': i,
                          'num': len(paramPoints)}
         # for each subject
-        for paramPoint in paramPoints:
+        for paramPoint in sorted(paramPoints, key=lambda x: x['caseid']):
             pipeline = makePipelineFn(**paramPoint)
             for key, node in pipelineNodeItems(pipeline):
                 p = SubjectPath(caseid=paramPoint['caseid'], path=node.path())
-                pipelinePaths['paths'][key + iStr].append(p)
+                # pipelinePaths['paths'][key + iStr].append(p)
+                pipelinePaths['paths'][key].append(p)
         result.append(pipelinePaths)
     return result
 
+def stripKeys(dic, strs):
+    def strip(s, strs):
+        if not strs:
+            return s
+        else:
+            return strip(s.replace(strs[0],''), strs[1:])
+    return {strip(k,strs):v for k,v in dic.items()}
 
 class Status(cli.Application):
     def main(self):
-        for comboPaths in pipelineComboPaths(self.parent.paramsFile,
-                                             self.parent.makePipeline):
-            logging.info("## Parameter Combination {} ({} subjects)".format(
-                comboPaths['id'], comboPaths['num']))
+        combos = pipelineComboPaths(self.parent.paramsFile,
+                                             self.parent.makePipeline)
+        # print("## Parameter Combination {} ({} subjects)".format(
+        #         comboPaths['id'], comboPaths['num']))
 
-            printVertical(comboPaths['paramCombo'])
+        paramDescrips = [stripKeys(dict(p['paramCombo'],paramid=p['id']), ['hash_', 'version_']) for p in combos]
+        printTable(paramDescrips, ['paramid'] + [k for k in paramDescrips[0].keys() if k!='paramid'])
+        print
+        pathCounts = []
+        for combo in combos:
             d = {k: len(filter(lambda x: x.path.exists(), vs))
-                 for k, vs in comboPaths['paths'].iteritems()}
-            printTable([d])
+                    for k, vs in combo['paths'].iteritems()}
+            pathCounts.append(dict(d, paramid=combo['id'], numcases=combo['num']))
+        cols = pathCounts[0].keys()
+        cols.remove('paramid')
+        cols.remove('numcases')
+        printTable(pathCounts, ['paramid'] + cols + ['numcases'])
 
-            # call pipeline's custom status
-            if hasattr(self.parent, 'status'):
-                #print("{}'s custom status result:".format(self.parent.name))
-                self.parent.status(comboPaths['paramPoints'])
+        # call pipeline's custom status
+        if hasattr(self.parent, 'status'):
+            self.parent.status(concat([combo['paramPoints'] for combo in combos]))
+
+
+# class Status(cli.Application):
+#     def main(self):
+#         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
+#                                              self.parent.makePipeline):
+#             print
+#             print("## Parameter Combination {} ({} subjects)".format(
+#                 comboPaths['id'], comboPaths['num']))
+
+#             printVertical(comboPaths['paramCombo'])
+#             d = {k: len(filter(lambda x: x.path.exists(), vs))
+#                  for k, vs in comboPaths['paths'].iteritems()}
+#             printTable([d])
+
+#             # call pipeline's custom status
+#             if hasattr(self.parent, 'status'):
+#                 #print("{}'s custom status result:".format(self.parent.name))
+#                 self.parent.status(comboPaths['paramPoints'])
 
 
 class Ls(cli.Application):
+    csv = cli.Flag(
+        ['-c', '--csv'], excludes=['-s'], help="Print subject ids and paths separated by comma")
     caseids = cli.Flag(
-        ['-s', '--subjid'], help="Print subject ids instead of paths")
+        ['-s', '--subjid'], excludes=['-c'], help="Print subject ids instead of paths")
     printFull = cli.Flag(
-        ['-p'], help="Print full paths instead of symlinks.")
+        ['-p'], excludes=['-s'], help="Print full paths instead of symlinks.")
     def main(self, *keys):
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
@@ -656,11 +696,14 @@ class Ls(cli.Application):
                 for p in existingPaths:
                     if self.caseids:
                         print('{}'.format(p.caseid))
-                    elif self.printFull:
-                        print(p.path)
-                    else:
-                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
-                        print(symlink)
+                        continue
+                    elif self.csv:
+                        sys.stdout.write('{},'.format(p.caseid))
+                        if self.printFull:
+                            print(p.path)
+                        else:
+                            symlink = toSymlink(p.caseid, self.parent.name, k, p.path)
+                            print(symlink)
 
 
 class Missing(cli.Application):

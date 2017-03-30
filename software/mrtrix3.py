@@ -9,7 +9,7 @@ DEFAULT_HASH = '97e4b3b'
 
 def make(hash=DEFAULT_HASH):
     if checkExists(getPath(hash)):
-        sys.exit(1)
+        return
 
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
         tmpdir = local.path(tmpdir)
