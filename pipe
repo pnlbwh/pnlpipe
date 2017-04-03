@@ -295,6 +295,17 @@ Run './pipe {} make' to build all prequisite software.".format(self.parent.name
             """.format(self.parent.name)
             raise Exception(errmsg)
 
+        if not self.want:
+            if not self.parent.defaultTarget:
+                errmsg = """
+'pipelines/pipeline_{}.py' doesn't have 'DEFAULT_TARGET' defined, set this in 'makePipeline(...)'."
+E.g. DEFAULT_TARGET = 'tractmeasures'""" .format(self.parent.name, self.parent.name)
+                raise Exception(errmsg)
+            want = self.parent.defaultTarget
+        else:
+            want = self.want
+        logging.info('Make target {}'.format(want))
+
         for params in paramsList:
             logging.info(
                 'Running {} pipeline with parameters:'.format(self.parent.name)
@@ -302,16 +313,7 @@ Run './pipe {} make' to build all prequisite software.".format(self.parent.name
             printVertical(params)
 
             pipeline = self.parent.makePipeline(**params)
-
-            if not self.want:
-                if not self.parent.defaultTarget:
-                    errmsg = """
-'pipelines/pipeline_{}.py' doesn't have 'DEFAULT_TARGET' defined, set this in 'makePipeline(...)'."
-E.g. DEFAULT_TARGET = 'tractmeasures'""" .format(self.parent.name, self.parent.name)
-                    raise Exception(errmsg)
-                pipelib.update(pipeline[self.parent.defaultTarget])
-            else:
-                pipelib.update(pipeline[self.want])
+            pipelib.update(pipeline[want])
 
 
 def softwareItems(items):
