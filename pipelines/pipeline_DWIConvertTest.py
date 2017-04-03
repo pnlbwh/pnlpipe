@@ -5,6 +5,7 @@ import pipelib
 import software
 import plumbum
 from plumbum import local, FG
+from pipelines.pnlscripts.util.scripts import dwiconvert_py
 
 DEFAULT_TARGET = 'csv'
 
@@ -23,21 +24,7 @@ class DwiNrrd(GeneratedNode):
     def build(self):
         needDeps(self)
         with software.BRAINSTools.env(self.hash_BRAINSTools):
-            from plumbum.cmd import DWIConvert, unu
-            if self.dwi.path().is_dir():
-                DWIConvert['--inputDicomDirectory', self.dwi.path()
-                        ,'-o', self.path()] & FG
-                unu['save','-e','gzip','-f','nrrd','-i',self.path(),'-o',self.path()] & FG
-            elif isFsl(self.dwi.path()):
-                DWIConvert['--conversionMode', 'FSLToNrrd'
-                           ,'--inputVolume', self.dwi.path()
-                           ,'--allowLossyConversion'
-                           ,'--inputBValues', self.dwi.path().with_suffix('.bval', depth=2)
-                           ,'--inputBVectors', self.dwi.path().with_suffix('.bvec', depth=2)
-                           ,'-o', self.path()] & FG
-                unu['save','-e','gzip','-f','nrrd','-i',self.path(),'-o',self.path()] & FG
-            else:
-                raise Exception("{}: Input dwi has to be a directory of dicoms or a nifti file.".format(self.__class__.__name__))
+            dwiconvert_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
 class DwiFSL(GeneratedNode):
     def __init__(self, caseid, dwi, hash_BRAINSTools):
@@ -48,18 +35,7 @@ class DwiFSL(GeneratedNode):
     def build(self):
         needDeps(self)
         with software.BRAINSTools.env(self.hash_BRAINSTools):
-            from plumbum.cmd import DWIConvert
-            if self.dwi.path().is_dir():
-                DWIConvert['--inputDicomDirectory', self.dwi.path()
-                        ,'-o', self.path()] & FG
-            elif isFsl(self.dwi.path()):
-                DWIConvert['--conversionMode', 'NrrdToFSL'
-                           ,'--inputVolume', self.dwi.path()
-                           ,'--allowLossyConversion'
-                           ,'-o', self.path()] & FG
-            else:
-                raise Exception("{}: Input dwi has to be a directory of dicoms or a nifti file.".format(self.__class__.__name__))
-
+            dwiconvert_py['-i', self.dwi.path(), '-o', self.path()] & FG
 
 class NrrdCompare(GeneratedNode):
     def __init__(self, caseid, nrrd1, nrrd2, hash_nrrdchecker, hash_BRAINSTools):
