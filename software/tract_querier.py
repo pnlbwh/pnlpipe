@@ -1,24 +1,26 @@
 import os
 from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, TemporaryDirectory, envFromDict
 from plumbum import local
-from plumbum.cmd import cmake, make, chmod
+from plumbum.cmd import chmod
 import logging
 
 DEFAULT_HASH = 'e045eab'
+NAME = 'tract_querier'
+REPO = 'demianw/tract_querier'
 
 def make(commit=DEFAULT_HASH):
     """Downloads a lean version of tract_querier. Output is '$soft/tract_querier-<commit>'."""
     dest = getSoftDir()
 
     if commit != 'master':
-        out = local.path(dest / 'tract_querier-' + commit)
+        out = local.path(dest / '{}-{}'.format(NAME, commit))
         if checkExists(out):
             return
 
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
-        repo = downloadGithubRepo('demianw/tract_querier', commit)
+        repo = downloadGithubRepo(REPO, commit)
         sha, date = getCommitInfo(repo)
-        out = local.path(dest / 'tract_querier-' + sha)
+        out = local.path(dest / '{}-{}'.format(NAME, sha))
         if checkExists(out):
             return
 
@@ -31,17 +33,12 @@ def make(commit=DEFAULT_HASH):
 
     chmod('-R', 'a-w', out)
     chmod('a-w', out)
-    date_symlink = dest / 'tract_querier-' + date
+    date_symlink = dest / '{}-{}'.format(NAME, date)
     out.symlink(date_symlink)
 
 
 def getPath(hash=DEFAULT_HASH):
-    path = getSoftDir() / ('tract_querier-' + hash)
-    if not path.exists():
-        raise Exception(
-            "{} doesn\'t exist, make it first with 'pnlscripts/software.py --commit {} tractquerier".format(
-                path, hash))
-    return path
+    return getSoftDir() / '{}-{}'.format(NAME, hash)
 
 def envDict(hash):
     return {'PATH': getPath(hash) / 'scripts'
