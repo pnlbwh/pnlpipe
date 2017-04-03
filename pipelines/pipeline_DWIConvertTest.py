@@ -62,21 +62,20 @@ class DwiFSL(GeneratedNode):
 
 
 class NrrdCompare(GeneratedNode):
-    def __init__(self, caseid, nrrd1, nrrd2, hash_nrrdchecker):
+    def __init__(self, caseid, nrrd1, nrrd2, hash_nrrdchecker, hash_BRAINSTools):
         self.deps = [nrrd1, nrrd2]
-        self.params = [hash_nrrdchecker]
+        self.params = [hash_nrrdchecker, hash_BRAINSTools]
         self.ext = '.txt'
         GeneratedNode.__init__(self, locals())
     def build(self):
         needDeps(self)
-        binarypath = software.nrrdchecker.nrrdchecker.getPath(self.hash_nrrdchecker)
+        import software.nrrdchecker
+        binarypath = software.nrrdchecker.getPath(self.hash_nrrdchecker)
         nrrdchecker = local[binarypath]
-        retcode, stdout, stderr = nrrdchecker.run('-i', self.nrrd1.path(), '-r', self.nrrd2.path())
-        if retcode:
-            raise Exception("{}: nrrdchecker failed to run".format(self.__class__.__name__))
+        retcode, stdout, stderr = nrrdchecker['-i', self.nrrd1.path(), '-r', self.nrrd2.path()].run(retcode=(0,1))
         with open(self.path(), 'w') as f:
             f.write(stderr)
-            f.write(stdout)
+            f.write(stdout[:-1] + ',{},{}'.format(self.caseid, self.hash_BRAINSTools))
 
 
 def makePipeline(caseid
@@ -92,7 +91,8 @@ def makePipeline(caseid
     pipeline['csv'] = NrrdCompare(caseid
                                  , pipeline['dwinrrd']
                                  , pipeline['dwinrrdFromFSL']
-                                 , hash_nrrdchecker)
+                                 , hash_nrrdchecker
+                                 , hash_BRAINSTools)
     return pipeline
 
 
@@ -100,4 +100,5 @@ def status(combos):
     for combo in combos:
         for p in combo['paramPoints']:
             pipeline = makePipeline(**p)
-            print pipeline['csv'].path()
+            with open(pipeline['csv'].path(), 'r') as f:
+                print f.read()

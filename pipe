@@ -49,7 +49,7 @@ def readAndSetInputPaths():
     with open(inputPathsFile, 'r') as f:
         inputPathDict = yaml.load(f)
     pipelib.INPUT_PATHS = {}
-    caseidPattern = inputPathDict.get('caseid', '{case}')
+    caseidPattern = inputPathDict.get('caseid', '{case}').__str__()
     for key, val in inputPathDict.items():
         if key == 'caseid' or key.startswith('version_') or key.startswith(
                 'hash_'):
@@ -229,6 +229,7 @@ def expandParams(params):
     paramPoints = []
     for paramsDict in params:
         # Check if case ids are defined by a caselist
+        paramsDict['caseid'] = map(str, paramsDict['caseid'])
         if '/' in paramsDict['caseid'][0]:
             with open(paramsDict['caseid'][0], 'r') as f:
                 paramsDict['caseid'] = [line for line in f.read().splitlines() if not line.startswith('#')]
