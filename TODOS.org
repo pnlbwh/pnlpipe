@@ -1,4 +1,5 @@
-* BUG: deleting files then running gives "node does not have attribute db"
+* STY/ENH: add env.sh to software builds
+* STY: ls symlinks will print existing full paths, but symlink might not exist
 * STy: add keys subcommand
 * replace ConvertBetweenFileFormat calls with allowLossyConversion in DWIConvert
 * move atlas.py root flags to subcommands (otherwise help doesn't work)

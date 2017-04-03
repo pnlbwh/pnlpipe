@@ -123,6 +123,9 @@ def make(commit=DEFAULT_HASH):
                 else:
                     dest.write(line)
     # (blddir / 'ANTs/Scripts/antsRegistrationSyN.sh').copy(out)
+    with open(out / 'env.sh') as f:
+        f.write("PATH={}:$PATH\n".format(out))
+        f.write("ANTSPATH={}\n".format(out))
     chmod('a-w', out.glob('*'))
     chmod('a-w', out)
     out.symlink(symlink)
