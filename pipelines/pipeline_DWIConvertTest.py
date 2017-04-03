@@ -6,7 +6,7 @@ import software
 import plumbum
 from plumbum import local, FG
 
-DEFAULT_TARGET = 'dwinrrdFromFSL'
+DEFAULT_TARGET = 'csv'
 
 def isFsl(f):
     return '.nii' in f.suffixes
@@ -61,13 +61,43 @@ class DwiFSL(GeneratedNode):
                 raise Exception("{}: Input dwi has to be a directory of dicoms or a nifti file.".format(self.__class__.__name__))
 
 
-def makePipeline(caseid,
-                 dwidicomdirPathKey='dwidicomdir',
-                 hash_BRAINSTools='41353e8'):
+class NrrdCompare(GeneratedNode):
+    def __init__(self, caseid, nrrd1, nrrd2, hash_nrrdchecker):
+        self.deps = [nrrd1, nrrd2]
+        self.params = [hash_nrrdchecker]
+        self.ext = '.txt'
+        GeneratedNode.__init__(self, locals())
+    def build(self):
+        needDeps(self)
+        binarypath = software.nrrdchecker.nrrdchecker.getPath(self.hash_nrrdchecker)
+        nrrdchecker = local[binarypath]
+        retcode, stdout, stderr = nrrdchecker.run('-i', self.nrrd1.path(), '-r', self.nrrd2.path())
+        if retcode:
+            raise Exception("{}: nrrdchecker failed to run".format(self.__class__.__name__))
+        with open(self.path(), 'w') as f:
+            f.write(stderr)
+            f.write(stdout)
+
+
+def makePipeline(caseid
+                 ,dwidicomdirPathKey='dwidicomdir'
+                 ,hash_BRAINSTools='41353e8'
+                 ,hash_nrrdchecker='133ad94'):
 
     pipeline = {'_name': "BRAINSTools DWIConvert test"}
     pipeline['dicoms'] = Src(caseid, dwidicomdirPathKey)
     pipeline['dwinrrd'] = DwiNrrd(caseid, pipeline['dicoms'], hash_BRAINSTools)
     pipeline['dwifsl'] = DwiFSL(caseid, pipeline['dicoms'], hash_BRAINSTools)
     pipeline['dwinrrdFromFSL'] = DwiNrrd(caseid, pipeline['dwifsl'], hash_BRAINSTools)
+    pipeline['csv'] = NrrdCompare(caseid
+                                 , pipeline['dwinrrd']
+                                 , pipeline['dwinrrdFromFSL']
+                                 , hash_nrrdchecker)
     return pipeline
+
+
+def status(combos):
+    for combo in combos:
+        for p in combo['paramPoints']:
+            pipeline = makePipeline(**p)
+            print pipeline['csv'].path()
