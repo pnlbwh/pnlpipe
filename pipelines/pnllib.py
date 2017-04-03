@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from plumbum import local, FG, cli, ProcessExecutionError
-from pnlscripts.util.scripts import convertdwi_py, atlas_py, fs2dwi_py, eddy_py, alignAndCenter_py, bet_py
+from pnlscripts.util.scripts import dwiconvert_py, atlas_py, fs2dwi_py, eddy_py, alignAndCenter_py, bet_py
 from pnlscripts.util import TemporaryDirectory
 import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
@@ -141,7 +141,7 @@ class DwiXc(GeneratedNode):
         needDeps(self)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             tmpdwi = tmpdir / (self.caseid + '-dwi.nrrd')
-            convertdwi_py['-f', '-i', self.dwi.path(), '-o', tmpdwi] & FG
+            dwiconvert_py['-f', '-i', self.dwi.path(), '-o', tmpdwi] & FG
             alignAndCenter_py['-i', tmpdwi, '-o', self.path()] & FG
 
 
@@ -187,7 +187,7 @@ class UkfDefault(GeneratedNode):
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
-            convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
+            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
@@ -288,7 +288,7 @@ class FsInDwiDirect(GeneratedNode):
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
-            convertdwi_py('-i', self.dwi.path(), '-o', tmpdwi)
+            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             fs2dwi_py['-f', fssubjdir, '-t', tmpdwi, '-m',
                       tmpdwimask, '-o', tmpoutdir, 'direct'] & FG

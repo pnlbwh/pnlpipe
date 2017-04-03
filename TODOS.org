@@ -1,3 +1,6 @@
+* BUG: decide on getPath behaviour - no exceptions, check paths before run?
+* ENH: add list of default targets
+* STY: software: if building  master, don't say building '...-master'
 * STY/ENH: add env.sh to software builds
 * STY: ls symlinks will print existing full paths, but symlink might not exist
 * STy: add keys subcommand

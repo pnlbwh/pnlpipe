@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import sys
-from util import logfmt, ExistingNrrdOrNifti, TemporaryDirectory
+from util import logfmt, ExistingNrrdOrNifti
 from plumbum import cli, FG, local
-from plumbum.cmd import unu, DWIConvert, ConvertBetweenFileFormats
+from plumbum.cmd import unu, DWIConvert
 
 import logging
 logger = logging.getLogger()
@@ -21,13 +21,21 @@ def bvec(f):
 
 
 class App(cli.Application):
-    """Converts between DWI formats using unu, DWIConvert and ConvertBetweenFileFormats"""
+    """Converts DWI (or dicom directory), uses unu and DWIConvert.
+
+    DWIConvert is called with '--allowLossyConversion'.
+
+    Examples:
+        dwiconvert.py -i dwi.nii.gz -o dwi.nrrd
+        dwiconvert.py -i dicomdir -o dwi.nii.gz
+        dwiconvert.py -i dwi.nrrd -o dwi.nhdr
+
+    """
 
     force = cli.Flag(['-f','--force'], help='Force overwrite if output already exists',mandatory=False,default=False)
     dwi = cli.SwitchAttr(
         ['-i', '--input'],
-        ExistingNrrdOrNifti,
-        help='Input DWI (nrrd or nifti)',
+        help='Input DWI (nrrd or nifti), or dicom directory',
         mandatory=True)
     out = cli.SwitchAttr(
         ['-o', '--out'],
@@ -35,7 +43,7 @@ class App(cli.Application):
         mandatory=True)
 
     def main(self):
-        dwi = self.dwi
+        dwi = local.path(self.dwi)
         out = local.path(self.out)
 
         if self.force and out.exists():
@@ -43,28 +51,35 @@ class App(cli.Application):
 
         if dwi.suffixes == out.suffixes:
             dwi.copy(out)
+
         elif nrrd(dwi) and nrrd(out):
             unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', dwi, '-o', out)
+
         elif nrrd(dwi) and nifti(out):
-            with TemporaryDirectory() as tmpdir:
-                shortdwi = tmpdir / 'short.nrrd'
-                unu('convert', '-t', 'int16', '-i', dwi, '-o', shortdwi)
-                DWIConvert('--conversionMode', 'NrrdToFSL', '--inputVolume', shortdwi,
-                           '-o', out)
+            DWIConvert('--conversionMode', 'NrrdToFSL'
+                        ,'--inputVolume', dwi
+                        ,'--allowLossyConversion'
+                        ,'-o', out)
+
         elif nifti(dwi) and nrrd(out):
-            with TemporaryDirectory() as t:
-                ConvertBetweenFileFormats(dwi, t / 'short.nii.gz', 'short')
-                DWIConvert('--conversionMode', 'FSLToNrrd', '--inputBValues',
-                           bval(dwi), '--inputBVectors', bvec(dwi),
-                           '--inputVolume', t / 'short.nii.gz', '-o', out)
-            #(unu['permute', '-p','1','2','3','0', '-i', out] | \
-                #unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', out]) & FG
+            DWIConvert('--conversionMode', 'FSLToNrrd'
+                        ,'--inputBValues', bval(dwi)
+                        ,'--inputBVectors', bvec(dwi)
+                        ,'--inputVolume', dwi
+                        ,'--allowLossyConversion'
+                        , '-o', out)
             (unu['save', '-e', 'gzip', '-f', 'nrrd', '-i', out, '-o', out]) & FG
+
         elif nifti(dwi) and nifti(out):
             ConvertBetweenFileFormats(dwi, out)
+
+        elif dwi.is_dir():
+            DWIConvert('--inputDicomDirectory', dwi
+                       ,'--allowLossyConversion'
+                       ,'-o', out)
+
         else:
-            logging.error('Dwi\'s must be nrrd or nifti.')
-            sys.exit(1)
+            raise Exception('Input must be nrrd, nifti, or a dicom directory, and output must be nrrd or nifti.')
 
 
 if __name__ == '__main__':
