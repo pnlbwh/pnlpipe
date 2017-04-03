@@ -1,6 +1,6 @@
 from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict
-from plumbum import local
-from plumbum.cmd import cmake, make, chmod
+from plumbum import local, FG
+from plumbum.cmd import cmake, chmod
 import logging
 
 DEFAULT_HASH = '41353e8'
@@ -113,7 +113,8 @@ def make(commit=DEFAULT_HASH):
         ,"-DUSE_SYSTEM_VTK=OFF"
         ,"-DVTK_GIT_REPOSITORY=git://vtk.org/VTK.git"
         )
-        make['-j', '16'] & FG
+        import plumbum.cmd
+        plumbum.cmd.make['-j', '16'] & FG
     (blddir / 'bin').move(out)
     with open(blddir / 'ANTs/Scripts/antsRegistrationSyN.sh', 'r') as src:
         with open(out / 'antsRegistrationSyN.sh', 'w') as dest:
@@ -123,7 +124,7 @@ def make(commit=DEFAULT_HASH):
                 else:
                     dest.write(line)
     # (blddir / 'ANTs/Scripts/antsRegistrationSyN.sh').copy(out)
-    with open(out / 'env.sh') as f:
+    with open(out / 'env.sh', 'w') as f:
         f.write("PATH={}:$PATH\n".format(out))
         f.write("ANTSPATH={}\n".format(out))
     chmod('a-w', out.glob('*'))
