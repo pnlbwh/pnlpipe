@@ -195,11 +195,13 @@ def readParams(ymlfile):
         pipeline = ymlfile.name.split('.')[1]
         raise Exception("'{}' doesn't exist, run './pipe {} init' first".format(
             ymlfile, pipeline))
+
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
 
     result = []
-    for idx, paramDict in enumerate(yml if isinstance(yml, list) else [yml]):
+    for paramDict in (yml if isinstance(yml, list) else [yml]):
+        print paramDict
         listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
                              for k, v in paramDict.items())
         if not paramDict.get('caseid'):
@@ -210,11 +212,11 @@ def readParams(ymlfile):
                         ymlfile))
             logging.info("Found './caselist.txt, using that for case id's")
             listValueDict['caseid'] = ['./caselist.txt']
+        else:
+            listValueDict['caseid'] = map(str, listValueDict['caseid'])
         result.append(listValueDict)
 
-    logging.debug("Read parameter file '{}':".format(ymlfile))
-    #for d in result:
-        #printVertical(d)
+    logging.debug("Finished reading parameter file '{}':".format(ymlfile))
     return result
 
 
@@ -225,11 +227,10 @@ def checkParams(paramDicts):
         )
 
 
-def expandParams(params):
+def expandParams(paramsDicts):
     paramPoints = []
-    for paramsDict in params:
+    for paramsDict in paramsDicts:
         # Check if case ids are defined by a caselist
-        paramsDict['caseid'] = map(str, paramsDict['caseid'])
         if '/' in paramsDict['caseid'][0]:
             with open(paramsDict['caseid'][0], 'r') as f:
                 paramsDict['caseid'] = [line for line in f.read().splitlines() if not line.startswith('#')]

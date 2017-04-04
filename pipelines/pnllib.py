@@ -212,9 +212,9 @@ class StrctXc(GeneratedNode):
             alignAndCenter_py['-i', nrrd, '-o', self.path()] & FG
 
 
-class T2wMaskRigid(GeneratedNode):
-    def __init__(self, caseid, t2, t1, t1mask, bthash):
-        self.deps = [t2, t1, t1mask]
+class MaskRigid(GeneratedNode):
+    def __init__(self, caseid, fixedStrct, movingStrct, movingStrctMask, bthash):
+        self.deps = [fixedStrct, movingStrct, movingStrctMask]
         self.params = [bthash]
         GeneratedNode.__init__(self, locals())
 
@@ -222,15 +222,15 @@ class T2wMaskRigid(GeneratedNode):
         needDeps(self)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             from pnlscripts.util.scripts import makeRigidMask_py
-            t1 = tmpdir / 't1.nrrd'
-            t1mask = tmpdir / 't1mask.nrrd'
-            t2 = tmpdir / 't2.nrrd'
-            out = tmpdir / 't2mask.nrrd'
-            convertImage(self.t1.path(), t1, self.bthash)
-            convertImage(self.t1mask.path(), t1mask, self.bthash)
-            convertImage(self.t2.path(), t2, self.bthash)
+            moving = tmpdir / 'moving.nrrd'
+            movingmask = tmpdir / 'movingmask.nrrd'
+            fixed = tmpdir / 'fixed.nrrd'
+            out = tmpdir / 'fixedmask.nrrd'
+            convertImage(self.movingStrct.path(), moving, self.bthash)
+            convertImage(self.movingStrctMask.path(), movingmask, self.bthash)
+            convertImage(self.fixedStrct.path(), fixed, self.bthash)
             makeRigidMask_py('-i', t1, '--labelmap',
-                             t1mask, '--target', t2,
+                             movingmask, '--target', fixed,
                              '-o', out)
             out.move(self.path())
 
@@ -292,6 +292,37 @@ class FsInDwiDirect(GeneratedNode):
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             fs2dwi_py['-f', fssubjdir, '-t', tmpdwi, '-m',
                       tmpdwimask, '-o', tmpoutdir, 'direct'] & FG
+	    local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
+
+class FsInDwiUsingT2(GeneratedNode):
+    def __init__(self, caseid, fs, t1, t1mask, t2, t2mask, dwi, dwimask, bthash):
+        self.deps = [fs, t1, t2, dwi, dwimask]
+        self.params = [bthash]
+        self.ext = 'nii.gz'
+        GeneratedNode.__init__(self, locals())
+    def build(self):
+        needDeps(self)
+        fssubjdir = self.fs.path().dirname.dirname
+        with TemporaryDirectory() as tmpdir, BRAINSTools.env(self.bthash):
+            tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
+            tmpdwi = tmpdir / 'dwi.nrrd'
+            tmpdwimask = tmpdir / 'dwimask.nrrd'
+            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
+            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            t2 = self.t2.path()
+            t1 = self.t1.path()
+            t1mask = self.t1mask.path()
+            t2mask = self.t2mask.path()
+            cmd = 'pipelines/pnlscripts/old/fs2dwi_T2.sh --fsdir {fssubjdir} \
+            --dwi {tmpdwi} \
+            --dwimask {tmpdwimask} \
+            --t2 {t2} \
+            --t2mask {t2mask} \
+            --t1 {t1} \
+            --t1mask {t1mask} \
+            -o {tmpoutdir}'.format(locals())
+            import os
+            os.system(cmd)
 	    local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
 
 
