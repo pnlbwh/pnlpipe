@@ -17,9 +17,12 @@ def readParams(ymlfile):
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
     result = []
+    def mapTuple(xs):
+        return [tuple(x) if isinstance(x,list) else x for x in xs]
     for paramDict in (yml if isinstance(yml, list) else [yml]):
-        listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
-                             for k, v in paramDict.items())
+        #listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
+                             #for k, v in paramDict.items())
+        listValueDict = dict((k, mapTuple(v)) for k, v in paramDict.items())
         listValueDict['caseid'] = map(str, listValueDict['caseid'])
         result.append(listValueDict)
     logging.debug("Finished reading parameter file '{}':".format(ymlfile))

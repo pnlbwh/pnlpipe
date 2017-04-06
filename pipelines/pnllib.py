@@ -7,10 +7,10 @@ from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
 import software.FreeSurfer
 
-defaultUkfParams = dict([("Ql", 70), ("Qm", 0.001), ("Rs", 0.015),
-                    ("numTensor", 2), ("recordLength", 1.7),
-                    ("seedFALimit", 0.18), ("seedsPerVoxel", 10),
-                    ("stepLength", 0.3)])
+defaultUkfParams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015,
+                    "--numTensor", 2, "--recordLength", 1.7,
+                    "--seedFALimit", 0.18, "--seedsPerVoxel", 10,
+                    "--stepLength", 0.3]
 
 class DoesNotExistException(Exception):
     pass
@@ -48,9 +48,9 @@ def convertImage(i, o, bthash):
         ConvertBetweenFileFormats(i, o)
 
 
-def formatParams(dic):
+def formatParams(l):
     formatted = [['--' + key, val] for key, val in dic.items()]
-    return [item for pair in formatted for item in pair]
+    return [item for pair in formatted for item in pair if item]
 
 
 def validateFreeSurfer(versionRequired):
@@ -192,13 +192,13 @@ class UkfDefault(GeneratedNode):
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
-                      self.path()] + formatParams(defaultUkfParams)
+                      self.path()] + defaultUkfParams
             ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
             ukfbin(*params)
 
-class UkfCustom(GeneratedNode):
+class Ukf(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfparams, ukfhash, bthash):
         self.deps = [dwi, dwimask]
         self.params = [ukfhash, bthash, ukfparams]
@@ -214,7 +214,7 @@ class UkfCustom(GeneratedNode):
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
-                      self.path()] + formatParams(self.ukfparams)
+                      self.path()] + self.ukfparams
             ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]

@@ -145,9 +145,9 @@ def lookupPathKey(key, caseid, pathsDict):
         pathPattern = pathsDict[key]
         caseid_string = pathsDict.get('caseid', '{case}')
         filepath = local.path(pathPattern.replace(caseid_string, caseid))
-        if not filepath.exists():
-            raise DoesNotExistException(
-                "pipelib: '{}' does not exist".format(filepath))
+        #if not filepath.exists():
+            #raise DoesNotExistException(
+                #"pipelib: '{}' does not exist".format(filepath))
         return filepath
     except KeyError:
         msg = """Key '{key}' not found in pipelib.INPUT_PATHS.
