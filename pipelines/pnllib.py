@@ -197,6 +197,27 @@ class UkfDefault(GeneratedNode):
             ukfbin = local[ukfpath]
             ukfbin(*params)
 
+class UkfCustom(GeneratedNode):
+    def __init__(self, caseid, dwi, dwimask, ukfparams, ukfhash, bthash):
+        self.deps = [dwi, dwimask]
+        self.params = [ukfhash, bthash, ukfparams]
+        self.ext = '.vtk'
+        GeneratedNode.__init__(self, locals())
+    def build(self):
+        needDeps(self)
+        with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
+            tmpdir = local.path(tmpdir)
+            tmpdwi = tmpdir / 'dwi.nrrd'
+            tmpdwimask = tmpdir / 'dwimask.nrrd'
+            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
+            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
+                      '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
+                      self.path()] + formatParams(self.ukfparams)
+            ukfpath = UKFTractography.getPath(self.ukfhash)
+            log.info(' Found UKF at {}'.format(ukfpath))
+            ukfbin = local[ukfpath]
+            ukfbin(*params)
 
 class StrctXc(GeneratedNode):
     def __init__(self, caseid, strct, bthash):
