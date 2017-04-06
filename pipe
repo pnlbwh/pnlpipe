@@ -4,8 +4,7 @@ try:
 except ImportError:
     print('Couldn\'t import plumbum')
     print(
-        'Did you forget to load python environment? (e.g. source activate pnlpipe)'
-    )
+        'Did you forget to load python environment? (e.g. source activate pnlpipe)')
 import sys
 import yaml
 import itertools
@@ -14,16 +13,21 @@ from collections import defaultdict
 from pprint import pprint
 import logging
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)5s - %(name)s %(message)s', datefmt="%Y-%m-%d %H:%M")
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s', datefmt="%Y-%m-%d %H:%M")
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s',
+    datefmt="%Y-%m-%d %H:%M")
 logger = logging.getLogger(__name__)
 import pipelib
 import software
-from pipelib.params import readParams, readComboPaths, readParamCombos, assertValidParamCombos, filterSoftwareItems
+from pipelib.params import readParams, readComboPaths, readParamCombos, assertValidParamCombos, getSoftwareItems
 
 inputPathsFile = "srcpaths.yml"
 
+
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
+
 
 def printTable(myDict, colList=None):
     """ Pretty print a list of dictionaries (myDict) as a dynamically sized table.
@@ -42,7 +46,7 @@ def printTable(myDict, colList=None):
 
 def printVertical(d, prepend='', fd=sys.stderr):
     for k, v in d.items():
-       fd.write("{}{:<25} {:<15}".format(prepend,k, v) + '\n')
+        fd.write("{}{:<25} {:<15}".format(prepend, k, v) + '\n')
 
 
 def readAndSetSrcPaths():
@@ -60,7 +64,8 @@ def readAndSetSrcPaths():
             continue
         pipelib.INPUT_PATHS[key] = local.path(
             val.replace(caseidPattern, '{case}'))
-    logging.debug("Read '{}' and set pipelib.INPUT_PATHS:".format(inputPathsFile))
+    logging.debug("Read '{}' and set pipelib.INPUT_PATHS:".format(
+        inputPathsFile))
     #printVertical(pipelib.INPUT_PATHS)
     # pprint(pipelib.INPUT_PATHS)
 
@@ -83,7 +88,8 @@ def checkPaths(pathsDict):
         if key == 'caseid':
             continue
         if not local.path(path).exists():
-            logging.warning("'{}' does not exist, is this intended?".format(path))
+            logging.warning("'{}' does not exist, is this intended?".format(
+                path))
             allexist = False
     if not pathsDict.get('caseid', None):
         errmsg = """'caseid' not set, make you set this so the pipeline knows how to get the paths for your other subjects.
@@ -93,8 +99,7 @@ def checkPaths(pathsDict):
         logging.info('All paths exist.')
         return
     logging.warning(
-        "Warning: Some paths don't exist for the given caseid, so pipeline may fail to run."
-    )
+        "Warning: Some paths don't exist for the given caseid, so pipeline may fail to run.")
 
 
 def writePaths(pathsDict, outfile):
@@ -112,7 +117,8 @@ def readPathsYml(pathsDir):
         except yaml.parser.ParserError, e:
             loggin.error(
                 'Error parsing {}, is there a typo? (And are the path templates in quotes?)'.format(
-                    pathsDir / 'paths.yml'), exc_info=True)
+                    pathsDir / 'paths.yml'),
+                exc_info=True)
             sys.exit(1)
     return relativePaths
 
@@ -128,8 +134,8 @@ class PipeInit(cli.Application):
 
     def main(self):
         if local.path(inputPathsFile).exists():
-            logging.info(
-                "'{}' already exists, won't overwrite.".format(inputPathsFile))
+            logging.info("'{}' already exists, won't overwrite.".format(
+                inputPathsFile))
             return
 
         # Copy from paths.yml in another project directory
@@ -189,7 +195,6 @@ text editor to make the yaml file ({}), with this format:
     caseid: 001""".format(inputPathsFile))
 
 
-
 class PipelineSubcommand(cli.Application):
     def main(self, *args):
         if args:
@@ -213,8 +218,8 @@ class Run(cli.Application):
         logging.info('Check that prerequisite software exists')
         missingSoftwareModules = []
         missingSoftware = []
-        for (paramCombo,_) in paramCombos:
-            for softname, version, modulefile in filterSoftwareItems(paramCombo):
+        for (paramCombo, _) in paramCombos:
+            for softname, version, modulefile in getSoftwareItems(paramCombo):
                 if not modulefile.exists():
                     missingSoftwareModules.append(modulefile)
                     continue
@@ -246,7 +251,8 @@ Run './pipe {} make' to build all prequisite software and make sure FREESURFER_H
             if not self.parent.defaultTarget:
                 errmsg = """
 'pipelines/pipeline_{}.py' doesn't have 'DEFAULT_TARGET' defined, set this in 'makePipeline(...)'."
-E.g. DEFAULT_TARGET = 'tractmeasures'""" .format(self.parent.name, self.parent.name)
+E.g. DEFAULT_TARGET = 'tractmeasures'""".format(self.parent.name,
+                                                self.parent.name)
                 raise Exception(errmsg)
             want = self.parent.defaultTarget
         else:
@@ -256,15 +262,12 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""" .format(self.parent.name, self.parent.n
         for paramCombo, caseids in paramCombos:
             caseids = commandLineCaseids if commandLineCaseids else caseids
             for caseid in caseids:
-                logging.info(
-                    'Running {} pipeline'.format(self.parent.name)
-                )
+                logging.info('Running {} pipeline'.format(self.parent.name))
                 print("# Subject ID " + caseid)
                 printVertical(paramCombo)
                 args = dict(paramCombo, caseid=caseid)
                 pipeline = self.parent.makePipeline(**args)
                 pipelib.update(pipeline[want])
-
 
 
 class Init(cli.Application):
@@ -294,7 +297,7 @@ class Init(cli.Application):
         else:
             x = izip_longest(reversed(args), [], fillvalue='*mandatory*')
         # paramDict = OrderedDict(reversed(list(x)))
-        paramDict = OrderedDict(reversed(map(lambda y: (y[0],[y[1]]), x)))
+        paramDict = OrderedDict(reversed(map(lambda y: (y[0], [y[1]]), x)))
         # get a default caseid
         paramDict['caseid'] = ['./caselist.txt']
         if (not local.path('caselist.txt').exists()
@@ -305,10 +308,10 @@ class Init(cli.Application):
                     errmsg = """Error reading {} as a dictionary, is it in the correct format?                    E.g.
 dwi: path/to/001-dwi.nrrd
 t1: path/to/001-t1.nrrd
-caseid: caseid""" .format(inputPathsFile)
+caseid: caseid""".format(inputPathsFile)
                     raise Exception(errmsg)
                 paramDict['caseid'] = [inputPaths.get('caseid',
-                                                     './caselist.txt')]
+                                                      './caselist.txt')]
         """ http://stackoverflow.com/a/8661021 """
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
@@ -356,12 +359,17 @@ class Make(cli.Application):
 
         logging.info("Build prerequisite software")
         paramDicts = readParams(self.parent.paramsFile)
-        for module, commit in getRequiredSoftwareModules(paramDicts):
-            logging.info("Make {}".format(module.getPath(commit)))
-            module.make(commit)
+        for (paramCombo, _) in readParamCombos(self.parent.paramsFile):
+            for softname, commit, modulefile in getSoftwareItems(paramCombo):
+                if not modulefile.exists():
+                    raise Exception("{} does not exist".format(modulefile))
+                module = importlib.import_module('software.' + softname)
+                logging.info("Make {}".format(module.getPath(commit)))
+                module.make(commit)
 
         logging.info("Make shell environment files")
-        makeEnvFiles(self.parent.name, self.parent.paramsFile, self.parent.makePipeline)
+        makeEnvFiles(self.parent.name, self.parent.paramsFile,
+                     self.parent.makePipeline)
 
 
 def makeRelativeSymlink(src, symlink):
@@ -370,7 +378,9 @@ def makeRelativeSymlink(src, symlink):
     #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
     src.symlink(symlink)
     if '.nhdr' in src.suffixes:
-        src.with_suffix('.raw.gz').symlink(symlink.dirname / src.with_suffix('.raw.gz').name)
+        src.with_suffix('.raw.gz').symlink(symlink.dirname /
+                                           src.with_suffix('.raw.gz').name)
+
 
 def escapePath(filepath):
     return filepath.__str__().replace('(', '\(').replace(')', '\)')
@@ -404,11 +414,12 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
         logging.info("Make '{}'".format(envFile))
         with open(envFile, 'w') as f:
             f.write('# Parameter combination {}\n'.format(comboPaths['id']))
-            printVertical(comboPaths['paramCombo'],'#  ', f)
+            printVertical(comboPaths['paramCombo'], '#  ', f)
             f.write('\n')
 
             # Generated output paths
-            for key, subjectPaths in itertools.groupby(comboPaths['paths'], lambda x: x.pipelineKey):
+            for key, subjectPaths in itertools.groupby(
+                    comboPaths['paths'], lambda x: x.pipelineKey):
                 firstSubject = list(subjectPaths)[0]
                 f.write('{}={}\n\n'.format(key, escapePath(firstSubject.path)))
                 # fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
@@ -417,22 +428,26 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
 
             # Software environment
             envDicts = []
-            for softname, version, _ in filterSoftwareItems(comboPaths['paramCombo']):
+            for softname, version, _ in getSoftwareItems(comboPaths[
+                    'paramCombo']):
                 m = importlib.import_module('software.' + softname)
                 if hasattr(m, 'envDict'):
                     envDicts.append(m.envDict(version))
             softVars = software.composeEnvDicts(envDicts)
             for var, val in softVars.items():
                 f.write('{}={}\n\n'.format(var, val))
-            f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
+            f.write("PATH={}:$PATH\n".format(
+                local.path('pipelines/pnlscripts')))
+
 
 def toSymlink(caseid, pipename, key, path, paramId):
     path = local.path(path)
     suffixes = path.suffixes[-2:]
     if not '.nii' in suffixes:
         suffixes = suffixes[-1:]
-    return local.path(pipelib.OUTDIR / caseid /
-                         (pipename + '_' + key + str(paramId) + ''.join(suffixes)))
+    return local.path(
+        pipelib.OUTDIR / caseid /
+        (pipename + '_' + key + str(paramId) + ''.join(suffixes)))
 
 
 class SymLink(cli.Application):
@@ -452,7 +467,8 @@ class SymLink(cli.Application):
                     p for p in filter(lambda x: x.path.exists(), subjectPaths)
                 ]
                 for p in existingPaths:
-                    symlink = toSymlink(p.caseid, pipename, key, p.path, comboPaths['id'])
+                    symlink = toSymlink(p.caseid, pipename, key, p.path,
+                                        comboPaths['id'])
                     sys.stdout.write("Make symlink '{}' --> '{}' ".format(
                         symlink, p.path))
                     if symlink.exists():
@@ -497,32 +513,36 @@ class SoftwareCommand(cli.Application):
             softwareModule.make()
 
 
-
 def stripKeys(dic, strs):
     def strip(s, strs):
         if not strs:
             return s
         else:
-            return strip(s.replace(strs[0],''), strs[1:])
-    return {strip(k,strs):v for k,v in dic.items()}
+            return strip(s.replace(strs[0], ''), strs[1:])
+
+    return {strip(k, strs): v for k, v in dic.items()}
+
 
 class Status(cli.Application):
     def main(self):
         combos = pipelineComboPaths(self.parent.paramsFile,
-                                             self.parent.makePipeline)
+                                    self.parent.makePipeline)
         # print("## Parameter Combination {} ({} subjects)".format(
         #         comboPaths['id'], comboPaths['num']))
 
         #paramDescrips = [stripKeys(dict(p['paramCombo'],paramid=p['id']), ['hash_', 'version_']) for p in combos]
-        paramDescrips = [stripKeys(dict(p['paramCombo']), ['hash_', 'version_']) for p in combos]
+        paramDescrips = [stripKeys(
+            dict(p['paramCombo']), ['hash_', 'version_']) for p in combos]
         #printTable(paramDescrips, ['paramid'] + [k for k in paramDescrips[0].keys() if k!='paramid'])
         printTable(paramDescrips)
         print
         pathCounts = []
         for combo in combos:
             d = {k: len(filter(lambda x: x.path.exists(), vs))
-                    for k, vs in combo['paths'].iteritems()}
-            pathCounts.append(dict(d, paramid=combo['id'], numcases=combo['num']))
+                 for k, vs in combo['paths'].iteritems()}
+            pathCounts.append(
+                dict(
+                    d, paramid=combo['id'], numcases=combo['num']))
         cols = pathCounts[0].keys()
         cols.remove('paramid')
         cols.remove('numcases')
@@ -537,11 +557,16 @@ class Status(cli.Application):
 
 class Ls(cli.Application):
     csv = cli.Flag(
-        ['-c', '--csv'], excludes=['-s'], help="Print subject ids and paths separated by comma")
+        ['-c', '--csv'],
+        excludes=['-s'],
+        help="Print subject ids and paths separated by comma")
     caseids = cli.Flag(
-        ['-s', '--subjid'], excludes=['-c'], help="Print subject ids instead of paths")
+        ['-s', '--subjid'],
+        excludes=['-c'],
+        help="Print subject ids instead of paths")
     printFull = cli.Flag(
         ['-p'], excludes=['-s'], help="Print full paths instead of symlinks.")
+
     def main(self, *keys):
         for comboPaths in pipelineComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
@@ -563,7 +588,8 @@ class Ls(cli.Application):
                     if self.printFull:
                         print(p.path)
                     else:
-                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path, comboPaths['id'])
+                        symlink = toSymlink(p.caseid, self.parent.name, k,
+                                            p.path, comboPaths['id'])
                         print(symlink)
 
 
@@ -572,15 +598,15 @@ class Missing(cli.Application):
 
     caseids = cli.Flag(
         ['-s', '--subjid'], help="Print subject ids instead of paths")
-    printFull = cli.Flag(
-        ['-p'], help="Print full paths instead of symlinks.")
+    printFull = cli.Flag(['-p'], help="Print full paths instead of symlinks.")
 
     def main(self, *keys):
 
         from itertools import cycle
-        defaultKeys = [a + str(
-            b) for a, b in zip(cycle([self.parent.defaultTarget]), range(1, 5))
-                       ] + [self.parent.defaultTarget]
+        defaultKeys = [
+            a + str(b)
+            for a, b in zip(cycle([self.parent.defaultTarget]), range(1, 5))
+        ] + [self.parent.defaultTarget]
         keys = defaultKeys if not keys else keys
         if not keys:
             raise Exception(
@@ -605,7 +631,8 @@ class Missing(cli.Application):
                     elif self.printFull:
                         print(p.path)
                     else:
-                        symlink = toSymlink(p.caseid, self.parent.name, k, p.path, comboPaths['id'])
+                        symlink = toSymlink(p.caseid, self.parent.name, k,
+                                            p.path, comboPaths['id'])
                         print(symlink)
 
 

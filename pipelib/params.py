@@ -14,27 +14,14 @@ def readParams(ymlfile):
         raise Exception(
             "'{}' doesn't exist, run './pipe {} init' first".format(ymlfile,
                                                                     pipeline))
-
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
-
     result = []
     for paramDict in (yml if isinstance(yml, list) else [yml]):
-        print paramDict
         listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
                              for k, v in paramDict.items())
-        # if not paramDict.get('caseid'):
-        #     caselist = local.path('caselist.txt')
-        #     if not caselist.exists():
-        #         raise Exception(
-        #             "Add 'caseid' to {} (or save a caselist.txt to this directory)".format(
-        #                 ymlfile))
-        #     logging.info("Found './caselist.txt, using that for case id's")
-        #     listValueDict['caseid'] = ['./caselist.txt']
-        # else:
         listValueDict['caseid'] = map(str, listValueDict['caseid'])
         result.append(listValueDict)
-
     logging.debug("Finished reading parameter file '{}':".format(ymlfile))
     return result
 
@@ -123,6 +110,7 @@ def readComboPaths(paramsFile, makePipelineFn):
         result.append(paramComboPaths)
     return result
 
+
 def assertValidParamCombos(paramCombos, paramsFile):
     for paramCombo, _ in paramCombos:
         if '*mandatory*' in paramCombo.values():
@@ -139,17 +127,9 @@ def softNameFromKey(paramKey):
         softname = paramKey[8:]
     return softname
 
-def filterSoftwareItems(d):
+
+def getSoftwareItems(d):
     for k, v in (d.items() if isinstance(d, dict) else d):
         softname = softNameFromKey(k)
         if softname:
             yield softname, v, local.path('software/{}.py'.format(softname))
-
-def getRequiredSoftwareModules(yml):
-    for paramsDict in yml:
-        for softname, commits, modulefile in filterSoftwareItems(paramsDict):
-            if not moduleFile.exists():
-                raise Exception("{} does not exist".format(moduleFile))
-            module = importlib.import_module('software.' + softname)
-            for commit in commits:
-                yield (module, commit)
