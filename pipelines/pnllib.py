@@ -7,10 +7,10 @@ from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
 import software.FreeSurfer
 
-defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
-                    ("numTensor", "2"), ("recordLength", "1.7"),
-                    ("seedFALimit", "0.18"), ("seedsPerVoxel", "10"),
-                    ("stepLength", "0.3")]
+defaultUkfParams = dict([("Ql", 70), ("Qm", 0.001), ("Rs", 0.015),
+                    ("numTensor", 2), ("recordLength", 1.7),
+                    ("seedFALimit", 0.18), ("seedsPerVoxel", 10),
+                    ("stepLength", 0.3)])
 
 class DoesNotExistException(Exception):
     pass
@@ -48,8 +48,8 @@ def convertImage(i, o, bthash):
         ConvertBetweenFileFormats(i, o)
 
 
-def formatParams(paramsList):
-    formatted = [['--' + key, val] for key, val in paramsList]
+def formatParams(dic):
+    formatted = [['--' + key, val] for key, val in dic.items()]
     return [item for pair in formatted for item in pair]
 
 
@@ -73,6 +73,7 @@ def validateFreeSurfer(versionRequired):
     else:
         log.error("FreeSurfer version {} at {} does not match the required version of {}, either change FREESURFER_HOME or change the version you require".format(version, freesurferHome, versionRequired))
         sys.exit(1)
+
 
 class DwiHcp(GeneratedNode):
     """ Washington University HCP DWI preprocessing. """
