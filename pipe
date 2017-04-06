@@ -18,8 +18,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)5s - %
 logger = logging.getLogger(__name__)
 import pipelib
 import software
+from pipelib.params import readParams, readComboPaths, readParamCombos, assertValidParamCombos, filterSoftwareItems
 
 inputPathsFile = "srcpaths.yml"
+
+def concat(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
 
 def printTable(myDict, colList=None):
     """ Pretty print a list of dictionaries (myDict) as a dynamically sized table.
@@ -41,7 +45,7 @@ def printVertical(d, prepend='', fd=sys.stderr):
        fd.write("{}{:<25} {:<15}".format(prepend,k, v) + '\n')
 
 
-def readAndSetInputPaths():
+def readAndSetSrcPaths():
     if not local.path(inputPathsFile).exists():
         raise Exception(
             "Missing {}, first make one using './pipe init' or a text editor".format(
@@ -185,62 +189,6 @@ text editor to make the yaml file ({}), with this format:
     caseid: 001""".format(inputPathsFile))
 
 
-def concat(l):
-    return l if l == [] else [item for sublist in l for item in sublist]
-
-
-def readParams(ymlfile):
-
-    if not local.path(ymlfile).exists():
-        pipeline = ymlfile.name.split('.')[1]
-        raise Exception("'{}' doesn't exist, run './pipe {} init' first".format(
-            ymlfile, pipeline))
-
-    with open(ymlfile, 'r') as f:
-        yml = yaml.load(f)
-
-    result = []
-    for paramDict in (yml if isinstance(yml, list) else [yml]):
-        print paramDict
-        listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
-                             for k, v in paramDict.items())
-        if not paramDict.get('caseid'):
-            caselist = local.path('caselist.txt')
-            if not caselist.exists():
-                raise Exception(
-                    "Add 'caseid' to {} (or save a caselist.txt to this directory)".format(
-                        ymlfile))
-            logging.info("Found './caselist.txt, using that for case id's")
-            listValueDict['caseid'] = ['./caselist.txt']
-        else:
-            listValueDict['caseid'] = map(str, listValueDict['caseid'])
-        result.append(listValueDict)
-
-    logging.debug("Finished reading parameter file '{}':".format(ymlfile))
-    return result
-
-
-def checkParams(paramDicts):
-    if '*mandatory*' in concat([concat(d.values()) for d in paramDicts]):
-        raise Exception(
-            "First replace '*mandatory*' values in params file and then run again."
-        )
-
-
-def expandParams(paramsDicts):
-    paramPoints = []
-    for paramsDict in paramsDicts:
-        # Check if case ids are defined by a caselist
-        if '/' in paramsDict['caseid'][0]:
-            with open(paramsDict['caseid'][0], 'r') as f:
-                paramsDict['caseid'] = [line for line in f.read().splitlines() if not line.startswith('#')]
-        keys = paramsDict.keys()
-        valueCombos = list(itertools.product(*paramsDict.values()))
-        ps = [dict(zip(keys, combo)) for combo in valueCombos]
-        paramPoints.append(ps)
-    # return list of unique parameters
-    return list({yaml.dump(p): p for p in concat(paramPoints)}.values())
-
 
 class PipelineSubcommand(cli.Application):
     def main(self, *args):
@@ -257,32 +205,22 @@ class Run(cli.Application):
     want = cli.SwitchAttr(
         ['-w', '--want'], help='target node to build, e.g. fsindwi')
 
-    def main(self, *caseids):
-        readAndSetInputPaths()  # reads source paths into pipelib.INPUT_PATHS
-
-        paramDicts = readParams(self.parent.paramsFile)
-        if any('*mandatory*' in concat(p.values()) for p in paramDicts):
-            raise Exception(
-                "'{}' has unfilled mandatory values, replace the '*mandatory*' fields first and then rerun the pipeline.".format(
-                    self.parent.paramsFile))
-
-        if caseids:
-            for paramsDict in paramDicts:
-                if 'caseid' in paramsDict.keys():
-                    paramsDict['caseid'] = caseids
-
-        paramsList = expandParams(paramDicts)
+    def main(self, *commandLineCaseids):
+        readAndSetSrcPaths()
+        paramCombos = readParamCombos(self.parent.paramsFile)
+        assertValidParamCombos(paramCombos, self.parent.paramsFile)
 
         logging.info('Check that prerequisite software exists')
         missingSoftwareModules = []
         missingSoftware = []
-        for softname, version, moduleFile in softwareItems(list(set(filter(lambda x: not isinstance(x[1],list), concat([p.items() for p in paramsList]))))):
-            if not moduleFile.exists():
-                missingSoftwareModules.append(moduleFile)
-                continue
-            module = importlib.import_module('software.' + softname)
-            if not local.path(module.getPath(version)).exists():
-                missingSoftware.append(module.getPath(version))
+        for (paramCombo,_) in paramCombos:
+            for softname, version, modulefile in filterSoftwareItems(paramCombo):
+                if not modulefile.exists():
+                    missingSoftwareModules.append(modulefile)
+                    continue
+                module = importlib.import_module('software.' + softname)
+                if not local.path(module.getPath(version)).exists():
+                    missingSoftware.append(module.getPath(version))
 
         for f in missingSoftwareModules:
             logging.warning("missing {}".format(f))
@@ -292,9 +230,16 @@ class Run(cli.Application):
             sys.exit(1)
         if missingSoftware:
             errmsg = """
-Some software components are missing so some parts of the pipeline won't run.
-Run './pipe {} make' to build all prequisite software.".format(self.parent.name
+Some software components are missing and so some parts of the pipeline won't run.
+Run './pipe {} make' to build all prequisite software.
             """.format(self.parent.name)
+            errmsgFS = """
+Some software components are missing and so some parts of the pipeline won't run.
+Run './pipe {} make' to build all prequisite software and make sure FREESURFER_HOME is set.
+            """.format(self.parent.name)
+            for soft in missingSoftware:
+                if 'FREESURFER_HOME' in soft:
+                    raise Exception(errmsgFS)
             raise Exception(errmsg)
 
         if not self.want:
@@ -308,36 +253,18 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""" .format(self.parent.name, self.parent.n
             want = self.want
         logging.info('Make target {}'.format(want))
 
-        for params in paramsList:
-            logging.info(
-                'Running {} pipeline with parameters:'.format(self.parent.name)
-            )
-            printVertical(params)
+        for paramCombo, caseids in paramCombos:
+            caseids = commandLineCaseids if commandLineCaseids else caseids
+            for caseid in caseids:
+                logging.info(
+                    'Running {} pipeline'.format(self.parent.name)
+                )
+                print("# Subject ID " + caseid)
+                printVertical(paramCombo)
+                args = dict(paramCombo, caseid=caseid)
+                pipeline = self.parent.makePipeline(**args)
+                pipelib.update(pipeline[want])
 
-            pipeline = self.parent.makePipeline(**params)
-            pipelib.update(pipeline[want])
-
-
-def softwareItems(items):
-    for key, val in items:
-        if key.startswith('hash_'):
-            softname = key[5:]
-        elif key.startswith('version_'):
-            softname = key[8:]
-        else:
-            continue
-        moduleFile = local.path('software') / (softname + '.py')
-        yield (softname, val, moduleFile)
-
-
-def getRequiredSoftwareModules(yml):
-    for paramsDict in yml:
-        for softname, commits, moduleFile in softwareItems(paramsDict.items()):
-            if not moduleFile.exists():
-                raise Exception("{} does not exist".format(moduleFile))
-            module = importlib.import_module('software.' + softname)
-            for commit in commits:
-                yield (module, commit)
 
 
 class Init(cli.Application):
@@ -437,11 +364,6 @@ class Make(cli.Application):
         makeEnvFiles(self.parent.name, self.parent.paramsFile, self.parent.makePipeline)
 
 
-def groupDicts(dicts, keyfn):
-    from itertools import groupby
-    return [(k, list(g)) for k, g in groupby(sorted(dicts, key=keyfn), keyfn)]
-
-
 def makeRelativeSymlink(src, symlink):
     import os
     #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
@@ -476,7 +398,8 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
     for f in local.cwd.glob(name + '*.sh'):
         f.delete()
     # with open('outputPaths.yml', 'w') as fyml:
-    for comboPaths in pipelineComboPaths(paramsFile, makePipelineFn):
+    readAndSetSrcPaths()
+    for comboPaths in readComboPaths(paramsFile, makePipelineFn):
         envFile = "_{}_env{}.sh".format(name, comboPaths['id'])
         logging.info("Make '{}'".format(envFile))
         with open(envFile, 'w') as f:
@@ -485,15 +408,16 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
             f.write('\n')
 
             # Generated output paths
-            for key, subjectPaths in comboPaths['paths'].iteritems():
-                f.write('{}={}\n\n'.format(key, escapePath(subjectPaths[0].path)))
+            for key, subjectPaths in itertools.groupby(comboPaths['paths'], lambda x: x.pipelineKey):
+                firstSubject = list(subjectPaths)[0]
+                f.write('{}={}\n\n'.format(key, escapePath(firstSubject.path)))
                 # fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
-            f.write('caseid={}\n\n'.format(subjectPaths[0].caseid))
+            f.write('caseid={}\n\n'.format(firstSubject.caseid))
             # fyml.write('caseid: {}\n'.format(subjectPaths[0].caseid))
 
             # Software environment
             envDicts = []
-            for softname, version, _ in softwareItems(comboPaths['paramCombo'].items()):
+            for softname, version, _ in filterSoftwareItems(comboPaths['paramCombo']):
                 m = importlib.import_module('software.' + softname)
                 if hasattr(m, 'envDict'):
                     envDicts.append(m.envDict(version))
@@ -501,9 +425,6 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
             for var, val in softVars.items():
                 f.write('{}={}\n\n'.format(var, val))
             f.write("PATH={}:$PATH\n".format(local.path('pipelines/pnlscripts')))
-        # sys.stdout.write("Done.\n".format(envFile))
-        #logging.info("Made '{}'".format(envFile))
-    # print("Made '{}'".format('outputPaths.yml'))
 
 def toSymlink(caseid, pipename, key, path, paramId):
     path = local.path(path)
@@ -575,56 +496,7 @@ class SoftwareCommand(cli.Application):
             logging.info("Make '{}'".format(softwareModule.getPath()))
             softwareModule.make()
 
-def pipelineNodeItems(pipeline):
-    items = filter(lambda x: not x[0].startswith('_'), pipeline.items())
-    for item in items:
-        if not hasattr(item[1], 'build') or not hasattr(item[1], 'path'):
-            raise Exception(
-                "The object at key '{}' is not a Node, are you missing a leading '_'?".format(
-                    item[0]))
-    return items
 
-
-def groupParamPointsByCombo(paramsFile):
-    readAndSetInputPaths()
-    paramDicts = readParams(paramsFile)
-    checkParams(paramDicts)
-    paramPoints = expandParams(paramDicts)
-    paramPointsByCombo = groupDicts(paramPoints, lambda x: {k:v for k,v in x.items() if k != 'caseid'} )
-    # Sort by parameter points that have most caseids. This is an edge
-    # case, usually there will only be one parameter point, or if more than
-    # one they will be the same length. But, there is a use case hen
-    # running a smaller test set to see the effect of a change in one of
-    # the parameters, e.g. a different software version
-    paramPointsByCombo = sorted(paramPointsByCombo, key=lambda x: -len(x[1]))
-    return paramPointsByCombo
-
-
-from collections import namedtuple
-SubjectPath = namedtuple('SubjectPath', 'caseid path')
-
-
-def pipelineComboPaths(paramsFile, makePipelineFn):
-    paramPointsByCombo = groupParamPointsByCombo(paramsFile)
-    result = []
-    # for each parameter values combo (a parameter point without caseid)
-    for i, (paramCombo, paramPoints) in enumerate(paramPointsByCombo):
-        # iStr = '' if i == 0 else str(i)
-        iStr = str(i)
-        pipelinePaths = {'paramCombo': paramCombo,
-                         'paramPoints': paramPoints,
-                         'paths': defaultdict(list),
-                         'id': i,
-                         'num': len(paramPoints)}
-        # for each subject
-        for paramPoint in sorted(paramPoints, key=lambda x: x['caseid']):
-            pipeline = makePipelineFn(**paramPoint)
-            for key, node in pipelineNodeItems(pipeline):
-                p = SubjectPath(caseid=paramPoint['caseid'], path=node.path())
-                # pipelinePaths['paths'][key + iStr].append(p)
-                pipelinePaths['paths'][key].append(p)
-        result.append(pipelinePaths)
-    return result
 
 def stripKeys(dic, strs):
     def strip(s, strs):
