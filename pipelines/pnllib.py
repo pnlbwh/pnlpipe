@@ -174,7 +174,6 @@ class DwiMaskBet(GeneratedNode):
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             bet_py('--force', '-f', self.threshold, '-i', self.dwi.path(), '-o', self.path())
 
-
 class UkfDefault(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
         self.deps = [dwi, dwimask]
@@ -198,10 +197,13 @@ class UkfDefault(GeneratedNode):
             ukfbin = local[ukfpath]
             ukfbin(*params)
 
+
 class Ukf(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfparams, ukfhash, bthash):
         self.deps = [dwi, dwimask]
-        self.params = [ukfhash, bthash, ukfparams]
+        import hashlib
+        ukfParamsHash = int(hashlib.sha1(ukfparams.__str__()).hexdigest(), 16) % (10 ** 8)
+        self.params = [ukfhash, bthash, ukfparamsHash]
         self.ext = '.vtk'
         GeneratedNode.__init__(self, locals())
     def build(self):
