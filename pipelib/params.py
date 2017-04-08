@@ -2,7 +2,7 @@ from plumbum import local, FG, cli
 import yaml
 import logging
 import itertools
-
+from collections import defaultdict
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
@@ -80,7 +80,7 @@ SubjectPath = namedtuple('SubjectPath', 'caseid pipelineKey path')
 
 
 def assertIsNode(node, key):
-    if not hasattr(node, 'build') or not hasattr(node, 'path'):
+    if not node or not hasattr(node, 'build') or not hasattr(node, 'path'):
         raise Exception(
             "The object at key '{}' is not a Node, are you missing a leading '_'?".format(
                 key))
@@ -97,7 +97,7 @@ def readComboPaths(paramsFile, makePipelineFn):
     for i, (paramCombo, caseids) in enumerate(paramCombos):
         iStr = str(i)
         paramComboPaths = {'paramCombo': paramCombo,
-                           'paths': [],
+                           'paths': defaultdict(list),
                            'id': i,
                            'num': len(caseids)}
         for caseid in caseids:
@@ -109,7 +109,7 @@ def readComboPaths(paramsFile, makePipelineFn):
                 assertIsNode(node, pipelineKey)
                 p = SubjectPath(
                     caseid=caseid, pipelineKey=pipelineKey, path=node.path())
-                paramComboPaths['paths'].append(p)
+                paramComboPaths['paths'][pipelineKey].append(p)
         result.append(paramComboPaths)
     return result
 

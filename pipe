@@ -358,7 +358,6 @@ class Make(cli.Application):
                     self.parent.paramsFile, self.parent.__class__.__name__))
 
         logging.info("Build prerequisite software")
-        paramDicts = readParams(self.parent.paramsFile)
         for (paramCombo, _) in readParamCombos(self.parent.paramsFile):
             for softname, commit, modulefile in getSoftwareItems(paramCombo):
                 if not modulefile.exists():
@@ -418,9 +417,8 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
             f.write('\n')
 
             # Generated output paths
-            for key, subjectPaths in itertools.groupby(
-                    comboPaths['paths'], lambda x: x.pipelineKey):
-                firstSubject = list(subjectPaths)[0]
+            for key, subjectPaths in comboPaths['paths'].items():
+                firstSubject = subjectPaths[0]
                 f.write('{}={}\n\n'.format(key, escapePath(firstSubject.path)))
                 # fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
             f.write('caseid={}\n\n'.format(firstSubject.caseid))
@@ -455,14 +453,15 @@ class SymLink(cli.Application):
 
     def main(self):
         pipename = self.parent.name
+        readAndSetSrcPaths()
         for symlink in (pipelib.OUTDIR // '*/{}_*'.format(self.parent.name)):
             symlink.delete()
-        for comboPaths in pipelineComboPaths(self.parent.paramsFile,
+        for comboPaths in readComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             logging.info("# Make symlinks for parameter combination {}".format(
                 comboPaths['id']))
             printVertical(comboPaths['paramCombo'])
-            for key, subjectPaths in comboPaths['paths'].iteritems():
+            for key, subjectPaths in comboPaths['paths'].items():
                 existingPaths = [
                     p for p in filter(lambda x: x.path.exists(), subjectPaths)
                 ]
@@ -525,7 +524,8 @@ def stripKeys(dic, strs):
 
 class Status(cli.Application):
     def main(self):
-        combos = pipelineComboPaths(self.parent.paramsFile,
+        readAndSetSrcPaths()
+        combos = readComboPaths(self.parent.paramsFile,
                                     self.parent.makePipeline)
         # print("## Parameter Combination {} ({} subjects)".format(
         #         comboPaths['id'], comboPaths['num']))
@@ -568,7 +568,8 @@ class Ls(cli.Application):
         ['-p'], excludes=['-s'], help="Print full paths instead of symlinks.")
 
     def main(self, *keys):
-        for comboPaths in pipelineComboPaths(self.parent.paramsFile,
+        readAndSetSrcPaths()
+        for comboPaths in readComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             logging.info("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['id'], comboPaths['num']))
@@ -601,6 +602,7 @@ class Missing(cli.Application):
     printFull = cli.Flag(['-p'], help="Print full paths instead of symlinks.")
 
     def main(self, *keys):
+        readAndSetSrcPaths()
 
         from itertools import cycle
         defaultKeys = [
@@ -613,7 +615,7 @@ class Missing(cli.Application):
                 "'DEFAULT_TARGET' not set in 'pipelines/pipeline_{}.py', so you must provide a key on the command line, e.g. ./pipe std missing fs".format(
                     self.parent.name))
 
-        for comboPaths in pipelineComboPaths(self.parent.paramsFile,
+        for comboPaths in readComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             logging.info("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['id'], comboPaths['num']))
