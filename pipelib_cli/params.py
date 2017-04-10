@@ -4,6 +4,7 @@ import logging
 import itertools
 from collections import defaultdict
 
+
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
 
@@ -17,11 +18,13 @@ def readParams(ymlfile):
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
     result = []
+
     def mapTuple(xs):
-        return [tuple(x) if isinstance(x,list) else x for x in xs]
+        return [tuple(x) if isinstance(x, list) else x for x in xs]
+
     for paramDict in (yml if isinstance(yml, list) else [yml]):
         #listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
-                             #for k, v in paramDict.items())
+        #for k, v in paramDict.items())
         listValueDict = dict((k, mapTuple(v)) for k, v in paramDict.items())
         listValueDict['caseid'] = map(str, listValueDict['caseid'])
         result.append(listValueDict)
@@ -58,22 +61,6 @@ def expandParamCombos(paramsDicts):
     # return list of unique parameters
     return list({yaml.dump(p): p for p in concat(parametersList)}.values())
 
-# def groupDicts(dicts, keyfn):
-#     from itertools import groupby
-#     return [(k, list(g)) for k, g in groupby(sorted(dicts, key=keyfn), keyfn)]
-
-# def groupParamPointsByCombo(paramsFile):
-#     readAndSetInputPaths()
-#     paramDicts = readParams(paramsFile)
-#     checkParams(paramDicts)
-#     pipelineArguments = paramCombos(paramDicts)
-#     parameters = groupDicts(pipelineArguments, lambda x: {k:v for k,v in x.items() if k != 'caseid'} )
-#     # Sort by parameter points that have most caseids. This is an edge
-#     # case, usually there will only be one parameter point, or if more than
-#     # one they will be the same length. But, there is a use case when
-#     # running a smaller test set to see the effect of a change in one of
-#     # the parameters, e.g. a different software version
-#     return sorted(parameters, key=lambda x: -len(x[1]))
 
 from collections import namedtuple
 SubjectPath = namedtuple('SubjectPath', 'caseid pipelineKey path')
@@ -99,7 +86,8 @@ def readComboPaths(paramsFile, makePipelineFn):
         paramComboPaths = {'paramCombo': paramCombo,
                            'paths': defaultdict(list),
                            'id': i,
-                           'num': len(caseids)}
+                           'num': len(caseids),
+                           'caseids': caseids}
         for caseid in caseids:
             args = dict(paramCombo, caseid=caseid)
             subjectPipeline = makePipelineFn(**args)
