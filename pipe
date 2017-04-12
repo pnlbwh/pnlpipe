@@ -5,12 +5,7 @@ except ImportError:
     print('Couldn\'t import plumbum')
     print(
         'Did you forget to load python environment? (e.g. source activate pnlpipe)')
-import sys
-import yaml
-import itertools
-import importlib
-from collections import defaultdict
-from pprint import pprint
+import software
 import logging
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)5s - %(name)s %(message)s', datefmt="%Y-%m-%d %H:%M")
 logging.basicConfig(
@@ -18,15 +13,9 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s',
     datefmt="%Y-%m-%d %H:%M")
 logger = logging.getLogger(__name__)
-import pipelib
-import pipelib_cli
-from pipelib_cli import readAndSetSrcPaths, printVertical, printTable
-import software
-from pipelib_cli.params import readParams, readComboPaths, readParamCombos, assertValidParamCombos, getSoftwareItems
 
-
-def concat(l):
-    return l if l == [] else [item for sublist in l for item in sublist]
+import pipelib_cli.subcmd
+import pipelib_cli.cmd.soft
 
 
 class App(cli.Application):
@@ -39,51 +28,9 @@ class App(cli.Application):
             return 1  # error exit code
 
 
-class PipelineSubcommand(cli.Application):
-    def main(self, *args):
-        if args:
-            print("Unknown command {0!r}".format(args[0]))
-            return 1
-        if not self.nested_command:
-            print("No command given")
-            return 1  # error exit code
-
-
-def getSoftwareModules():
-    import pkgutil
-    from os.path import isfile
-    import software
-    for importer, modname, ispkg in pkgutil.iter_modules(software.__path__):
-        yield importer.find_module(modname).load_module(modname)
-
-
-def loadSoftwareModule(name):
-    moduleFile = local.path('software') / (name + '.py')
-    if not moduleFile.exists():
-        raise Exception(
-            "{} does not exist, is there a typo (e.g. in the params file?)".format(
-                moduleFile))
-    return importlib.import_module('software.' + name)
-
-
-@App.subcommand('soft')
-class SoftwareCommand(cli.Application):
-    ver = cli.SwitchAttr(['-v', '--version'], help='Software version')
-
-    def main(self, softname):
-        if not softname:
-            logging.info("Missing software module argument, e.g. BRAINSTools")
-            return 1
-        softwareModule = loadSoftwareModule(softname)
-        if self.ver:
-            logging.info("Make '{}'".format(softwareModule.getPath(self.ver)))
-            softwareModule.make(self.ver)
-        else:
-            logging.info("Make '{}'".format(softwareModule.getPath()))
-            softwareModule.make()
-
-
-def classSoftwareFactory(name, makeFn, BaseClass=SoftwareCommand):
+def classSoftwareFactory(name,
+                         makeFn,
+                         BaseClass=pipelib_cli.cmd.soft.SoftwareCommand):
     def wrapFunction(self, *args, **kwargs):
         return make(*args, **kwargs)
 
@@ -104,7 +51,7 @@ def classFactory(name,
                  makePipelineFn,
                  statusFn,
                  defaultTarget,
-                 BaseClass=PipelineSubcommand):
+                 BaseClass=pipelib_cli.subcmd.PipelineSubcommand):
     def wrappedMakePipeline(self, *args, **kwargs):
         return makePipelineFn(*args, **kwargs)
 
@@ -126,6 +73,7 @@ def classFactory(name,
 
 if __name__ == '__main__':
     import pipelib_cli.cmd.init
+    import pipelib_cli.cmd.soft
     import pipelib_cli.subcmd.init
     import pipelib_cli.subcmd.make
     import pipelib_cli.subcmd.run
@@ -134,7 +82,10 @@ if __name__ == '__main__':
     import pipelib_cli.subcmd.ls
     import pipelib_cli.subcmd.missing
     import pipelib_cli.subcmd.publish
+
     App.subcommand("init", pipelib_cli.cmd.init.Init)
+    App.subcommand("soft", pipelib_cli.cmd.soft.SoftwareCommand)
+
     for m in pipelineModules():
         name = m.__name__[9:]
         statusFn = getattr(m, 'status', None)
@@ -142,12 +93,13 @@ if __name__ == '__main__':
         SubcommandClass = classFactory(name, m.makePipeline, statusFn,
                                        defaultTarget)
         App.subcommand(name, SubcommandClass)
-        SubcommandClass.subcommand("run", pipelib_cli.subcmd.run.Run)
-        SubcommandClass.subcommand("make", pipelib_cli.subcmd.make.Make)
-        SubcommandClass.subcommand("init", pipelib_cli.subcmd.init.Init)
+        SubcommandClass.subcommand("run",     pipelib_cli.subcmd.run.Run)
+        SubcommandClass.subcommand("make",    pipelib_cli.subcmd.make.Make)
+        SubcommandClass.subcommand("init",    pipelib_cli.subcmd.init.Init)
         SubcommandClass.subcommand("symlink", pipelib_cli.subcmd.symlink.SymLink)
-        SubcommandClass.subcommand("status", pipelib_cli.subcmd.status.Status)
-        SubcommandClass.subcommand("ls", pipelib_cli.subcmd.ls.Ls)
+        SubcommandClass.subcommand("status",  pipelib_cli.subcmd.status.Status)
+        SubcommandClass.subcommand("ls",      pipelib_cli.subcmd.ls.Ls)
         SubcommandClass.subcommand("missing", pipelib_cli.subcmd.missing.Missing)
         SubcommandClass.subcommand("publish", pipelib_cli.subcmd.publish.Publish)
+
     App.run()

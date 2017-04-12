@@ -8,13 +8,7 @@ from tempfile import mkdtemp
 modules = glob.glob(dirname(__file__) + "/*.py")
 __all__ = [basename(f)[:-3] for f in modules
            if isfile(f) and not f.startswith('_')]
-try:
-    from plumbum import local, FG, cli
-except ImportError:
-    print('Couldn\'t import plumbum')
-    print(
-        'Did you forget to load python environment? (e.g. source activate pyppl)')
-    sys.exit(1)
+from plumbum import local, FG, cli
 from plumbum.cmd import git, cmake, make, chmod
 import logging
 logger = logging.getLogger(__name__)
