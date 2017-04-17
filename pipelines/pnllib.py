@@ -203,7 +203,7 @@ class Ukf(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfparams, ukfhash, bthash):
         self.deps = [dwi, dwimask]
         import hashlib
-        ukfParamsHash = int(hashlib.sha1(ukfparams.__str__()).hexdigest(), 16) % (10 ** 8)
+        ukfparamsHash = "ukfparams-" + str(int(hashlib.sha1(ukfparams.__str__()).hexdigest(), 16) % (10 ** 8))
         self.params = [ukfhash, bthash, ukfparamsHash]
         self.ext = '.vtk'
         GeneratedNode.__init__(self, locals())
@@ -217,7 +217,7 @@ class Ukf(GeneratedNode):
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
-                      self.path()] + self.ukfparams
+                      self.path()] + list(self.ukfparams)
             ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]

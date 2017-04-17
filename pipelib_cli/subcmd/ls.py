@@ -4,6 +4,7 @@ from pipelib_cli.params import readComboPaths
 from pipelib_cli.subcmd.symlink import toSymlink
 import logging
 import pipelib
+import sys
 
 
 class Ls(cli.Application):
