@@ -8,7 +8,11 @@ import software
 
 
 class Make(cli.Application):
-    """ Builds necessary software for pipeline. """
+    """ Builds necessary software for pipeline and creates shell environment files. """
+
+    fullPaths = cli.Flag(
+        ['-p'],
+        help="Use full path filenames (containing escaped characters) in the shell environment files instead of shortened symlinks")
 
     def main(self):
         if not self.parent.paramsFile.exists():
@@ -27,13 +31,14 @@ class Make(cli.Application):
 
         logging.info("Make shell environment files")
         makeEnvFiles(self.parent.name, self.parent.paramsFile,
-                     self.parent.makePipeline)
+                     self.parent.makePipeline, self.fullPaths)
+
 
 def escapePath(filepath):
     return filepath.__str__().replace('(', '\(').replace(')', '\)')
 
 
-def makeEnvFiles(name, paramsFile, makePipelineFn):
+def makeEnvFiles(name, paramsFile, makePipelineFn, useFullPaths=False):
     # first delete existing files in case they are stale
     for f in local.cwd.glob(name + '*.sh'):
         f.delete()
@@ -50,8 +55,14 @@ def makeEnvFiles(name, paramsFile, makePipelineFn):
             # Generated output paths
             for key, subjectPaths in comboPaths['paths'].items():
                 firstSubject = subjectPaths[0]
-                f.write('{}={}\n\n'.format(key, escapePath(firstSubject.path)))
-                # fyml.write('{}: {}\n'.format(key, subjectPaths[0].path.relative_to(local.cwd)))
+                if useFullPaths:
+                    path = escapePath(firstSubject.path)
+                else:
+                    from pipelib_cli.subcmd.symlink import toSymlink
+                    path = toSymlink(firstSubject.caseid, name, key,
+                                     firstSubject.path, comboPaths['id'])
+                f.write('{}={}\n\n'.format(key, path))
+
             f.write('caseid={}\n\n'.format(firstSubject.caseid))
             # fyml.write('caseid: {}\n'.format(subjectPaths[0].caseid))
 

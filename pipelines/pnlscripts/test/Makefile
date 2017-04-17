@@ -40,12 +40,12 @@ _data/xcFromNrrd.nrrd: ../alignAndCenter.py ../center.py ../axisAlign.py
 	../alignAndCenter.py -i $(t1) -o $@
 
 _data/b0masked.nrrd: ../bse.py
-	$(call setup, dwi dwimask)
-	../bse.py -m $(dwimask) -i $(dwi) -o $@
+	$(call setup, dwiraw dwimask)
+	../bse.py -m $(dwimask) -i $(dwiraw) -o $@
 
 _data/b0.nrrd: ../bse.py
-	$(call setup, dwi)
-	../bse.py -i $(dwi) -o $@
+	$(call setup, dwiraw)
+	../bse.py -i $(dwiraw) -o $@
 
 _data/dwied.nrrd: ../eddy.py
 	$(call setup, dwi)

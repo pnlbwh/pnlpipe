@@ -15,6 +15,13 @@ def logfmt(scriptname):
 
 from plumbum.cli.switches import Predicate
 
+def isNifti(f):
+    return '.nii' in f.suffixes
+
+def isNrrd(f):
+    return '.nrrd' in f.suffixes or '.nhdr' in f.suffixes
+
+
 @Predicate
 def ExistingNrrdOrNifti(val):
     p = local.path(val)
