@@ -10,6 +10,10 @@ dependencies:
   - nibabel
   - pyyaml
   - csvkit
+  - cython
+  - joblib
+  - matplotlib
   - pip:
      - git+https://github.com/dstrohl/Python_log_indenter.git
      - git+https://github.com/npcole/npyscreen.git
+     - git+https://github.com/SlicerDMRI/whitematteranalysis.git@5fa706b8c944aba9d6138417d70dc25c359b5811

@@ -229,7 +229,7 @@ class MaskRigid(GeneratedNode):
             convertImage(self.movingStrct.path(), moving, self.bthash)
             convertImage(self.movingStrctMask.path(), movingmask, self.bthash)
             convertImage(self.fixedStrct.path(), fixed, self.bthash)
-            makeRigidMask_py('-i', t1, '--labelmap',
+            makeRigidMask_py('-i', moving, '--labelmap',
                              movingmask, '--target', fixed,
                              '-o', out)
             out.move(self.path())
@@ -296,7 +296,7 @@ class FsInDwiDirect(GeneratedNode):
 
 class FsInDwiUsingT2(GeneratedNode):
     def __init__(self, caseid, fs, t1, t1mask, t2, t2mask, dwi, dwimask, bthash):
-        self.deps = [fs, t1, t2, dwi, dwimask]
+        self.deps = [fs, t1, t2, t1mask, t2mask, dwi, dwimask]
         self.params = [bthash]
         self.ext = 'nii.gz'
         GeneratedNode.__init__(self, locals())
@@ -305,25 +305,30 @@ class FsInDwiUsingT2(GeneratedNode):
         fssubjdir = self.fs.path().dirname.dirname
         with TemporaryDirectory() as tmpdir, BRAINSTools.env(self.bthash):
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
-            tmpdwi = tmpdir / 'dwi.nrrd'
-            tmpdwimask = tmpdir / 'dwimask.nrrd'
-            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
-            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
-            t2 = self.t2.path()
-            t1 = self.t1.path()
-            t1mask = self.t1mask.path()
-            t2mask = self.t2mask.path()
-            cmd = 'pipelines/pnlscripts/old/fs2dwi_T2.sh --fsdir {fssubjdir} \
-            --dwi {tmpdwi} \
-            --dwimask {tmpdwimask} \
-            --t2 {t2} \
-            --t2mask {t2mask} \
-            --t1 {t1} \
-            --t1mask {t1mask} \
-            -o {tmpoutdir}'.format(locals())
-            import os
-            os.system(cmd)
-	    local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
+            dwi = tmpdir / 'dwi.nrrd'
+            dwimask = tmpdir / 'dwimask.nrrd'
+            fs = tmpdir / 'fs'
+            t2 = tmpdir / 't2.nrrd'
+            t1 = tmpdir / 't1.nrrd'
+            t1mask = tmpdir / 't1mask.nrrd'
+            t2mask = tmpdir / 't2mask.nrrd'
+            fssubjdir.copy(fs)
+            dwiconvert_py('-i', self.dwi.path(), '-o', dwi)
+            convertImage(self.dwimask.path(), dwimask, self.bthash)
+            convertImage(self.t2.path(), t2, self.bthash)
+            convertImage(self.t1.path(), t1, self.bthash)
+            convertImage(self.t2mask.path(), t2mask, self.bthash)
+            convertImage(self.t1mask.path(), t1mask, self.bthash)
+            script = local['pipelines/pnlscripts/old/fs2dwi_T2.sh']
+            script['--fsdir', fs
+            ,'--dwi', dwi
+            ,'--dwimask', dwimask
+            ,'--t2', t2
+            ,'--t2mask', t2mask
+            ,'--t1', t1
+            ,'--t1mask', t1mask
+            ,'-o', tmpoutdir] & FG
+            convertImage(tmpoutdir / 'wmparc-in-bse.nrrd', self.path(), self.bthash)
 
 
 class Wmql(GeneratedNode):
