@@ -7,10 +7,10 @@ from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
 import software.FreeSurfer
 
-defaultUkfParams = [("Ql", "70"), ("Qm", "0.001"), ("Rs", "0.015"),
-                    ("numTensor", "2"), ("recordLength", "1.7"),
-                    ("seedFALimit", "0.18"), ("seedsPerVoxel", "10"),
-                    ("stepLength", "0.3")]
+defaultUkfParams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015,
+                    "--numTensor", 2, "--recordLength", 1.7,
+                    "--seedFALimit", 0.18, "--seedsPerVoxel", 10,
+                    "--stepLength", 0.3]
 
 class DoesNotExistException(Exception):
     pass
@@ -28,9 +28,10 @@ def tractMeasureStatus(combos, makePipelineFn):
     import pandas as pd
     dfs = []
     for combo in combos:
-        pipelines = [makePipelineFn(**paramPoint) for paramPoint in combo['paramPoints']]
-        csvs = [p['tractmeasures'].path() for p in pipelines
-            if p['tractmeasures'].path().exists()]
+        # pipelines = [makePipelineFn(**paramPoint) for paramPoint in combo['paramPoints']]
+        csvs = [p.path for p in combo['paths']['tractmeasures'] if p.path.exists()]
+        # csvs = [p['tractmeasures'].path() for p in pipelines
+        #     if p['tractmeasures'].path().exists()]
         if csvs:
             df = pd.concat((pd.read_csv(csv) for csv in csvs))
             df['algo'] = combo['id']
@@ -48,9 +49,9 @@ def convertImage(i, o, bthash):
         ConvertBetweenFileFormats(i, o)
 
 
-def formatParams(paramsList):
-    formatted = [['--' + key, val] for key, val in paramsList]
-    return [item for pair in formatted for item in pair]
+def formatParams(l):
+    formatted = [['--' + key, val] for key, val in dic.items()]
+    return [item for pair in formatted for item in pair if item]
 
 
 def validateFreeSurfer(versionRequired):
@@ -73,6 +74,7 @@ def validateFreeSurfer(versionRequired):
     else:
         log.error("FreeSurfer version {} at {} does not match the required version of {}, either change FREESURFER_HOME or change the version you require".format(version, freesurferHome, versionRequired))
         sys.exit(1)
+
 
 class DwiHcp(GeneratedNode):
     """ Washington University HCP DWI preprocessing. """
@@ -173,7 +175,6 @@ class DwiMaskBet(GeneratedNode):
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             bet_py('--force', '-f', self.threshold, '-i', self.dwi.path(), '-o', self.path())
 
-
 class UkfDefault(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
         self.deps = [dwi, dwimask]
@@ -191,12 +192,36 @@ class UkfDefault(GeneratedNode):
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
-                      self.path()] + formatParams(defaultUkfParams)
+                      self.path()] + defaultUkfParams
             ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
             ukfbin(*params)
 
+
+class Ukf(GeneratedNode):
+    def __init__(self, caseid, dwi, dwimask, ukfparams, ukfhash, bthash):
+        self.deps = [dwi, dwimask]
+        import hashlib
+        ukfparamsHash = "ukfparams-" + str(int(hashlib.sha1(ukfparams.__str__()).hexdigest(), 16) % (10 ** 8))
+        self.params = [ukfhash, bthash, ukfparamsHash]
+        self.ext = '.vtk'
+        GeneratedNode.__init__(self, locals())
+    def build(self):
+        needDeps(self)
+        with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
+            tmpdir = local.path(tmpdir)
+            tmpdwi = tmpdir / 'dwi.nrrd'
+            tmpdwimask = tmpdir / 'dwimask.nrrd'
+            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
+            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
+                      '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
+                      self.path()] + list(self.ukfparams)
+            ukfpath = UKFTractography.getPath(self.ukfhash)
+            log.info(' Found UKF at {}'.format(ukfpath))
+            ukfbin = local[ukfpath]
+            ukfbin(*params)
 
 class StrctXc(GeneratedNode):
     def __init__(self, caseid, strct, bthash):

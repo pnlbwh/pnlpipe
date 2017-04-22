@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from util import logfmt, TemporaryDirectory, ExistingNrrd
+from util import TemporaryDirectory, ExistingNrrd
 from plumbum import cli, local, FG
-
-import logging
-logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
-
 
 class App(cli.Application):
     """Align and center a 3d or 4d image.."""
@@ -23,7 +18,6 @@ class App(cli.Application):
 
     def main(self):
         from util.scripts import axisAlign_py, center_py
-        from plumbum.cmd import ConvertBetweenFileFormats, unu
         axisAlign_py('--force', '-i', self.infile, '-o', self.out)
         center_py('-i', self.out, '-o', self.out)
 

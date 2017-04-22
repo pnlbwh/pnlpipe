@@ -1,8 +1,5 @@
 _*
-!__init__.py
-testdata
 *.pyc
 caselist.txt
 #.*
-inputPaths.yml
-params.*
+srcpaths.yml

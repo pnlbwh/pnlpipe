@@ -6,8 +6,8 @@ import pipelib
 DEFAULT_TARGET = 'tractmeasures'
 
 def makePipeline(caseid,
-                 t1PathKey='t1raw',
-                 dwiPathKey='dwiraw',
+                 t1PathKey,
+                 dwiPathKey,
                  dwimaskPathKey='',
                  t1maskPathKey='',
                  version_FreeSurfer='5.3.0',
@@ -18,12 +18,12 @@ def makePipeline(caseid,
                  ):
     """Makes the PNL's standard pipeline. """
     pipeline = {'_name': "standard PNL pipeline"}
-    pipeline['t1raw'] = Src(caseid, t1PathKey)
-    pipeline['dwiraw'] = Src(caseid, dwiPathKey)
-    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwiraw'],
+    pipeline['t1'] = Src(caseid, t1PathKey)
+    pipeline['dwi'] = Src(caseid, dwiPathKey)
+    pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'],
                                 hash_BRAINSTools)  # works on nrrd or nii
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
-    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1raw'], hash_BRAINSTools)
+    pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(caseid,
                               dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(
                                   caseid, pipeline['dwied'], 0.1, hash_BRAINSTools)

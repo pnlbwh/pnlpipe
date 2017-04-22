@@ -4,5 +4,4 @@ numpy
 pandas
 nibabel
 python_log_indenter
-pyaml
-tabulate
+pyyaml
