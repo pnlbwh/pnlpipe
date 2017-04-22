@@ -61,9 +61,9 @@ def makeEnvFiles(name, paramsFile, makePipelineFn, useFullPaths=False):
                     from pipelib_cli.subcmd.symlink import toSymlink
                     path = toSymlink(firstSubject.caseid, name, key,
                                      firstSubject.path, comboPaths['id'])
-                f.write('{}={}\n\n'.format(key, path))
+                f.write('export {}={}\n\n'.format(key, path))
 
-            f.write('caseid={}\n\n'.format(firstSubject.caseid))
+            f.write('export caseid={}\n\n'.format(firstSubject.caseid))
             # fyml.write('caseid: {}\n'.format(subjectPaths[0].caseid))
 
             # Software environment
@@ -75,6 +75,6 @@ def makeEnvFiles(name, paramsFile, makePipelineFn, useFullPaths=False):
                     envDicts.append(m.envDict(version))
             softVars = software.composeEnvDicts(envDicts)
             for var, val in softVars.items():
-                f.write('{}={}\n\n'.format(var, val))
-            f.write("PATH={}:$PATH\n".format(
+                f.write('export {}={}\n\n'.format(var, val))
+            f.write("export PATH={}:$PATH\n".format(
                 local.path('pipelines/pnlscripts')))

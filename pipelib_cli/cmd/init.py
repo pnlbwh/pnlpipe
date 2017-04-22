@@ -2,6 +2,7 @@ from plumbum import local, cli
 import pipelib_cli
 from pipelib_cli import SRCPATHS
 import logging
+import yaml
 
 def checkPaths(pathsDict):
     allexist = True

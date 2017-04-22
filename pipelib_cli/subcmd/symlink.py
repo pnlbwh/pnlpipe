@@ -16,9 +16,8 @@ def toSymlink(caseid, pipename, key, path, paramId):
         (pipename + '_' + key + str(paramId) + ''.join(suffixes)))
 
 
-def makeRelativeSymlink(src, symlink):
+def makeSymlink(src, symlink):
     import os
-    #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
     #os.symlink(os.path.relpath(src, os.path.dirname(symlink)), symlink)
     src.symlink(symlink)
     if '.nhdr' in src.suffixes:
@@ -32,17 +31,24 @@ class SymLink(cli.Application):
     def main(self):
         pipename = self.parent.name
         readAndSetSrcPaths()
-        for symlink in (pipelib.OUTDIR // '*/{}_*'.format(self.parent.name)):
-            symlink.delete()
+
+        # for symlink in (pipelib.OUTDIR // '*/{}_*'.format(pipename)):
+        #     symlink.delete()
+        from plumbum.cmd import find
+        for symlink in find(pipelib.OUTDIR, '-type', 'l').split():
+            local.path(symlink).delete()
+
         for comboPaths in readComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             logging.info("# Make symlinks for parameter combination {}".format(
                 comboPaths['id']))
             printVertical(comboPaths['paramCombo'])
+
             for key, subjectPaths in comboPaths['paths'].items():
                 existingPaths = [
                     p for p in filter(lambda x: x.path.exists(), subjectPaths)
                 ]
+
                 for p in existingPaths:
                     symlink = toSymlink(p.caseid, pipename, key, p.path,
                                         comboPaths['id'])
@@ -53,4 +59,4 @@ class SymLink(cli.Application):
                         continue
                     sys.stdout.write('\n')
                     symlink.dirname.mkdir()
-                    makeRelativeSymlink(p.path, symlink)
+                    makeSymlink(p.path, symlink)

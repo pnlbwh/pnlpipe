@@ -1,28 +1,30 @@
-* ENH: make bse.py operate on niftis
-- then FsInDwi doens't need to convert to nrrd first
-* BUG: decide on getPath behaviour - no exceptions, check paths before run?
-* ENH: add list of default targets
-* STY: software: if building  master, don't say building '...-master'
-* STY/ENH: add env.sh to software builds
-* STY: ls symlinks will print existing full paths, but symlink might not exist
-* STy: add keys subcommand
-* replace ConvertBetweenFileFormat calls with allowLossyConversion in DWIConvert
-* move atlas.py root flags to subcommands (otherwise help doesn't work)
-- as well as fs2dwi.py
-* show params with meaning in filenames
-* add permutation check to bse.py (currently assumes correct dwi permutation)
-* make env command have symlinks option
-* add env.sh files to software modules
-* make file argument non-list in caseid field of params config file
-* BUG: symlink: don't skip symlinks, remake them
-* software envs need to raise an exception if their paths don't exist, e.g could
-  be deleted during pipeline run
-* ENH: add check for correct DWI axes permutation
-* ENH: add ukf params
-* STY: change pnlscripts.util to pnlscripts
-* ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
-* think about multi file nodes
-  - could make it polymorphic: dictionary, list, string
-* STY: add log file output to pnlscripts scripts
-* STY: use python logging correctly
-* sty: clarify when 'caseid' gets special treatment as a parameter
+#+PROPERTY
+
+* Test
+** ENH: make bse.py operate on niftis
+ - then FsInDwi doens't need to convert to nrrd first as well as fs2dwi.py
+** add antsJointFusion
+** move atlas.py root flags to subcommands (otherwise help doesn't work)
+** ENH: add ukf params
+* Todo
+** STY: update pnlscript unit tests
+** BUG: decide on getPath behaviour - no exceptions, check paths before run?
+** ENH: add list of default targets
+** STY: software: if building  master, don't say building '...-master'
+** STY: ls symlinks will print existing full paths, but symlink might not exist
+** STy: add keys subcommand
+** replace ConvertBetweenFileFormat calls with allowLossyConversion in DWIConvert
+** show params with meaning in filenames
+** add permutation check to bse.py (currently assumes correct dwi permutation)
+** add env.sh files to software modules
+** make file argument non-list in caseid field of params config file
+** BUG: symlink: don't skip symlinks, remake them
+** software envs need to raise an exception if their paths don't exist, e.g could
+   be deleted during pipeline run
+** ENH: add check for correct DWI axes permutation
+** STY: change pnlscripts.util to pnlscripts
+** ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
+** think about multi file nodes
+   - could make it polymorphic: dictionary, list, string
+** STY: add log file output to pnlscripts scripts
+** sty: clarify when 'caseid' gets special treatment as a parameter
