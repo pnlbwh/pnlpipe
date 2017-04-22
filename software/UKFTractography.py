@@ -1,6 +1,6 @@
 from software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, envFromDict
-from plumbum import local
-from plumbum.cmd import cmake, make, chmod
+from plumbum import local, FG
+from plumbum.cmd import cmake, chmod
 import logging
 
 DEFAULT_HASH = '421a7ad'
@@ -28,7 +28,8 @@ def make(commit=DEFAULT_HASH):
     blddir.mkdir()
     with local.cwd(blddir):
         cmake(repo)
-        make['-j', '16'] & FG
+        import plumbum.cmd
+        plumbum.cmd.make['-j', 16] & FG
 
     binary1 = blddir / 'ukf/bin/UKFTractography'
     binary2 = blddir / 'UKFTractography-build/ukf/bin/UKFTractography' # later commits
@@ -43,6 +44,7 @@ def make(commit=DEFAULT_HASH):
 
 def getPath(ukfhash=DEFAULT_HASH):
     binary = getSoftDir() / ('UKFTractography-' + ukfhash)
-    if not binary.exists():
-        raise DoesNotExistException('{} doesn\'t exist')
     return binary
+    # if not binary.exists():
+    #     raise DoesNotExistException('{} doesn\'t exist')
+    # return binary
