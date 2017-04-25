@@ -24,21 +24,20 @@ def assertInputKeys(pipelineName, keys):
                 pipelineName, key))
         sys.exit(1)
 
-def tractMeasureStatus(combos, makePipelineFn):
+def tractMeasureStatus(combos):
     import pandas as pd
     dfs = []
     for combo in combos:
-        # pipelines = [makePipelineFn(**paramPoint) for paramPoint in combo['paramPoints']]
         csvs = [p.path for p in combo['paths']['tractmeasures'] if p.path.exists()]
-        # csvs = [p['tractmeasures'].path() for p in pipelines
-        #     if p['tractmeasures'].path().exists()]
         if csvs:
             df = pd.concat((pd.read_csv(csv) for csv in csvs))
             df['algo'] = combo['id']
             dfs.append(df)
     if dfs:
+        df = pd.concat(dfs)
         from pipelines.pnlscripts.summarizeTractMeasures import summarize
-        summarize(pd.concat(dfs))
+        summarize(df)
+        df.to_csv(OUTDIR / (combos[0]['pipelineName'] + '.csv'))
 
 
 def convertImage(i, o, bthash):

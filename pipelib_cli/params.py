@@ -83,7 +83,8 @@ def readComboPaths(paramsFile, makePipelineFn):
     # for each parameter values combo (a parameter point without caseid)
     for i, (paramCombo, caseids) in enumerate(paramCombos):
         iStr = str(i)
-        paramComboPaths = {'paramCombo': paramCombo,
+        paramComboPaths = {'pipelineName': local.path(paramsFile).stem,
+                           'paramCombo': paramCombo,
                            'paths': defaultdict(list),
                            'id': i,
                            'num': len(caseids),

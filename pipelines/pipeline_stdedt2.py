@@ -54,4 +54,4 @@ def makePipeline(caseid,
 
 def status(combos):
     import pipelines.pnllib
-    pipelines.pnllib.tractMeasureStatus(combos, makePipeline)
+    pipelines.pnllib.tractMeasureStatus(combos)
