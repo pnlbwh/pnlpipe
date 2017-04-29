@@ -191,6 +191,8 @@ def need(parentNode, childNode):
     log.debug('{} needs {}'.format(parentNode.show(),
                                                     childNode.show()))
     val = update(childNode)
+    if not hasattr(parentNode, 'db'):
+        parentNode.db = {'value': None, 'deps': {}}
     parentNode.db['deps'][pickle.dumps(childNode)] = (
         childNode.path().__str__(), val)
 
