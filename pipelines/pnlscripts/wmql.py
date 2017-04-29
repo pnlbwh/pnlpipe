@@ -49,7 +49,10 @@ class App(cli.Application):
             tract_querier = local['tract_querier']
             tract_math = local['tract_math']
             ukfpruned = t / 'ukfpruned.vtk'
-            tract_math(ukf, 'tract_remove_short_tracts', '2', ukfpruned)
+            # tract_math(ukf, 'tract_remove_short_tracts', '2', ukfpruned)
+            tract_math[ukf, 'tract_remove_short_tracts', '2', ukfpruned] & FG
+            if not ukfpruned.exists():
+                raise Exception("tract_math failed to make '{}'".format(ukfpruned))
             self.out.mkdir()
             tract_querier['-t', ukfpruned, '-a', fsindwi, '-q', self.query, '-o'
                           ,self.out / '_'] & FG

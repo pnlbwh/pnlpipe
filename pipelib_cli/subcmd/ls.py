@@ -24,7 +24,7 @@ class Ls(cli.Application):
         for comboPaths in readComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             logging.info("## Parameter Combination {} ({} subjects)".format(
-                comboPaths['id'], comboPaths['num']))
+                comboPaths['paramId'], comboPaths['num']))
             printVertical(comboPaths['paramCombo'])
             for k, vs in comboPaths['paths'].iteritems():
                 if keys and k not in keys:

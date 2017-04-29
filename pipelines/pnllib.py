@@ -6,6 +6,7 @@ import sys
 from pipelib import Src, GeneratedNode, need, needDeps, OUTDIR, log
 from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
 import software.FreeSurfer
+import hashlib
 
 defaultUkfParams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015,
                     "--numTensor", 2, "--recordLength", 1.7,
@@ -201,7 +202,6 @@ class UkfDefault(GeneratedNode):
 class Ukf(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfparams, ukfhash, bthash):
         self.deps = [dwi, dwimask]
-        import hashlib
         ukfparamsHash = "ukfparams-" + str(int(hashlib.sha1(ukfparams.__str__()).hexdigest(), 16) % (10 ** 8))
         self.params = [ukfhash, bthash, ukfparamsHash]
         self.ext = '.vtk'
@@ -220,7 +220,9 @@ class Ukf(GeneratedNode):
             ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
-            ukfbin(*params)
+            # ukfbin(*params)
+            ukfbin.bound_command(*params) & FG
+
 
 class StrctXc(GeneratedNode):
     def __init__(self, caseid, strct, bthash):

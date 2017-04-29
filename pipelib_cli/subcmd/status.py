@@ -15,8 +15,7 @@ def stripKeys(dic, strs):
 class Status(cli.Application):
     def main(self):
         readAndSetSrcPaths()
-        combos = readComboPaths(self.parent.paramsFile,
-                                    self.parent.makePipeline)
+        combos = readComboPaths(self.parent.paramsFile)
         # print("## Parameter Combination {} ({} subjects)".format(
         #         comboPaths['id'], comboPaths['num']))
 
@@ -32,7 +31,7 @@ class Status(cli.Application):
                  for k, vs in combo['paths'].iteritems()}
             pathCounts.append(
                 dict(
-                    d, paramid=combo['id'], numcases=combo['num']))
+                    d, paramid=combo['paramId'], numcases=combo['num']))
         cols = pathCounts[0].keys()
         cols.remove('paramid')
         cols.remove('numcases')

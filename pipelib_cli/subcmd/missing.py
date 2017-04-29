@@ -29,7 +29,7 @@ class Missing(cli.Application):
         for comboPaths in readComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             logging.info("## Parameter Combination {} ({} subjects)".format(
-                comboPaths['id'], comboPaths['num']))
+                comboPaths['paramId'], comboPaths['num']))
             printVertical(comboPaths['paramCombo'])
 
             for k, vs in comboPaths['paths'].iteritems():
@@ -45,5 +45,5 @@ class Missing(cli.Application):
                         print(p.path)
                     else:
                         symlink = toSymlink(p.caseid, self.parent.name, k,
-                                            p.path, comboPaths['id'])
+                                            p.path, comboPaths['paramId'])
                         print(symlink)

@@ -30,25 +30,24 @@ class Make(cli.Application):
                 module.make(commit)
 
         logging.info("Make shell environment files")
-        makeEnvFiles(self.parent.name, self.parent.paramsFile,
-                     self.parent.makePipeline, self.fullPaths)
+        makeEnvFiles(self.parent.name, self.parent.paramsFile, self.fullPaths)
 
 
 def escapePath(filepath):
     return filepath.__str__().replace('(', '\(').replace(')', '\)')
 
 
-def makeEnvFiles(name, paramsFile, makePipelineFn, useFullPaths=False):
+def makeEnvFiles(name, paramsFile, useFullPaths=False):
     # first delete existing files in case they are stale
     for f in local.cwd.glob(name + '*.sh'):
         f.delete()
     # with open('outputPaths.yml', 'w') as fyml:
     readAndSetSrcPaths()
-    for comboPaths in readComboPaths(paramsFile, makePipelineFn):
-        envFile = "_{}_env{}.sh".format(name, comboPaths['id'])
+    for comboPaths in readComboPaths(paramsFile):
+        envFile = "_{}_env{}.sh".format(name, comboPaths['paramId'])
         logging.info("Make '{}'".format(envFile))
         with open(envFile, 'w') as f:
-            f.write('# Parameter combination {}\n'.format(comboPaths['id']))
+            f.write('# Parameter combination {}\n'.format(comboPaths['paramId']))
             printVertical(comboPaths['paramCombo'], '#  ', f)
             f.write('\n')
 
@@ -60,7 +59,7 @@ def makeEnvFiles(name, paramsFile, makePipelineFn, useFullPaths=False):
                 else:
                     from pipelib_cli.subcmd.symlink import toSymlink
                     path = toSymlink(firstSubject.caseid, name, key,
-                                     firstSubject.path, comboPaths['id'])
+                                     firstSubject.path, comboPaths['paramId'])
                 f.write('export {}={}\n\n'.format(key, path))
 
             f.write('export caseid={}\n\n'.format(firstSubject.caseid))

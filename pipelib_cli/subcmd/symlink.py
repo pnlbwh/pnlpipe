@@ -4,6 +4,7 @@ from pipelib_cli.params import readComboPaths
 import logging
 import pipelib
 import sys
+import os
 
 
 def toSymlink(caseid, pipename, key, path, paramId):
@@ -36,12 +37,12 @@ class SymLink(cli.Application):
         #     symlink.delete()
         from plumbum.cmd import find
         for symlink in find(pipelib.OUTDIR, '-type', 'l').split():
-            local.path(symlink).delete()
+            os.unlink(symlink)
 
         for comboPaths in readComboPaths(self.parent.paramsFile,
                                              self.parent.makePipeline):
             logging.info("# Make symlinks for parameter combination {}".format(
-                comboPaths['id']))
+                comboPaths['paramId']))
             printVertical(comboPaths['paramCombo'])
 
             for key, subjectPaths in comboPaths['paths'].items():
@@ -51,7 +52,7 @@ class SymLink(cli.Application):
 
                 for p in existingPaths:
                     symlink = toSymlink(p.caseid, pipename, key, p.path,
-                                        comboPaths['id'])
+                                        comboPaths['paramId'])
                     sys.stdout.write("Make symlink '{}' --> '{}' ".format(
                         symlink, p.path))
                     if symlink.exists():

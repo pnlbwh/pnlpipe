@@ -54,7 +54,7 @@ class Publish(cli.Application):
                     for k, v in combo['paramCombo'].items():
                         csvwriter.writerow([projectInfo['project'],
                                             projectInfo['projectPath'],
-                                            projectInfo['description'], combo['id'], k,
+                                            projectInfo['description'], combo['paramId'], k,
                                             v])
                     for pathKey, subjectPaths in combo['paths'].items():
                         for subjectPath in subjectPaths:

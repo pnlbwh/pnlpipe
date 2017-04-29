@@ -3,13 +3,17 @@ import yaml
 import logging
 import itertools
 from collections import defaultdict
+import importlib
+import pipelines
 
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
 
 
-def readParams(ymlfile):
+def readParamDicts(ymlfile):
+    """Reads in list of parameter dictionaries from parameter yaml file."""
+
     if not local.path(ymlfile).exists():
         pipeline = ymlfile.name.split('.')[1]
         raise Exception(
@@ -17,17 +21,16 @@ def readParams(ymlfile):
                                                                     pipeline))
     with open(ymlfile, 'r') as f:
         yml = yaml.load(f)
-    result = []
 
     def mapTuple(xs):
         return [tuple(x) if isinstance(x, list) else x for x in xs]
 
+    result = []
     for paramDict in (yml if isinstance(yml, list) else [yml]):
-        #listValueDict = dict((k, v) if isinstance(v, list) else (k, [v])
-        #for k, v in paramDict.items())
         listValueDict = dict((k, mapTuple(v)) for k, v in paramDict.items())
         listValueDict['caseid'] = map(str, listValueDict['caseid'])
         result.append(listValueDict)
+
     logging.debug("Finished reading parameter file '{}':".format(ymlfile))
     return result
 
@@ -38,7 +41,7 @@ def checkParams(paramDicts):
             "First replace '*mandatory*' values in params file and then run again.")
 
 
-def readCaseid(caseidVal):
+def readCaseids(caseidVal):
     if '/' in caseidVal[0]:
         with open(caseidVal[0], 'r') as f:
             return [line for line in f.read().splitlines()
@@ -46,11 +49,11 @@ def readCaseid(caseidVal):
     return caseidVal
 
 
-def expandParamCombos(paramsDicts):
-    """Returns [(paramCombo, caseids), ...]"""
+def expandParamDicts(paramsDicts):
+    """Returns [(paramCombo0, caseids0), (paramCombo1, caseids1), ...]"""
     parametersList = []
     for paramsDict in paramsDicts:
-        caseids = sorted(readCaseid(paramsDict['caseid']))
+        caseids = sorted(readCaseids(paramsDict['caseid']))
         paramsNoCaseid = paramsDict
         del paramsNoCaseid['caseid']
         valueCombos = list(itertools.product(*paramsNoCaseid.values()))
@@ -58,8 +61,8 @@ def expandParamCombos(paramsDicts):
                        for valueCombo in valueCombos]
         parametersList.append(
             [(paramCombo, caseids) for paramCombo in paramCombos])
-    # return list of unique parameters
-    return list({yaml.dump(p): p for p in concat(parametersList)}.values())
+    unique = lambda xs: list({yaml.dump(x): x for x in xs}.values())
+    return unique(concat(parametersList))
 
 
 from collections import namedtuple
@@ -74,32 +77,33 @@ def assertIsNode(node, key):
 
 
 def readParamCombos(paramsFile):
-    return expandParamCombos(readParams(paramsFile))
+    return expandParamDicts(readParamDicts(paramsFile))
 
 
-def readComboPaths(paramsFile, makePipelineFn):
-    paramCombos = readParamCombos(paramsFile)
+def readComboPaths(paramsFile):
     result = []
+    pipelineName = local.path(paramsFile).stem
+    pipelineModule = pipelines.importModule(pipelineName)
     # for each parameter values combo (a parameter point without caseid)
-    for i, (paramCombo, caseids) in enumerate(paramCombos):
+    for i, (paramCombo, caseids) in enumerate(readParamCombos(paramsFile)):
         iStr = str(i)
-        paramComboPaths = {'pipelineName': local.path(paramsFile).stem,
-                           'paramCombo': paramCombo,
-                           'paths': defaultdict(list),
-                           'id': i,
-                           'num': len(caseids),
-                           'caseids': caseids}
+        comboPaths = {'pipelineName': local.path(paramsFile).stem,
+                         'paramCombo': paramCombo,
+                         'paths': defaultdict(list),
+                         'paramId': i,
+                         'num': len(caseids),
+                         'caseids': caseids}
         for caseid in caseids:
             args = dict(paramCombo, caseid=caseid)
-            subjectPipeline = makePipelineFn(**args)
+            subjectPipeline = pipelineModule.makePipeline(**args)
             for pipelineKey, node in subjectPipeline.items():
                 if pipelineKey.startswith('_'):
                     continue
                 assertIsNode(node, pipelineKey)
                 p = SubjectPath(
                     caseid=caseid, pipelineKey=pipelineKey, path=node.path())
-                paramComboPaths['paths'][pipelineKey].append(p)
-        result.append(paramComboPaths)
+                comboPaths['paths'][pipelineKey].append(p)
+        result.append(comboPaths)
     return result
 
 
