@@ -32,7 +32,7 @@ def tractMeasureStatus(combos):
         csvs = [p.path for p in combo['paths']['tractmeasures'] if p.path.exists()]
         if csvs:
             df = pd.concat((pd.read_csv(csv) for csv in csvs))
-            df['algo'] = combo['id']
+            df['algo'] = combo['paramId']
             dfs.append(df)
     if dfs:
         df = pd.concat(dfs)

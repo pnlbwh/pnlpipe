@@ -21,8 +21,7 @@ class Ls(cli.Application):
 
     def main(self, *keys):
         readAndSetSrcPaths()
-        for comboPaths in readComboPaths(self.parent.paramsFile,
-                                             self.parent.makePipeline):
+        for comboPaths in readComboPaths(self.parent.paramsFile):
             logging.info("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['paramId'], comboPaths['num']))
             printVertical(comboPaths['paramCombo'])
@@ -42,5 +41,5 @@ class Ls(cli.Application):
                         print(p.path)
                     else:
                         symlink = toSymlink(p.caseid, self.parent.name, k,
-                                            p.path, comboPaths['id'])
+                                            p.path, comboPaths['paramId'])
                         print(symlink)
