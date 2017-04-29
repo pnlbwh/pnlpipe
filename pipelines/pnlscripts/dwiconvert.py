@@ -73,10 +73,24 @@ class App(cli.Application):
         elif nifti(dwi) and nifti(out):
             ConvertBetweenFileFormats(dwi, out)
 
-        elif dwi.is_dir():
+        elif dwi.is_dir() and nifti(out):
             DWIConvert('--inputDicomDirectory', dwi
                        ,'--allowLossyConversion'
                        ,'-o', out)
+        elif dwi.is_dir and nrrd(out):
+            # converting straight to nrrd will make a non-identity measurement frame
+            with TemporaryDirectory() as tmpdir:
+                tmpnii = tmpdir / 'dwi.nii.gz'
+                DWIConvert('--inputDicomDirectory', dwi
+                           ,'--allowLossyConversion'
+                           ,'-o', tmpnii)
+                DWIConvert('--conversionMode', 'FSLToNrrd'
+                        ,'--inputBValues', bval(tmpnii)
+                        ,'--inputBVectors', bvec(tmpnii)
+                        ,'--inputVolume', tmpnii
+                        ,'--allowLossyConversion'
+                        , '-o', out)
+            (unu['save', '-e', 'gzip', '-f', 'nrrd', '-i', out, '-o', out]) & FG
 
         else:
             raise Exception('Input must be nrrd, nifti, or a dicom directory, and output must be nrrd or nifti.')
