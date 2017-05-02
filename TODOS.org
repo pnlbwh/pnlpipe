@@ -7,7 +7,11 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
+** add key flag to run, e.g. run --existing dwied
+** add --extra flag to status
 ** add --missing flag to ls
+** add validators to pipeline (e.g. dwi validator/nrrdchecker)
+** add caseid flag to env/make
 ** ENH: add list of default targets
 ** STY: software: if building  master, don't say building '...-master'
 ** STY: ls symlinks will print existing full paths, but symlink might not exist

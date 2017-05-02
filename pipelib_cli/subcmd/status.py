@@ -13,6 +13,9 @@ def stripKeys(dic, strs):
 
 
 class Status(cli.Application):
+    extraFlags = cli.SwitchAttr(
+        ['--extra'], help="Extra flags passed to the pipeline's status function")
+
     def main(self):
         readAndSetSrcPaths()
         combos = readComboPaths(self.parent.paramsFile)
@@ -41,4 +44,7 @@ class Status(cli.Application):
         if hasattr(self.parent, 'status'):
             # self.parent.status(concat([combo['paramPoints'] for combo in combos]))
             print
-            self.parent.status(combos)
+            if self.extraFlags:
+                self.parent.status(combos, extraFlags=self.extraFlags.split())
+            else:
+                self.parent.status(combos)

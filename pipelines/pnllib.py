@@ -25,7 +25,7 @@ def assertInputKeys(pipelineName, keys):
                 pipelineName, key))
         sys.exit(1)
 
-def tractMeasureStatus(combos):
+def tractMeasureStatus(combos, extraFlags=[]):
     import pandas as pd
     dfs = []
     for combo in combos:
@@ -38,7 +38,8 @@ def tractMeasureStatus(combos):
         df = pd.concat(dfs)
         from pipelines.pnlscripts.summarizeTractMeasures import summarize
         summarize(df)
-        df.to_csv(OUTDIR / (combos[0]['pipelineName'] + '.csv'))
+        if 'csv' in extraFlags:
+            df.to_csv(OUTDIR / (combos[0]['pipelineName'] + '.csv'))
 
 
 def convertImage(i, o, bthash):
@@ -277,8 +278,7 @@ class T1wMaskMabs(GeneratedNode):
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1.path(), tmpt1] & FG
             trainingCsv = trainingDataT1AHCC.getPath(self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
-            atlas_py['--mabs', '-t', tmpt1, '-o', tmpdir, 'csv',
-                     trainingCsv ] & FG
+            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir, trainingCsv ] & FG
             (tmpdir / 'mask.nrrd').copy(self.path())
 
 
