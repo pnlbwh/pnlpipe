@@ -26,6 +26,13 @@ def assertInputKeys(pipelineName, keys):
                                                                   key))
         sys.exit(1)
 
+def read_csv(file):
+    import pandas as pd
+    try:
+        df = pd.read_csv(file)
+    except:
+        df = None
+    return df
 
 def tractMeasureStatus(combos, extraFlags=[]):
     import pandas as pd
@@ -34,7 +41,7 @@ def tractMeasureStatus(combos, extraFlags=[]):
         csvs = [p.path for p in combo['paths']['tractmeasures']
                 if p.path.exists()]
         if csvs:
-            df = pd.concat((pd.read_csv(csv) for csv in csvs))
+            df = pd.concat(filter(lambda x: x is not None, (read_csv(csv) for csv in csvs)))
             df['algo'] = combo['paramId']
             dfs.append(df)
     if dfs:

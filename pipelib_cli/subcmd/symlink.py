@@ -39,8 +39,7 @@ class SymLink(cli.Application):
         for symlink in find(pipelib.OUTDIR, '-type', 'l').split():
             os.unlink(symlink)
 
-        for comboPaths in readComboPaths(self.parent.paramsFile,
-                                             self.parent.makePipeline):
+        for comboPaths in readComboPaths(self.parent.paramsFile):
             logging.info("# Make symlinks for parameter combination {}".format(
                 comboPaths['paramId']))
             printVertical(comboPaths['paramCombo'])
