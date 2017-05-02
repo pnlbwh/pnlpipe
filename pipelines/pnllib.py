@@ -37,8 +37,10 @@ def tractMeasureStatus(combos):
     if dfs:
         df = pd.concat(dfs)
         from pipelines.pnlscripts.summarizeTractMeasures import summarize
+        outcsv = OUTDIR / (combos[0]['pipelineName'] + '-tractmeasures.csv')
+        df.to_csv(outcsv.__str__(), index=False, header=True)
         summarize(df)
-        df.to_csv(OUTDIR / (combos[0]['pipelineName'] + '.csv'))
+        print("Made '{}'".format(outcsv))
 
 
 def convertImage(i, o, bthash):
@@ -277,7 +279,7 @@ class T1wMaskMabs(GeneratedNode):
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1.path(), tmpt1] & FG
             trainingCsv = trainingDataT1AHCC.getPath(self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
-            atlas_py['--mabs', '-t', tmpt1, '-o', tmpdir, 'csv',
+            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir,
                      trainingCsv ] & FG
             (tmpdir / 'mask.nrrd').copy(self.path())
 

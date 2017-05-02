@@ -32,4 +32,4 @@ _data/t1atlas/%0.nrrd _data/t1atlas/%1.nrrd _data/t1atlas/%.nrrd: ../atlas.py $(
 
 _data/t1atlascsv/%0.nrrd _data/t1atlascsv/%1.nrrd _data/t1atlascsv/%.nrrd: ../atlas.py $(T1S) $(T1_MASKS) $(T1_CINGRS)
 	$(call setup, t1)
-	../atlas.py csv --fusion antsJointFusion -t $(t1) -o $@ csv $(soft)/trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv
+	../atlas.py csv --fusion avg -t $(t1) -o $(dir $@) $(soft)/trainingDataT1AHCC/trainingDataT1AHCC-hdr.csv

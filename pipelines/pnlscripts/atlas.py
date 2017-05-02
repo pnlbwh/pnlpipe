@@ -3,6 +3,8 @@ from __future__ import print_function
 from util import logfmt, TemporaryDirectory
 import util
 from plumbum import local, cli, FG
+from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
+from util.antspath import antsRegistrationSyN_sh
 from itertools import izip_longest
 import pandas as pd
 import sys
@@ -28,7 +30,6 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def computeWarp(image, target, out):
-    from util.antspath import ComposeMultiTransform, antsRegistrationSyN_sh
     with TemporaryDirectory() as tmpdir:
         tmpdir = local.path(tmpdir)
         pre = tmpdir / 'ants'
@@ -52,9 +53,8 @@ def applyWarp(moving, warp, reference, out, interpolation='Linear'):
     LanczosWindowedSinc
     GenericLabel[<interpolator=Linear>]
     '''
-    from util.antspath import antsApplyTransforms
-    antsApplyTransforms('-d', '3', '-i', moving, '-t', warp, '-r', reference,
-                        '-o', out, '--interpolation', interpolation)
+    antsApplyTransforms['-d', '3', '-i', moving, '-t', warp, '-r', reference,
+                        '-o', out, '--interpolation', interpolation] & FG
 
 
 def intersperse(seq, value):
@@ -78,7 +78,7 @@ def fuseAntsJointFusion(target, images, labels, out):
 def fuseAvg(labels, out):
     from plumbum.cmd import AverageImages
     with TemporaryDirectory() as tmpdir:
-        nii = local.path(tmpdir) / '{}.nii.gz'.format(fusion)
+        nii = local.path(tmpdir) / 'avg.nii.gz'
         AverageImages('3', nii, '0', *labels)
         ConvertBetweenFileFormats(nii, out)
     (unu['2op', 'gt', out, '0.5'] | \
@@ -108,22 +108,20 @@ def makeAtlases(target, trainingTable, outdir, fusions=[]):
                 atlaslabel,
                 interpolation='NearestNeighbor')
 
-    for fusion in fusions:
-        from plumbum.cmd import unu, ConvertBetweenFileFormats
-        for labelname in list(trainingTable)[
-                1:]:  #TODO change to colnames/cols
-            out = outdir / labelname + '.nrrd'
-            labelmaps = outdir.glob(labelname + '*')
-            for fusion in fusions:
-                if fusion.lower() == 'avg':
-                    fuseAvg(labelmaps, nii)
-                elif fusion.lower() == 'antsjointfusion':
-                    atlasimages = outdir // 'atlas*.nii.gz'
-                    fuseAntsJointFusion(target, atlasimages, labelmaps, nii)
-                else:
-                    print(
-                        'Unrecognized fusion option: {}. Skipping.'.format(
-                            fusion))
+    for labelname in list(trainingTable)[
+            1:]:  #list(d) gets column names
+        out = outdir / labelname + '.nrrd'
+        labelmaps = outdir // (labelname + '*')
+        for fusion in fusions:
+            if fusion.lower() == 'avg':
+                fuseAvg(labelmaps, out)
+            elif fusion.lower() == 'antsjointfusion':
+                atlasimages = outdir // 'atlas*.nii.gz'
+                fuseAntsJointFusion(target, atlasimages, labelmaps, out)
+            else:
+                print(
+                    'Unrecognized fusion option: {}. Skipping.'.format(
+                        fusion))
 
 
 class Atlas(cli.Application):
@@ -189,7 +187,7 @@ class AtlasArgs(cli.Application):
         trainingTable = pd.DataFrame(
             dict(zip(labelnames, labelcols) + [('image', images)]))
         makeAtlases(self.target, trainingTable, self.out, self.fusion)
-        logging.info('Made ' + self.parent.out)
+        logging.info('Made ' + self.out)
 
 
 @Atlas.subcommand("csv")
@@ -201,10 +199,10 @@ class AtlasCsv(cli.Application):
         cli.ExistingFile,
         help='target image',
         mandatory=True)
-    fusion = cli.SwitchAttr(
+    fusions = cli.SwitchAttr(
         '--fusion',
         cli.Set("avg", "antsJointFusion", case_sensitive=False),
-        list,
+        list=True,
         help='Also create predicted labelmap(s) by averaging the atlas labelmaps')
     out = cli.SwitchAttr(
         ['-o', '--out'], help='output directory', mandatory=True)
@@ -212,8 +210,8 @@ class AtlasCsv(cli.Application):
     @cli.positional(cli.ExistingFile)
     def main(self, csv):
         trainingTable = pd.read_csv(csv)
-        makeAtlases(self.target, trainingTable, self.out, self.fusion)
-        logging.info('Made ' + self.parent.out)
+        makeAtlases(self.target, trainingTable, self.out, self.fusions)
+        logging.info('Made ' + self.out)
 
 
 if __name__ == '__main__':
