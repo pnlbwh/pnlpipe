@@ -8,28 +8,31 @@ from software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1
 import software.FreeSurfer
 import hashlib
 
-defaultUkfParams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015,
-                    "--numTensor", 2, "--recordLength", 1.7,
-                    "--seedFALimit", 0.18, "--seedsPerVoxel", 10,
-                    "--stepLength", 0.3]
+defaultUkfParams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
+                    "--recordLength", 1.7, "--seedFALimit", 0.18,
+                    "--seedsPerVoxel", 10, "--stepLength", 0.3]
+
 
 class DoesNotExistException(Exception):
     pass
+
 
 def assertInputKeys(pipelineName, keys):
     import pipelib
     absentKeys = [k for k in keys if not pipelib.INPUT_PATHS.get(k)]
     if absentKeys:
         for key in absentKeys:
-            print("{} requires '{}' set in inputPaths.yml".format(
-                pipelineName, key))
+            print("{} requires '{}' set in inputPaths.yml".format(pipelineName,
+                                                                  key))
         sys.exit(1)
+
 
 def tractMeasureStatus(combos, extraFlags=[]):
     import pandas as pd
     dfs = []
     for combo in combos:
-        csvs = [p.path for p in combo['paths']['tractmeasures'] if p.path.exists()]
+        csvs = [p.path for p in combo['paths']['tractmeasures']
+                if p.path.exists()]
         if csvs:
             df = pd.concat((pd.read_csv(csv) for csv in csvs))
             df['algo'] = combo['paramId']
@@ -37,9 +40,12 @@ def tractMeasureStatus(combos, extraFlags=[]):
     if dfs:
         df = pd.concat(dfs)
         from pipelines.pnlscripts.summarizeTractMeasures import summarize
+        outcsv = OUTDIR / (combos[0]['pipelineName'] + '-tractmeasures.csv')
+        df.to_csv(outcsv.__str__(), index=False, header=True)
         summarize(df)
         if 'csv' in extraFlags:
             df.to_csv(OUTDIR / (combos[0]['pipelineName'] + '.csv'))
+            print("Made '{}'".format(outcsv))
 
 
 def convertImage(i, o, bthash):
@@ -58,7 +64,9 @@ def formatParams(l):
 def validateFreeSurfer(versionRequired):
     freesurferHome = os.environ.get('FREESURFER_HOME')
     if not freesurferHome:
-        log.error("'FREESURFER_HOME' not set, set that first (need version {}) then run again".format(version))
+        log.error(
+            "'FREESURFER_HOME' not set, set that first (need version {}) then run again".format(
+                version))
         sys.exit(1)
     with open(local.path(freesurferHome) / "build-stamp.txt", 'r') as f:
         buildStamp = f.read()
@@ -67,20 +75,25 @@ def validateFreeSurfer(versionRequired):
     try:
         version = p.search(buildStamp).group()
     except:
-        log.error("Couldn't extract FreeSurfer version from {}/build-stamp.txt, either that file is malformed or the regex used to extract the version is incorrect.".format(freesurferHome))
+        log.error(
+            "Couldn't extract FreeSurfer version from {}/build-stamp.txt, either that file is malformed or the regex used to extract the version is incorrect.".format(
+                freesurferHome))
 
         sys.exit(1)
     if version == versionRequired:
         log.info("Required FreeSurfer version {} is on path".format(version))
     else:
-        log.error("FreeSurfer version {} at {} does not match the required version of {}, either change FREESURFER_HOME or change the version you require".format(version, freesurferHome, versionRequired))
+        log.error(
+            "FreeSurfer version {} at {} does not match the required version of {}, either change FREESURFER_HOME or change the version you require".format(
+                version, freesurferHome, versionRequired))
         sys.exit(1)
 
 
 class DwiHcp(GeneratedNode):
     """ Washington University HCP DWI preprocessing. """
 
-    def __init__(self, caseid, posDwis, negDwis, echoSpacing, peDir, version_HCPPipelines):
+    def __init__(self, caseid, posDwis, negDwis, echoSpacing, peDir,
+                 version_HCPPipelines):
         self.deps = posDwis + negDwis
         self.params = [version_HCPPipelines]
         self.ext = '.nii.gz'
@@ -88,9 +101,10 @@ class DwiHcp(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        with HCPPipelines.env(self.version_HCPPipelines), TemporaryDirectory() as tmpdir:
+        with HCPPipelines.env(self.version_HCPPipelines), TemporaryDirectory(
+        ) as tmpdir:
             preproc = local[HCPPipelines.getPath(self.version_HCPPipelines) /
-                             'DiffusionPreprocessing/DiffPreprocPipeline.sh']
+                            'DiffusionPreprocessing/DiffPreprocPipeline.sh']
             posPaths = [n.path() for n in self.posDwis]
             negPaths = [n.path() for n in self.negDwis]
             datadir = tmpdir / 'hcp/data'
@@ -98,18 +112,17 @@ class DwiHcp(GeneratedNode):
             hcpdir = OUTDIR / self.caseid / 'hcp-{}'.format(getpid())
             datadir = hcpdir / 'data'
             try:
-                preproc['--path={}'.format(OUTDIR)
-                        ,'--subject={}'.format(self.caseid)
-                        ,'--PEdir={}'.format(self.peDir)
-                        ,'--posData='+'@'.join(posPaths)
-                        ,'--negData='+'@'.join(negPaths)
-                        ,'--echospacing={}'.format(self.echoSpacing)
-                        ,'--gdcoeffs=NONE'
-                        ,'--dwiname=hcp-{}'.format(getpid())] & FG
+                preproc['--path={}'.format(OUTDIR), '--subject={}'.format(
+                    self.caseid), '--PEdir={}'.format(self.peDir), '--posData='
+                        + '@'.join(posPaths), '--negData=' + '@'.join(
+                            negPaths), '--echospacing={}'.format(
+                                self.echoSpacing), '--gdcoeffs=NONE',
+                        '--dwiname=hcp-{}'.format(getpid())] & FG
             except ProcessExecutionError as e:
-                if not (datadir/'data.nii.gz').exists():
+                if not (datadir / 'data.nii.gz').exists():
                     print(e)
-                    log.error("HCP failed to make '{}'".format(datadir/'data.nii.gz'))
+                    log.error("HCP failed to make '{}'".format(datadir /
+                                                               'data.nii.gz'))
                     (OUTDIR / self.caseid / 'T1w').delete()
                     sys.exit(1)
             (OUTDIR / self.caseid / 'T1w').delete()
@@ -160,9 +173,9 @@ class DwiEpi(GeneratedNode):
         needDeps(self)
         with BRAINSTools.env(self.bthash):
             from pnlscripts.util.scripts import epi_py
-            epi_py('--force', '--dwi', self.dwi.path(), '--dwimask', self.dwimask.path(),
-                   '--t2', self.t2.path(), '--t2mask', self.t2mask.path(),
-                   '-o', self.path())
+            epi_py('--force', '--dwi', self.dwi.path(), '--dwimask',
+                   self.dwimask.path(), '--t2', self.t2.path(), '--t2mask',
+                   self.t2mask.path(), '-o', self.path())
 
 
 class DwiMaskBet(GeneratedNode):
@@ -174,7 +187,9 @@ class DwiMaskBet(GeneratedNode):
     def build(self):
         needDeps(self)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
-            bet_py('--force', '-f', self.threshold, '-i', self.dwi.path(), '-o', self.path())
+            bet_py('--force', '-f', self.threshold, '-i', self.dwi.path(),
+                   '-o', self.path())
+
 
 class UkfDefault(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfhash, bthash):
@@ -203,10 +218,12 @@ class UkfDefault(GeneratedNode):
 class Ukf(GeneratedNode):
     def __init__(self, caseid, dwi, dwimask, ukfparams, ukfhash, bthash):
         self.deps = [dwi, dwimask]
-        ukfparamsHash = "ukfparams-" + str(int(hashlib.sha1(ukfparams.__str__()).hexdigest(), 16) % (10 ** 8))
+        ukfparamsHash = "ukfparams-" + str(
+            int(hashlib.sha1(ukfparams.__str__()).hexdigest(), 16) % (10**8))
         self.params = [ukfhash, bthash, ukfparamsHash]
         self.ext = '.vtk'
         GeneratedNode.__init__(self, locals())
+
     def build(self):
         needDeps(self)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
@@ -240,7 +257,8 @@ class StrctXc(GeneratedNode):
 
 
 class MaskRigid(GeneratedNode):
-    def __init__(self, caseid, fixedStrct, movingStrct, movingStrctMask, bthash):
+    def __init__(self, caseid, fixedStrct, movingStrct, movingStrctMask,
+                 bthash):
         self.deps = [fixedStrct, movingStrct, movingStrctMask]
         self.params = [bthash]
         GeneratedNode.__init__(self, locals())
@@ -256,9 +274,8 @@ class MaskRigid(GeneratedNode):
             convertImage(self.movingStrct.path(), moving, self.bthash)
             convertImage(self.movingStrctMask.path(), movingmask, self.bthash)
             convertImage(self.fixedStrct.path(), fixed, self.bthash)
-            makeRigidMask_py('-i', moving, '--labelmap',
-                             movingmask, '--target', fixed,
-                             '-o', out)
+            makeRigidMask_py('-i', moving, '--labelmap', movingmask,
+                             '--target', fixed, '-o', out)
             out.move(self.path())
 
 
@@ -277,8 +294,10 @@ class T1wMaskMabs(GeneratedNode):
             tmpt1 = tmpdir / ('t1' + ''.join(self.t1.path().suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1.path(), tmpt1] & FG
-            trainingCsv = trainingDataT1AHCC.getPath(self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
-            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir, trainingCsv ] & FG
+            trainingCsv = trainingDataT1AHCC.getPath(
+                self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
+            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir,
+                     trainingCsv] & FG
             (tmpdir / 'mask.nrrd').copy(self.path())
 
 
@@ -316,16 +335,19 @@ class FsInDwiDirect(GeneratedNode):
             tmpdwimask = tmpdir / 'dwimask.nrrd'
             dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
             convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
-            fs2dwi_py['-f', fssubjdir, '-t', tmpdwi, '-m',
-                      tmpdwimask, '-o', tmpoutdir, 'direct'] & FG
-	    local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
+            fs2dwi_py['-f', fssubjdir, '-t', tmpdwi, '-m', tmpdwimask, '-o',
+                      tmpoutdir, 'direct'] & FG
+            local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
+
 
 class FsInDwiUsingT2(GeneratedNode):
-    def __init__(self, caseid, fs, t1, t1mask, t2, t2mask, dwi, dwimask, bthash):
+    def __init__(self, caseid, fs, t1, t1mask, t2, t2mask, dwi, dwimask,
+                 bthash):
         self.deps = [fs, t1, t2, t1mask, t2mask, dwi, dwimask]
         self.params = [bthash]
         self.ext = 'nii.gz'
         GeneratedNode.__init__(self, locals())
+
     def build(self):
         needDeps(self)
         fssubjdir = self.fs.path().dirname.dirname
@@ -346,15 +368,11 @@ class FsInDwiUsingT2(GeneratedNode):
             convertImage(self.t2mask.path(), t2mask, self.bthash)
             convertImage(self.t1mask.path(), t1mask, self.bthash)
             script = local['pipelines/pnlscripts/old/fs2dwi_T2.sh']
-            script['--fsdir', fs
-            ,'--dwi', dwi
-            ,'--dwimask', dwimask
-            ,'--t2', t2
-            ,'--t2mask', t2mask
-            ,'--t1', t1
-            ,'--t1mask', t1mask
-            ,'-o', tmpoutdir] & FG
-            convertImage(tmpoutdir / 'wmparc-in-bse.nrrd', self.path(), self.bthash)
+            script['--fsdir', fs, '--dwi', dwi, '--dwimask', dwimask, '--t2',
+                   t2, '--t2mask', t2mask, '--t1', t1, '--t1mask', t1mask,
+                   '-o', tmpoutdir] & FG
+            convertImage(tmpoutdir / 'wmparc-in-bse.nrrd', self.path(),
+                         self.bthash)
 
 
 class Wmql(GeneratedNode):
@@ -375,6 +393,7 @@ class Wmql(GeneratedNode):
             wmql_py['-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
                     '-o', self.path().dirname] & FG
 
+
 class TractMeasures(GeneratedNode):
     def __init__(self, caseid, wmql):
         self.deps = [wmql]
@@ -383,7 +402,9 @@ class TractMeasures(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        measureTracts_py = local['pipelines/pnlscripts/measuretracts/measureTracts.py']
+        measureTracts_py = local[
+            'pipelines/pnlscripts/measuretracts/measureTracts.py']
         vtks = self.wmql.path().up() // '*.vtk'
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
-                         self.wmql.showShortened(), '-o', self.path(), '-i', vtks] & FG
+                         self.wmql.showShortened(), '-o', self.path(
+                         ), '-i', vtks] & FG
