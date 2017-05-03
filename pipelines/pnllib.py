@@ -45,14 +45,16 @@ def tractMeasureStatus(combos, extraFlags=[]):
             df['algo'] = combo['paramId']
             dfs.append(df)
     if dfs:
-        df = pd.concat(dfs)
         from pipelines.pnlscripts.summarizeTractMeasures import summarize
-        outcsv = OUTDIR / (combos[0]['pipelineName'] + '-tractmeasures.csv')
-        df.to_csv(outcsv.__str__(), index=False, header=True)
-        summarize(df)
+        df = pd.concat(dfs)
+        df_summary = summarize(df)
         if 'csv' in extraFlags:
-            df.to_csv(OUTDIR / (combos[0]['pipelineName'] + '.csv'))
+            outcsv = OUTDIR / (combos[0]['pipelineName'] + '-tractmeasures.csv')
+            df.to_csv(outcsv.__str__(), header=True, index=False)
             print("Made '{}'".format(outcsv))
+            outcsv_summary = OUTDIR / (combos[0]['pipelineName'] + '-tractmeasures-summary.csv')
+            df_summary.to_csv(outcsv_summary)
+            print("Made '{}'".format(outcsv_summary))
 
 
 def convertImage(i, o, bthash):

@@ -51,6 +51,7 @@ INTRuST,uf.right,565.9559476129,43.1105907847185,142.316883116883,126.6375378403
     dfintrust= pd.read_csv(INTRUST, sep=",",index_col=0)
     print("Compare to INTRuST:")
     print(dfintrust)
+    return dfn
 
 
 class App(cli.Application):
