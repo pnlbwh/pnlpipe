@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import sys
-from util import logfmt, ExistingNrrdOrNifti
+from util import logfmt, ExistingNrrdOrNifti, TemporaryDirectory
 from plumbum import cli, FG, local
 from plumbum.cmd import unu, DWIConvert
 
