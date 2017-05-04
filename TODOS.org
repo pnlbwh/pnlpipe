@@ -7,6 +7,7 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
+** add keep going flag
 ** add --missing flag to ls
 ** add validators to pipeline (e.g. dwi validator/nrrdchecker)
 ** add caseid flag to env/make

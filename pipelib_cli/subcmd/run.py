@@ -12,6 +12,10 @@ class Run(cli.Application):
     want = cli.SwitchAttr(
         ['-w', '--want'], help='target node to build, e.g. fsindwi')
 
+
+    keepGoing = cli.Flag(
+        ['-k'], default=False, help="keep going if possible when there's an exception")
+
     def main(self, *commandLineCaseids):
         readAndSetSrcPaths()
         paramCombos = readParamCombos(self.parent.paramsFile)
@@ -69,4 +73,10 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""".format(self.parent.name,
                 printVertical(paramCombo)
                 args = dict(paramCombo, caseid=caseid)
                 pipeline = self.parent.makePipeline(**args)
-                pipelib.update(pipeline[want])
+                try:
+                    pipelib.update(pipeline[want])
+                except Exception as e:
+                    if self.keepGoing:
+                        continue
+                    else:
+                        raise(e)
