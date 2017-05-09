@@ -11,6 +11,7 @@ import yaml
 from collections import OrderedDict
 
 PUBLISH_CONFIG_FILE = 'publish.yml'
+PNLPROJECTSMETA = 'PNLPROJECTSMETA'
 
 def csvFromDict(d):
     s = ""
@@ -24,6 +25,7 @@ def readProjectInfo():
         return yaml.load(f)
 
 class Publish(cli.Application):
+
     def main(self, *args):
         if args:
             print("Unknown command {0!r}".format(args[0]))
@@ -32,8 +34,7 @@ class Publish(cli.Application):
             return
 
         readAndSetSrcPaths()
-        combos = readComboPaths(self.parent.paramsFile,
-                                self.parent.makePipeline)
+        combos = readComboPaths(self.parent.paramsFile)
         projectInfo = readProjectInfo()
 
         paramsCsv = '_{}_publish_params.csv'.format(self.parent.name)
@@ -60,8 +61,10 @@ class Publish(cli.Application):
                         for subjectPath in subjectPaths:
                             csvwriter2.writerow(
                                 [projectInfo['project'], projectInfo['projectPath'],
-                                combo['id'], pathKey, subjectPath.caseid,
+                                combo['paramId'], pathKey, subjectPath.caseid,
                                 subjectPath.path, subjectPath.path.exists()])
+            print("Made '{}'".format(paramsCsv))
+            print("Made '{}'".format(pathsCsv))
 
 
 @Publish.subcommand("init")
@@ -78,3 +81,24 @@ class Init(cli.Application):
 
 
         print("Made '{}'".format(PUBLISH_CONFIG_FILE))
+
+
+@Publish.subcommand("push")
+class Push(cli.Application):
+
+    def main(self):
+        import os
+        centralRepo = os.environ.get(PNLPROJECTSMETA, None)
+        if not centralRepo:
+            errmsg = "Set '{}' environment variable first.".format(PNLPROJECTSMETA)
+            raise Exception(errmsg)
+
+        paramsCsv = local.path('_{}_publish_params.csv'.format(self.parent.parent.name))
+        pathsCsv = local.path('_{}_publish_paths.csv'.format(self.parent.parent.name))
+
+        if not paramsCsv.exists():
+            errmsg = "'{}' does not exist, run 'publish' command first".format(paramsCsv)
+            raise Exception(errmsg)
+        if not pathsCsv.exists():
+            errmsg = "'{}' does not exist, run 'publish' command first".format(pathsCsv)
+            raise Exception(errmsg)
