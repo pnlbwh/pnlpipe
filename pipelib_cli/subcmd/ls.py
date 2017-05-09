@@ -16,10 +16,18 @@ class Ls(cli.Application):
         ['-s', '--subjid'],
         excludes=['-c'],
         help="Print subject ids instead of paths")
+    ignoreCaseids = cli.SwitchAttr(
+        ['-e', '--except'],
+        default="",
+        help="Ignore this list of caseids")
     printFull = cli.Flag(
         ['-p'], excludes=['-s'], help="Print full paths instead of symlinks.")
 
     def main(self, *keys):
+        ignoreCaseids = self.ignoreCaseids.split()
+        if len(ignoreCaseids) == 1 and './' in ignoreCaseids[0]:
+            with open(ignoreCaseids[0], 'r') as f:
+                ignoreCaseids = f.read().splitlines()
         readAndSetSrcPaths()
         for comboPaths in readComboPaths(self.parent.paramsFile):
             logging.info("## Parameter Combination {} ({} subjects)".format(
@@ -38,6 +46,8 @@ class Ls(cli.Application):
                                     for p in filter(lambda x: x.path.exists(), vs)
                                     ]
                     for p in existingPaths:
+                        if p.caseid in ignoreCaseids:
+                            continue
                         if self.caseids:
                             print('{}'.format(p.caseid))
                             continue
@@ -52,6 +62,8 @@ class Ls(cli.Application):
 
             else:
                 for i, caseid in enumerate(comboPaths['caseids']):
+                    if caseid in ignoreCaseids:
+                        continue
                     ps = [comboPaths['paths'][key][i] for key in keys]
                     if not all(p.path.exists() for p in ps):
                         continue
