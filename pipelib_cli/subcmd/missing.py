@@ -26,8 +26,7 @@ class Missing(cli.Application):
                 "'DEFAULT_TARGET' not set in 'pipelines/pipeline_{}.py', so you must provide a key on the command line, e.g. ./pipe std missing fs".format(
                     self.parent.name))
 
-        for comboPaths in readComboPaths(self.parent.paramsFile,
-                                             self.parent.makePipeline):
+        for comboPaths in readComboPaths(self.parent.paramsFile):
             logging.info("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['paramId'], comboPaths['num']))
             printVertical(comboPaths['paramCombo'])
