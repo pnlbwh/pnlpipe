@@ -11,10 +11,9 @@ class Run(cli.Application):
 
     want = cli.SwitchAttr(
         ['-w', '--want'], help='target node to build, e.g. fsindwi')
-
-
     keepGoing = cli.Flag(
         ['-k'], default=False, help="keep going if possible when there's an exception")
+    paramId = cli.SwitchAttr(['-p'], int, mandatory=False, help="parameter id, run pipeline only for this parameter combination")
 
     def main(self, *commandLineCaseids):
         readAndSetSrcPaths()
@@ -66,6 +65,8 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""".format(self.parent.name,
         logging.info('Make target {}'.format(want))
 
         for paramCombo, caseids in paramCombos:
+            if self.paramId and paramCombo != self.paramId:
+                continue
             caseids = commandLineCaseids if commandLineCaseids else caseids
             for caseid in caseids:
                 logging.info('Running {} pipeline'.format(self.parent.name))
