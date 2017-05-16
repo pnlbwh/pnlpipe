@@ -62,10 +62,11 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""".format(self.parent.name,
             want = self.parent.defaultTarget
         else:
             want = self.want
+
         logging.info('Make target {}'.format(want))
 
-        for paramCombo, caseids in paramCombos:
-            if self.paramId and paramCombo != self.paramId:
+        for paramId, (paramCombo, caseids) in enumerate(paramCombos):
+            if self.paramId and self.paramId != paramId:
                 continue
             caseids = commandLineCaseids if commandLineCaseids else caseids
             for caseid in caseids:
