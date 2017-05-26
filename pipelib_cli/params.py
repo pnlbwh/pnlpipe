@@ -44,7 +44,7 @@ def checkParams(paramDicts):
 def readCaseids(caseidVal):
     if '/' in caseidVal[0]:
         with open(caseidVal[0], 'r') as f:
-            return [line for line in f.read().splitlines()
+            return [line.split()[0] for line in f.read().splitlines()
                     if not line.startswith('#')]
     return caseidVal
 
