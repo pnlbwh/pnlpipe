@@ -15,20 +15,8 @@ PROJECT_INFO_YML = 'projectInfo.yml'
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
 
 
-def csvFromDict(d):
-    s = ""
-    hdr = 'project,grantId,paramId,caselist,param,paramValue'
-    row = ','.join(d.values())
-    return hdr + '\n' + row
-
-
-def readProjectInfo():
-    with open(PROJECT_YML, 'r') as f:
-        return yaml.load(f)
-
-
-class Publish(cli.Application):
-    """Makes project summary file and pushes to central project database."""
+class Export(cli.Application):
+    """Makes pnlproj project summary file."""
 
     def main(self, *args):
         if args:
@@ -38,20 +26,35 @@ class Publish(cli.Application):
             return
 
 
-@Publish.subcommand("init")
+@Export.subcommand("init")
 class Init(cli.Application):
-    """Makes 'project.yml'"""
+    """Makes 'project.yml' from your configured pipeline(s)."""
 
-    def main(self):
+    force = cli.Flag(['-f', '--force'], default=False, help='force overwrite')
 
-        if local.path(PROJECT_YML).exists():
-            msg = "'{}' already exists, to recreate it delete it first.".format(
+    def main(self, *pipelineNames):
+
+        if not pipelineNames:
+            print("List the pipelines for which you want a project.yml file generated.")
+            print
+            self.help()
+            sys.exit(1)
+
+        if local.path(PROJECT_YML).exists() and not self.force:
+            msg = "'{}' already exists, to recreate it delete it first or use --force flag.".format(
                 PROJECT_YML)
             print(msg)
             sys.exit(1)
 
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
+
+        pipelines = []
+        for subprojectyml in (local.cwd // 'project-*yml'):
+            with open(subprojectyml, 'r') as f:
+                y = yaml.load(f)
+            print("Found '{}', adding it to pipelines in '{}'".format(subprojectyml, PROJECT_YML))
+            pipelines.append(y)
 
         if local.path(PROJECT_INFO_YML).exists():
             print(
@@ -76,30 +79,33 @@ class Init(cli.Application):
         result['projectInfo'] = pi
 
         readAndSetSrcPaths()
-        combos = readComboPaths(self.parent.parent.paramsFile)
 
-        pipelines = []
-        for combo in combos:
-            pipeline = {}
-            pipeline['parameters'] = combo['paramCombo']
-            pipeline['paths'] = {}
-            pipeline['paths']['caselist'] = combo['caseids']
-            for pathKey, subjectPaths in combo['paths'].items():
-                s = subjectPaths[0]
-                pipeline['paths'][pathKey] = s.path.__str__()
-                pipeline['paths']['caseid'] = s.caseid
-            pipelines.append(pipeline)
+        for pipelineName in pipelineNames:
+            paramFile = local.path(pipelineName + '.params')
+            if not paramFile.exists():
+                raise Exception("Pipeline '{}' not configured, make a '{}.params' file first.".format(pipelineName, pipelineName))
+            combos = readComboPaths(pipelineName + '.params')
+            for combo in combos:
+                pipeline = {}
+                pipeline['parameters'] = combo['paramCombo']
+                pipeline['paths'] = {}
+                pipeline['paths']['caselist'] = combo['caseids']
+                for pathKey, subjectPaths in combo['paths'].items():
+                    s = subjectPaths[0]
+                    pipeline['paths'][pathKey] = s.path.__str__()
+                    pipeline['paths']['caseid'] = s.caseid
+                pipelines.append(pipeline)
+
         result['pipelines'] = pipelines
 
         with open(PROJECT_YML, 'w') as f:
             yaml.dump(result, f, default_flow_style=False)
         print("Made '{}'".format(PROJECT_YML))
         if not local.path(PROJECT_INFO_YML).exists():
-            print("Now customize the 'projectInfo' section and save.".format(
-                PROJECT_YML))
+            print("Now customize the 'projectInfo' section and save.")
 
 
-@Publish.subcommand("push")
+@Export.subcommand("push")
 class Push(cli.Application):
     """Copies project.yml to central project database"""
 

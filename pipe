@@ -74,6 +74,7 @@ def classFactory(name,
 if __name__ == '__main__':
     import pipelib_cli.cmd.init
     import pipelib_cli.cmd.soft
+    import pipelib_cli.cmd.export
     import pipelib_cli.subcmd.init
     import pipelib_cli.subcmd.make
     import pipelib_cli.subcmd.run
@@ -81,10 +82,10 @@ if __name__ == '__main__':
     import pipelib_cli.subcmd.symlink
     import pipelib_cli.subcmd.ls
     import pipelib_cli.subcmd.missing
-    import pipelib_cli.subcmd.publish
 
     App.subcommand("init", pipelib_cli.cmd.init.Init)
     App.subcommand("soft", pipelib_cli.cmd.soft.SoftwareCommand)
+    App.subcommand("export", pipelib_cli.cmd.export.Export)
 
     for m in pipelineModules():
         name = m.__name__[9:]
@@ -100,6 +101,5 @@ if __name__ == '__main__':
         SubcommandClass.subcommand("status",  pipelib_cli.subcmd.status.Status)
         SubcommandClass.subcommand("ls",      pipelib_cli.subcmd.ls.Ls)
         SubcommandClass.subcommand("missing", pipelib_cli.subcmd.missing.Missing)
-        SubcommandClass.subcommand("publish", pipelib_cli.subcmd.publish.Publish)
 
     App.run()

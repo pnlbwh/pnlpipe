@@ -7,7 +7,7 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
-** add automatic symlink generation
+** add multiple file nodes: dictionary or string
 ** add --missing flag to ls
 ** add validators to pipeline (e.g. dwi validator/nrrdchecker)
 ** add caseid flag to env/make
@@ -26,7 +26,5 @@
 ** ENH: add check for correct DWI axes permutation
 ** STY: change pnlscripts.util to pnlscripts
 ** ENH: add isUpToDate function (right now assumes dependencies don't changed between runs, which is true for pnl pipeline but not generally)
-** think about multi file nodes
-   - could make it polymorphic: dictionary, list, string
 ** STY: add log file output to pnlscripts scripts
 ** sty: clarify when 'caseid' gets special treatment as a parameter

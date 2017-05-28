@@ -19,7 +19,7 @@ class Missing(cli.Application):
         defaultKeys = [
             a + str(b)
             for a, b in zip(cycle([self.parent.defaultTarget]), range(1, 5))
-        ] + [self.parent.defaultTarget]
+        ] + [self.parent.defaultTarget]  # assuming max 5 different pipeline parameter combinations (defined in .params file)
         keys = defaultKeys if not keys else keys
         if not keys:
             raise Exception(

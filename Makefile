@@ -16,7 +16,7 @@ clean:
 	@echo "Not implemented yet (did you mean bclean?)"
 
 .PHONY: bclean
-bclean: 
+bclean:
 	rm *.err *.out
 
 # Run pipeline for given subject id, overrides caseid field in params.<pipe>
