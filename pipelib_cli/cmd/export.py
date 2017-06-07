@@ -92,7 +92,7 @@ class Init(cli.Application):
                 pipeline['paths']['caselist'] = combo['caseids']
                 for pathKey, subjectPaths in combo['paths'].items():
                     s = subjectPaths[0]
-                    pipeline['paths'][pathKey] = s.path.__str__()
+                    pipeline['paths'][pathKey] = s.path.relative_to(local.cwd).__str__()
                     pipeline['paths']['caseid'] = s.caseid
                 pipelines.append(pipeline)
 

@@ -95,6 +95,7 @@ def readComboPaths(paramsFile):
                          'caseids': caseids}
         for caseid in caseids:
             args = dict(paramCombo, caseid=caseid)
+            args = {k:v for k,v in args.items() if not k.startswith('_')}
             subjectPipeline = pipelineModule.makePipeline(**args)
             for pipelineKey, node in subjectPipeline.items():
                 if pipelineKey.startswith('_'):

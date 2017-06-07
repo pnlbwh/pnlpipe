@@ -73,6 +73,7 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""".format(self.parent.name,
                 print("# Subject ID " + caseid)
                 printVertical(paramCombo)
                 args = dict(paramCombo, caseid=caseid)
+                args = {k:v for k,v in args.items() if not k.startswith('_')}
                 pipeline = self.parent.makePipeline(**args)
                 try:
                     pipelib.update(pipeline[want])
