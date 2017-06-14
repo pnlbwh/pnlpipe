@@ -21,6 +21,7 @@ def readAndSetSrcPaths():
             val.replace(caseidPattern, '{case}'))
     logging.debug("Read '{}' and set pipelib.INPUT_PATHS:".format(
         SRCPATHS))
+    return pipelib.INPUT_PATHS
 
 
 def printVertical(d, prepend='', fd=sys.stderr):

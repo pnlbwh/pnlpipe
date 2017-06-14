@@ -6,28 +6,43 @@ import pipelib
 DEFAULT_TARGET = 'tractmeasures'
 
 def makePipeline(caseid,
-                 t1PathKey,
-                 dwiPathKey,
-                 dwimaskPathKey='',
-                 t1maskPathKey='',
+                 inputT1Key,
+                 inputDwiKey,
+                 inputDwimaskKey='',
+                 inputT1maskKey='',
                  version_FreeSurfer='5.3.0',
                  hash_UKFTractography='421a7ad',
                  hash_tract_querier='e045eab',
                  hash_BRAINSTools='41353e8',
                  hash_trainingDataT1AHCC='d6e5990'
                  ):
-    """Makes the PNL's standard pipeline. """
+    """The PNL's standard pipeline.
+Pipeline node key descriptions:
+    t1:            input T1w
+    dwi:           input DWI
+    dwixc:         axis-aligned and centered DWI
+    dwied:         eddy corrected, axis-aligned, centered DWI
+    t1xc:          axis-aligned and centered T1w
+    dwimask:       if inputDwimaskKey is empty, then generated FSL bet mask
+    t1mask:        if inputT1maskKey is empty, then generated MABS T1w mask
+    fs:            FreeSurfer subject directory
+    fsindwi:       FreeSurfer labelmap (wmparc) registered to dwied
+    ukf:           Whole brain UKF Tractography vtk
+    wmql:          directory of WMQL tracts (vtk files)
+    tractmeasures: CSV of WMQL tract measures
+    """
+
     pipeline = {'_name': "standard PNL pipeline"}
-    pipeline['t1'] = Src(caseid, t1PathKey)
-    pipeline['dwi'] = Src(caseid, dwiPathKey)
+    pipeline['t1'] = Src(caseid, inputT1Key)
+    pipeline['dwi'] = Src(caseid, inputDwiKey)
     pipeline['dwixc'] = DwiXc(caseid, pipeline['dwi'],
                                 hash_BRAINSTools)  # works on nrrd or nii
     pipeline['dwied'] = DwiEd(caseid, pipeline['dwixc'], hash_BRAINSTools)
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
     pipeline['dwimask'] = Src(caseid,
-                              dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(
+                              inputDwimaskKey) if inputDwimaskKey else DwiMaskBet(
                                   caseid, pipeline['dwied'], 0.1, hash_BRAINSTools)
-    pipeline['t1mask'] = Src(caseid, t1maskPathKey) if t1maskPathKey else T1wMaskMabs(
+    pipeline['t1mask'] = Src(caseid, inputT1maskKey) if inputT1maskKey else T1wMaskMabs(
         caseid, pipeline['t1xc'], hash_trainingDataT1AHCC, hash_BRAINSTools)
     pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
                                          pipeline['t1mask'], version_FreeSurfer)
