@@ -7,6 +7,9 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
+** STY:
+*** change _env#.sh to _pipeline#.sh
+*** change inputPaths.yml to inputpaths.yml
 ** caseid -> caseidPattern in project.yml
 ** add multiple file nodes: dictionary or string
 ** add --missing flag to ls
@@ -15,12 +18,12 @@
 ** show params with meaning in filenames
 ** STY: ls symlinks will print existing full paths, but symlink might not exist
 ** add permutation check to bse.py (currently assumes correct dwi permutation)
-** software envs need to raise an exception if their paths don't exist, e.g could
+** pp_software envs need to raise an exception if their paths don't exist, e.g could
    be deleted during pipeline run
 ** ENH: add check for correct DWI axes permutation
 ** STY: change pnlscripts.util to pnlscripts
 ** ENH: add isUpToDate function (right now assumes dependencies don't change between runs, which is true for pnl pipeline but not generally)
-** STY: software: if building  master, don't say building '...-master'
+** STY: pp_software: if building  master, don't say building '...-master'
 ** STY: add log file output to pnlscripts scripts
 ** sty: clarify when 'caseid' gets special treatment as a parameter
 ** ENH: add list of default targets

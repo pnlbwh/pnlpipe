@@ -2,4 +2,4 @@ _*
 *.pyc
 caselist.txt
 #.*
-srcpaths.yml
+inputPaths.yml
