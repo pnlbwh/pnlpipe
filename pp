@@ -15,7 +15,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 import pp_cli.subcmd
-import pp_cli.cmd.soft
+import pp_cli.cmd.install
 
 
 class App(cli.Application):
@@ -30,7 +30,7 @@ class App(cli.Application):
 
 def classSoftwareFactory(name,
                          makeFn,
-                         BaseClass=pp_cli.cmd.soft.SoftwareCommand):
+                         BaseClass=pp_cli.cmd.install.SoftwareCommand):
     def wrapFunction(self, *args, **kwargs):
         return make(*args, **kwargs)
 
@@ -73,7 +73,6 @@ def classFactory(name,
 
 if __name__ == '__main__':
     import pp_cli.cmd.init
-    import pp_cli.cmd.soft
     import pp_cli.cmd.export
     import pp_cli.subcmd.init
     import pp_cli.subcmd.make
@@ -85,7 +84,7 @@ if __name__ == '__main__':
     import pp_cli.subcmd.keys
 
     App.subcommand("init", pp_cli.cmd.init.Init)
-    App.subcommand("soft", pp_cli.cmd.soft.SoftwareCommand)
+    App.subcommand("install", pp_cli.cmd.install.SoftwareCommand)
     App.subcommand("export", pp_cli.cmd.export.Export)
 
     for m in pipelineModules():

@@ -2,6 +2,7 @@ from plumbum import local, cli
 import pp_cli
 from pp_cli import SRCPATHS
 import logging
+import pp_software
 
 
 def loadSoftwareModule(name):
@@ -15,13 +16,19 @@ def loadSoftwareModule(name):
 
 
 class SoftwareCommand(cli.Application):
+    softwareModules = [local.path(m.__file__).stem for m in pp_software.getModules()]
+    USAGE = """    %(progname)s [SWITCHES] %(tailargs)s
+
+where softwareModule is one of:
+""" + '\n'.join(softwareModules) + '\n'
+
     ver = cli.SwitchAttr(['-v', '--version'], help='Software version')
 
-    def main(self, softname):
-        if not softname:
+    def main(self, softwareModule):
+        if not softwareModule:
             logging.info("Missing pp_software module argument, e.g. BRAINSTools")
             return 1
-        pp_softwareModule = loadSoftwareModule(softname)
+        pp_softwareModule = loadSoftwareModule(softwareModule)
         if self.ver:
             logging.info("Make '{}'".format(pp_softwareModule.getPath(self.ver)))
             pp_softwareModule.make(self.ver)
