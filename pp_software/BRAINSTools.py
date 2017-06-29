@@ -2,6 +2,7 @@ from pp_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExis
 from plumbum import local, FG
 from plumbum.cmd import cmake, chmod
 import logging
+import os
 
 DEFAULT_HASH = '41353e8'
 
@@ -123,6 +124,8 @@ def make(commit=DEFAULT_HASH):
                     dest.write('#!/usr/bin/env bash')
                 else:
                     dest.write(line)
+    st = os.stat(str(out / 'antsRegistrationSyN.sh'))
+    os.chmod(str(out / 'antsRegistrationSyN.sh'), st.st_mode | stat.S_IEXEC)
     # (blddir / 'ANTs/Scripts/antsRegistrationSyN.sh').copy(out)
     with open(out / 'env.sh', 'w') as f:
         f.write("PATH={}:$PATH\n".format(out))
