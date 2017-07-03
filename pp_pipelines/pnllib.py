@@ -26,6 +26,7 @@ def assertInputKeys(pipelineName, keys):
                                                                   key))
         sys.exit(1)
 
+
 def read_csv(file):
     import pandas as pd
     try:
@@ -34,6 +35,7 @@ def read_csv(file):
         df = None
     return df
 
+
 def tractMeasureStatus(combos, extraFlags=[]):
     import pandas as pd
     dfs = []
@@ -41,7 +43,9 @@ def tractMeasureStatus(combos, extraFlags=[]):
         csvs = [p.path for p in combo['paths']['tractmeasures']
                 if p.path.exists()]
         if csvs:
-            df = pd.concat(filter(lambda x: x is not None, (read_csv(csv) for csv in csvs)))
+            df = pd.concat(
+                filter(lambda x: x is not None, (read_csv(csv)
+                                                 for csv in csvs)))
             df['algo'] = combo['paramId']
             dfs.append(df)
     if dfs:
@@ -52,7 +56,8 @@ def tractMeasureStatus(combos, extraFlags=[]):
         outcsv = OUTDIR / (combos[0]['pipelineName'] + '-tractmeasures.csv')
         df.to_csv(outcsv.__str__(), header=True, index=False)
         print("Made '{}'".format(outcsv))
-        outcsv_summary = OUTDIR / (combos[0]['pipelineName'] + '-tractmeasures-summary.csv')
+        outcsv_summary = OUTDIR / (
+            combos[0]['pipelineName'] + '-tractmeasures-summary.csv')
         #df_summary.to_csv(outcsv_summary.__str__(), header=True, index=False)
         df_summary.to_csv(outcsv_summary.__str__(), header=True)
         print("Made '{}'".format(outcsv_summary))

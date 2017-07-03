@@ -4,6 +4,7 @@ from pnlpipe import Src
 
 DEFAULT_TARGET = 'tractmeasures'
 
+
 def makePipeline(caseid,
                  t1PathKey,
                  dwiPathKey,
@@ -16,16 +17,19 @@ def makePipeline(caseid,
     """Makes the PNL's standard pipeline, given an eddy corrected DWI
     (For example, a DRBUDDI processed DWI.). Same as 'std' except eddy
     current correction is not performed."""
+
     pipeline = {'_name': "standard PNL pipeline with no eddy correction"}
+
     pipeline['t1'] = Src(caseid, t1PathKey)
     pipeline['dwi'] = Src(caseid, dwiPathKey)
     pipeline['t1xc'] = StrctXc(caseid, pipeline['t1'], hash_BRAINSTools)
-    pipeline['dwimask'] = Src(caseid,
-                              dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(caseid, pipeline['dwi'], 0.1, hash_BRAINSTools)
+    pipeline['dwimask'] = Src(
+        caseid, dwimaskPathKey) if dwimaskPathKey else DwiMaskBet(
+            caseid, pipeline['dwi'], 0.1, hash_BRAINSTools)
     pipeline['t1mask'] = T1wMaskMabs(caseid, pipeline['t1xc'],
                                      hash_trainingDataT1AHCC, hash_BRAINSTools)
-    pipeline['fs'] = FreeSurferUsingMask(caseid, pipeline['t1xc'],
-                                         pipeline['t1mask'], version_FreeSurfer)
+    pipeline['fs'] = FreeSurferUsingMask(
+        caseid, pipeline['t1xc'], pipeline['t1mask'], version_FreeSurfer)
     pipeline['fsindwi'] = FsInDwiDirect(caseid, pipeline['fs'],
                                         pipeline['dwi'], pipeline['dwimask'],
                                         hash_BRAINSTools)

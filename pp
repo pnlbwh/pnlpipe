@@ -6,16 +6,15 @@ except ImportError:
     print(
         'Did you forget to load python environment? (e.g. source activate pnlpipe)')
 import pp_software
+import pp_pipelines
+import pp_cli.subcmd
+import pp_cli.cmd.install
 import logging
-# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)5s - %(name)s %(message)s', datefmt="%Y-%m-%d %H:%M")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s',
     datefmt="%Y-%m-%d %H:%M")
 logger = logging.getLogger(__name__)
-
-import pp_cli.subcmd
-import pp_cli.cmd.install
 
 
 class App(cli.Application):
@@ -37,14 +36,6 @@ def classSoftwareFactory(name,
     newclass = type(name, (BaseClass, ), {"make": wrapFunction})
     return newclass
 
-
-def pipelineModules():
-    import pkgutil
-    import pp_pipelines
-    from os.path import isfile
-    for importer, modname, ispkg in pkgutil.iter_modules(pp_pipelines.__path__):
-        if modname.startswith('pipeline_'):
-            yield importer.find_module(modname).load_module(modname)
 
 
 def classFactory(name,
@@ -87,7 +78,7 @@ if __name__ == '__main__':
     App.subcommand("install", pp_cli.cmd.install.SoftwareCommand)
     App.subcommand("export", pp_cli.cmd.export.Export)
 
-    for m in pipelineModules():
+    for m in pp_pipelines.getModules():
         name = m.__name__[9:]
         statusFn = getattr(m, 'status', None)
         defaultTarget = getattr(m, 'DEFAULT_TARGET', None)

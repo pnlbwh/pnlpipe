@@ -20,7 +20,7 @@ class Run(cli.Application):
         paramCombos = readParamCombos(self.parent.paramsFile)
         assertValidParamCombos(paramCombos, self.parent.paramsFile)
 
-        logging.info('Check that prerequisite pp_software exists')
+        logging.info('Check that prerequisite software exists')
         missingSoftwareModules = []
         missingSoftware = []
         for (paramCombo, _) in paramCombos:
