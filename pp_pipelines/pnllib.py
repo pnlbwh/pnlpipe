@@ -323,7 +323,7 @@ class FreeSurferUsingMask(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def path(self):
-        return OUTDIR / self.caseid / self.show() / 'mri/wmparc.mgz'
+        return OUTDIR / self.caseid / self.showDAG() / 'mri/wmparc.mgz'
 
     def build(self):
         needDeps(self)
@@ -397,7 +397,7 @@ class Wmql(GeneratedNode):
         GeneratedNode.__init__(self, locals())
 
     def path(self):
-        return OUTDIR / self.caseid / self.showShortened() / 'cc.vtk'
+        return OUTDIR / self.caseid / self.showCompressedDAG() / 'cc.vtk'
 
     def build(self):
         needDeps(self)
@@ -421,5 +421,5 @@ class TractMeasures(GeneratedNode):
             'pp_pipelines/pnlscripts/measuretracts/measureTracts.py']
         vtks = self.wmql.path().up() // '*.vtk'
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
-                         self.wmql.showShortened(), '-o', self.path(
+                         self.wmql.showCompressedDAG(), '-o', self.path(
                          ), '-i', vtks] & FG
