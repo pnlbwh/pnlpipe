@@ -75,10 +75,11 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""".format(self.parent.name,
                 args = dict(paramCombo, caseid=caseid)
                 args = {k:v for k,v in args.items() if not k.startswith('_')}
                 pipeline = self.parent.makePipeline(**args)
-                try:
-                    pnlpipe.update(pipeline[want])
-                except Exception as e:
-                    if self.keepGoing:
-                        continue
-                    else:
-                        raise(e)
+                pnlpipe.update(pipeline[want])
+                # try:
+                #     pnlpipe.update(pipeline[want])
+                # except Exception as e:
+                #     if self.keepGoing:
+                #         continue
+                #     else:
+                #         raise(e)
