@@ -7,9 +7,8 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
-** STY:
-*** change _env#.sh to _pipeline#.sh
-*** change inputPaths.yml to inputpaths.yml
+** sty: remove self from needDeps(self,..)
+** ENH: add InputFile node
 ** caseid -> caseidPattern in project.yml
 ** add multiple file nodes: dictionary or string
 ** add --missing flag to ls

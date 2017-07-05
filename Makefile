@@ -8,12 +8,15 @@ PARAMS := params.$(PIPE)
 
 # Run pipeline
 # E.g. make
-.PHONY: all clean
+.PHONY: all clean pyclean bclean
 all:
 	./pipe $(PIPE) run
 
 clean:
 	@echo "Not implemented yet (did you mean bclean?)"
+
+pyclean:
+	find . -name "*.pyc" -exec rm {} \;
 
 .PHONY: bclean
 bclean:
