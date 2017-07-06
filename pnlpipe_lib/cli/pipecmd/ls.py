@@ -1,7 +1,7 @@
 from plumbum import cli, local
-from pnlpipe_lib.cli import printVertical
-from pnlpipe_lib.cli.params import readComboPaths
-from pnlpipe_lib.cli.pipecmd.symlink import toSymlink
+from ..display import printVertical
+from ..params import readComboPaths
+from ..pipecmd.symlink import toSymlink
 import logging
 import sys
 

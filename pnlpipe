@@ -46,7 +46,7 @@ def classFactory(name,
     def wrappedMakePipeline(self, *args, **kwargs):
         return makePipelineFn(*args, **kwargs)
 
-    paramsFile = local.path(name + '.params')
+    paramsFile = local.path('pnlpipe_params') / (name + '.params')
     newclass = type(name, (BaseClass, ), {"name": name,
                                           "makePipeline": wrappedMakePipeline,
                                           "makePipeline_orig": makePipelineFn,

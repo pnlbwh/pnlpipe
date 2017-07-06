@@ -39,11 +39,11 @@ def escapePath(filepath):
 
 def makeEnvFiles(name, paramsFile, useFullPaths=False):
     # first delete existing files in case they are stale
-    for f in local.cwd.glob(name + '*.sh'):
+    for f in local.path("pnlpipe_params") // ('_' + name + '*.sh'):
         f.delete()
     # with open('outputPaths.yml', 'w') as fyml:
     for comboPaths in readComboPaths(paramsFile):
-        envFile = "_{}_env{}.sh".format(name, comboPaths['paramId'])
+        envFile = "pnlpipe_params/_{}_env{}.sh".format(name, comboPaths['paramId'])
         logging.info("Make '{}'".format(envFile))
         with open(envFile, 'w') as f:
             f.write('# Parameter combination {}\n'.format(comboPaths['paramId']))
