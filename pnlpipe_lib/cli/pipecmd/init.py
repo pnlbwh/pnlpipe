@@ -1,5 +1,4 @@
 from plumbum import local, cli
-import pnlpipe_cli
 import logging
 import yaml
 

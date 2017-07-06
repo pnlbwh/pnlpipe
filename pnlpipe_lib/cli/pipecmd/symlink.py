@@ -1,6 +1,6 @@
 from plumbum import cli, local
-from pnlpipe_cli import printVertical
-from pnlpipe_cli.params import readComboPaths
+from pnlpipe_lib.cli import printVertical
+from pnlpipe_lib.cli.params import readComboPaths
 import logging
 import pnlpipe_lib
 import sys

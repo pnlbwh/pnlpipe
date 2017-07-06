@@ -2,8 +2,8 @@ from plumbum import local, FG, cli
 import yaml
 import logging
 import pnlpipe_lib
-from pnlpipe_cli import printVertical
-from pnlpipe_cli.params import readParamCombos, assertValidParamCombos, \
+from pnlpipe_lib.cli import printVertical
+from pnlpipe_lib.cli.params import readParamCombos, assertValidParamCombos, \
     getSoftwareItems
 import importlib
 

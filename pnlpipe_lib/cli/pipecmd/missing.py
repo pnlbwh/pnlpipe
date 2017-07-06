@@ -1,7 +1,7 @@
 from plumbum import cli, local
-from pnlpipe_cli import printVertical
-from pnlpipe_cli.params import readComboPaths
-from pnlpipe_cli.pipecmd.symlink import toSymlink
+from pnlpipe_lib.cli import printVertical
+from pnlpipe_lib.cli.params import readComboPaths
+from pnlpipe_lib.cli.pipecmd.symlink import toSymlink
 import logging
 
 class Missing(cli.Application):

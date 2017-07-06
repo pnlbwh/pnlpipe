@@ -1,6 +1,4 @@
 from plumbum import local, cli
-import pnlpipe_cli
-from pnlpipe_cli import SRCPATHS
 import logging
 import pnlpipe_software
 

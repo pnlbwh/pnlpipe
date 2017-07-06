@@ -1,7 +1,7 @@
 from plumbum import local, cli
-import pnlpipe_cli
-from pnlpipe_cli import printVertical
-from pnlpipe_cli.params import readParamCombos, readComboPaths, getSoftwareItems
+import pnlpipe_lib.cli
+from pnlpipe_lib.cli import printVertical
+from pnlpipe_lib.cli.params import readParamCombos, readComboPaths, getSoftwareItems
 import importlib
 import logging
 import pnlpipe_software
@@ -56,7 +56,7 @@ def makeEnvFiles(name, paramsFile, useFullPaths=False):
                 if useFullPaths:
                     path = escapePath(firstSubject.path)
                 else:
-                    from pnlpipe_cli.pipecmd.symlink import toSymlink
+                    from pnlpipe_lib.cli.pipecmd.symlink import toSymlink
                     path = toSymlink(firstSubject.caseid, name, key,
                                      firstSubject.path, comboPaths['paramId'])
                 f.write('export {}={}\n\n'.format(key, path))

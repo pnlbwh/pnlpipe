@@ -1,6 +1,6 @@
 from plumbum import cli, local
-from pnlpipe_cli.params import readParamCombos
-from pnlpipe_cli.params import readComboPaths
+from pnlpipe_lib.cli.params import readParamCombos
+from pnlpipe_lib.cli.params import readComboPaths
 
 
 class Keys(cli.Application):

@@ -1,5 +1,5 @@
 from plumbum import cli, local, FG
-from pnlpipe_cli.params import readComboPaths
+from pnlpipe_lib.cli.params import readComboPaths
 import pnlpipe_lib
 import sys
 if sys.version_info[0] < 3:

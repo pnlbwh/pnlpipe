@@ -1,6 +1,6 @@
 from plumbum import cli
-from pnlpipe_cli import printTable
-from pnlpipe_cli.params import readComboPaths
+from pnlpipe_lib.cli import printTable
+from pnlpipe_lib.cli.params import readComboPaths
 
 def stripKeys(dic, strs):
     def strip(s, strs):
