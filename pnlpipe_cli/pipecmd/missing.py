@@ -1,7 +1,7 @@
 from plumbum import cli, local
-from pnlpipe_cli import readAndSetInputKeyPaths, printVertical
+from pnlpipe_cli import printVertical
 from pnlpipe_cli.params import readComboPaths
-from pnlpipe_cli.subcmd.symlink import toSymlink
+from pnlpipe_cli.pipecmd.symlink import toSymlink
 import logging
 
 class Missing(cli.Application):
@@ -12,8 +12,6 @@ class Missing(cli.Application):
     printFull = cli.Flag(['-p'], help="Print full paths instead of symlinks.")
 
     def main(self, *keys):
-        readAndSetInputKeyPaths()
-
         from itertools import cycle
         defaultKeys = [
             a + str(b)

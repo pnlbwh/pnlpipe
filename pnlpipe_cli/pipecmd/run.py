@@ -2,12 +2,10 @@ from plumbum import local, FG, cli
 import yaml
 import logging
 import pnlpipe_lib
-from pnlpipe_cli import readAndSetInputKeyPaths, printVertical
+from pnlpipe_cli import printVertical
 from pnlpipe_cli.params import readParamCombos, assertValidParamCombos, \
     getSoftwareItems
 import importlib
-
-SRCPATHS = "inputPaths.yml"
 
 class Run(cli.Application):
 
@@ -76,8 +74,7 @@ E.g. DEFAULT_TARGET = 'tractmeasures'""".format(self.parent.name,
                 args = dict(paramCombo, caseid=caseid)
                 args = {k:v for k,v in args.items() if not k.startswith('_')}
                 pipeline = self.parent.makePipeline(**args)
-                with pnlpipe_lib.env(SRCPATHS, '_data'):
-                    pnlpipe_lib.update(pipeline[want])
+                pnlpipe_lib.update(pipeline[want])
                 # try:
                 #     pnlpipe_lib.update(pipeline[want])
                 # except Exception as e:

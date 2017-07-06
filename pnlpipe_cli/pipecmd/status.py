@@ -1,5 +1,5 @@
 from plumbum import cli
-from pnlpipe_cli import readAndSetInputKeyPaths, printTable
+from pnlpipe_cli import printTable
 from pnlpipe_cli.params import readComboPaths
 
 def stripKeys(dic, strs):
@@ -17,7 +17,6 @@ class Status(cli.Application):
         ['--extra'], help="Extra flags passed to the pipeline's status function")
 
     def main(self):
-        readAndSetInputKeyPaths()
         combos = readComboPaths(self.parent.paramsFile)
         # print("## Parameter Combination {} ({} subjects)".format(
         #         comboPaths['id'], comboPaths['num']))

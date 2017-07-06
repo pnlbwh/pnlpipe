@@ -1,6 +1,6 @@
 from plumbum import cli, local, FG
-from pnlpipe_cli import readAndSetInputKeyPaths, SRCPATHS
 from pnlpipe_cli.params import readComboPaths
+import pnlpipe_lib
 import sys
 if sys.version_info[0] < 3:
     from StringIO import StringIO
@@ -65,10 +65,9 @@ class Export(cli.Application):
         result = {}
         result['projectInfo'] = pi
 
-        srcPaths = readAndSetInputKeyPaths()
-        srcPathsStr = '\n'.join(['{:<8}:  {}'.format(k,v) for k,v in srcPaths.items()])
+        srcPathsStr = '\n'.join(['{:<8}:  {}'.format(k,v) for k,v in pnlpipe_lib.INPUT_KEYS.items()])
         result['projectInfo']['description'] = result['projectInfo']['description'] + \
-                                               '\n\n\nInput Keys (from {}):\n\n'.format(SRCPATHS) + srcPathsStr
+                                               '\n\n\nInput Keys (from {}):\n\n'.format('pnlpipe_config.py') + srcPathsStr
 
         for pipelineName in pipelineNames:
             paramFile = local.path(pipelineName + '.params')

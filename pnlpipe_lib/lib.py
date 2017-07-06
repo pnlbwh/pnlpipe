@@ -1,29 +1,17 @@
 from plumbum import local
 import yaml
 import pickle
-# import hashlib
-# from abc import abstractmethod, abstractproperty
 import logging
 logger = logging.getLogger(__name__)
 from python_log_indenter import IndentedLoggerAdapter
 log = IndentedLoggerAdapter(logger, indent_char='.')
 from nodes import *
 from util import *
-import pnlpipe_lib.nodes
-
-# DBDIR = local.path('_data/db')
-
-@contextmanager
-def env(ymlfile, outdir):
-    pnlpipe_lib.nodes.INPUT_PATHS = readInputKeysYaml(ymlfile)
-    pnlpipe_lib.nodes.OUTDIR = local.path(outdir)
-    yield
-    pnlpipe_lib.nodes.INPUT_PATHS = None
-    pnlpipe_lib.nodes.OUTDIR = None
-
+import config
 
 def dbfile(node):
-    return pnlpipe_lib.nodes.OUTDIR / 'db' / (node.showCompressedDAG() + '-' + node.caseid)
+    return config.OUTDIR / 'db' / (
+        node.showCompressedDAG() + '-' + node.caseid)
 
 
 def readDB(node):
@@ -31,6 +19,7 @@ def readDB(node):
         return None
     with open(dbfile(node), 'r') as f:
         return yaml.load(f)
+
 
 def writeDB(node, db):
     if not dbfile(node).dirname.exists():
@@ -42,8 +31,7 @@ def writeDB(node, db):
 def need(parentNode, childNode, db):
     log.debug('{} needs {}'.format(parentNode.showDAG(), childNode.showDAG()))
     val = update(childNode)
-    db['deps'][pickle.dumps(childNode)] = (
-        childNode.path().__str__(), val)
+    db['deps'][pickle.dumps(childNode)] = (childNode.path().__str__(), val)
 
 
 def needDeps(node, deps, db):
@@ -76,7 +64,8 @@ def update(node):
 
     log.info(' Check if node exists or has been modified')
     db = readDB(node)
-    currentValue = None if not node.path().exists() else node.readCurrentValue()
+    currentValue = None if not node.path().exists() else node.readCurrentValue(
+    )
     nodeChanged = False
     rebuild = False
     if db == None:

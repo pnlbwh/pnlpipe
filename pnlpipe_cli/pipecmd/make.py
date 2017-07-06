@@ -1,6 +1,6 @@
 from plumbum import local, cli
 import pnlpipe_cli
-from pnlpipe_cli import SRCPATHS, readAndSetInputKeyPaths, printVertical
+from pnlpipe_cli import printVertical
 from pnlpipe_cli.params import readParamCombos, readComboPaths, getSoftwareItems
 import importlib
 import logging
@@ -42,7 +42,6 @@ def makeEnvFiles(name, paramsFile, useFullPaths=False):
     for f in local.cwd.glob(name + '*.sh'):
         f.delete()
     # with open('outputPaths.yml', 'w') as fyml:
-    readAndSetInputKeyPaths()
     for comboPaths in readComboPaths(paramsFile):
         envFile = "_{}_env{}.sh".format(name, comboPaths['paramId'])
         logging.info("Make '{}'".format(envFile))
@@ -57,7 +56,7 @@ def makeEnvFiles(name, paramsFile, useFullPaths=False):
                 if useFullPaths:
                     path = escapePath(firstSubject.path)
                 else:
-                    from pnlpipe_cli.subcmd.symlink import toSymlink
+                    from pnlpipe_cli.pipecmd.symlink import toSymlink
                     path = toSymlink(firstSubject.caseid, name, key,
                                      firstSubject.path, comboPaths['paramId'])
                 f.write('export {}={}\n\n'.format(key, path))

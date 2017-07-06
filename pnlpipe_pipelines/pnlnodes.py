@@ -3,15 +3,18 @@ from plumbum import local, FG, cli, ProcessExecutionError
 from pnlscripts.util.scripts import dwiconvert_py, atlas_py, fs2dwi_py, eddy_py, alignAndCenter_py, bet_py
 from pnlscripts.util import TemporaryDirectory
 import sys
-from pnlpipe_lib import InputKey, GeneratedNode, need, needDeps, OUTDIR, log
+import hashlib
+import pnlpipe_lib
+from pnlpipe_lib import InputKey, GeneratedNode, need, needDeps, log
 from pnlpipe_software import BRAINSTools, tract_querier, UKFTractography, trainingDataT1AHCC, HCPPipelines
 import pnlpipe_software.FreeSurfer
-import hashlib
+import pnlpipe_config
 
 defaultUkfParams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
                     "--recordLength", 1.7, "--seedFALimit", 0.18,
                     "--seedsPerVoxel", 10, "--stepLength", 0.3]
 
+OUTDIR = local.path(pnlpipe_config.OUTDIR)
 
 class DoesNotExistException(Exception):
     pass

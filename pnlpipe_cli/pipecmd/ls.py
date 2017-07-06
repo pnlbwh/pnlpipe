@@ -1,7 +1,7 @@
 from plumbum import cli, local
-from pnlpipe_cli import readAndSetInputKeyPaths, printVertical
+from pnlpipe_cli import printVertical
 from pnlpipe_cli.params import readComboPaths
-from pnlpipe_cli.subcmd.symlink import toSymlink
+from pnlpipe_cli.pipecmd.symlink import toSymlink
 import logging
 import sys
 
@@ -16,9 +16,7 @@ class Ls(cli.Application):
         excludes=['-c'],
         help="Print subject ids instead of paths")
     ignoreCaseids = cli.SwitchAttr(
-        ['-e', '--except'],
-        default="",
-        help="Ignore this list of caseids")
+        ['-e', '--except'], default="", help="Ignore this list of caseids")
     printFull = cli.Flag(
         ['-p'], excludes=['-s'], help="Print full paths instead of symlinks.")
 
@@ -27,7 +25,6 @@ class Ls(cli.Application):
         if len(ignoreCaseids) == 1 and './' in ignoreCaseids[0]:
             with open(ignoreCaseids[0], 'r') as f:
                 ignoreCaseids = f.read().splitlines()
-        readAndSetInputKeyPaths()
         for comboPaths in readComboPaths(self.parent.paramsFile):
             logging.info("## Parameter Combination {} ({} subjects)".format(
                 comboPaths['paramId'], comboPaths['num']))
@@ -41,9 +38,9 @@ class Ls(cli.Application):
                 for k, vs in comboPaths['paths'].iteritems():
                     if k not in keys:
                         continue
-                    existingPaths = [p
-                                    for p in filter(lambda x: x.path.exists(), vs)
-                                    ]
+                    existingPaths = [
+                        p for p in filter(lambda x: x.path.exists(), vs)
+                    ]
                     for p in existingPaths:
                         if p.caseid in ignoreCaseids:
                             continue
@@ -71,7 +68,8 @@ class Ls(cli.Application):
                         if self.printFull:
                             path = p.path
                         else:
-                            path = toSymlink(p.caseid, self.parent.name, p.pipelineKey,
-                                                p.path, comboPaths['paramId'])
+                            path = toSymlink(p.caseid, self.parent.name,
+                                             p.pipelineKey, p.path,
+                                             comboPaths['paramId'])
                         sys.stdout.write(',{}'.format(path))
                     sys.stdout.write('\n')

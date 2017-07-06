@@ -6,22 +6,21 @@ import logging
 logger = logging.getLogger(__name__)
 from python_log_indenter import IndentedLoggerAdapter
 log = IndentedLoggerAdapter(logger, indent_char='.')
+import pnlpipe_lib
 
-INPUT_PATHS = None
-OUTDIR = None
-
-def readInputKeysYaml(ymlfile):
-    if not local.path(ymlfile).exists():
-        raise Exception(
-            "Missing {}, cannot set InputKey paths".format(ymlfile))
-    with open(ymlfile, 'r') as f:
-        inputkeys = yaml.load(f, Loader=yaml.loader.BaseLoader)
-    caseidPattern = inputkeys.get('caseid', '{case}')
-    for key, val in inputkeys.items():
-        if not '/' in val:
-            continue
-        inputkeys[key] = local.path(val.replace(caseidPattern, '{case}'))
-    return inputkeys
+# def readInputKeysYaml(ymlfile):
+#     if not local.path(ymlfile).exists():
+#         raise Exception(
+#             "Missing {}, cannot set InputKey paths".format(ymlfile))
+#     with open(ymlfile, 'r') as f:
+#         inputkeys = yaml.load(f, Loader=yaml.loader.BaseLoader)
+#     caseidPattern = inputkeys.get('caseid', '{case}')
+#     for key, val in inputkeys.items():
+#         if not '/' in val:
+#             continue
+#         inputkeys[key] = local.path(val.replace(caseidPattern, '{case}'))
+#     # return inputkeys
+#     return pnlpipe_config.INPUT_PATHS
 
 
 class ParamNode(dag.Node):
@@ -54,7 +53,7 @@ class PathNode(dag.Node):
 
     def readCurrentValue(self):
         log.debug(self.tag + ' path: ' + str(self.path()) +
-              ' (readCurrentValue)')
+                  ' (readCurrentValue)')
         return self.path().stat().st_mtime
 
 
@@ -65,7 +64,8 @@ class InputKey(PathNode):
         PathNode.__init__(self, locals())
 
     def path(self):
-        return lookupPathKey(self.inputKey, self.caseid, INPUT_PATHS)
+        return lookupPathKey(self.inputKey, self.caseid,
+                             pnlpipe_lib.INPUT_KEYS)
 
     def showDAG(self):
         return 'InputKey-{}'.format(self.params[0])
@@ -81,7 +81,9 @@ class InputKey(PathNode):
 
     def build(self, db):
         if not self.path().exists():
-            raise Exception("Input file doesn\'t exist: {}\nCheck that the path of your input key '{}' is correct.".format(self.path(), self.inputKey))
+            raise Exception(
+                "Input file doesn\'t exist: {}\nCheck that the path of your input key '{}' is correct.".format(
+                    self.path(), self.inputKey))
 
 
 class GeneratedNode(PathNode):
@@ -92,7 +94,7 @@ class GeneratedNode(PathNode):
         ext = getattr(self, 'ext', '.nrrd')
         if not ext.startswith('.'):
             ext = '.' + ext
-        return OUTDIR / self.caseid / (
+        return pnlpipe_lib.OUTDIR / self.caseid / (
             self.showCompressedDAG() + '-' + self.caseid + ext)
 
     def showCompressedDAG(self):
@@ -115,9 +117,9 @@ class GeneratedNode(PathNode):
 
 def lookupPathKey(key, caseid, pathsDict):
     try:
-        pathPattern = pathsDict[key]
-        # caseid_string = pathsDict.get('caseid', '{case}')
-        filepath = local.path(pathPattern.replace(u'{case}', caseid))
+        pathFormat = pathsDict[key]
+        caseidPlaceholder = pathsDict.get('caseid', '{case}')
+        filepath = local.path(pathFormat.replace(caseidPlaceholder, caseid))
         return filepath
     except KeyError:
         msg = """Key '{key}' not found in pnlpipe_lib.nodes.INPUT_PATHS.
