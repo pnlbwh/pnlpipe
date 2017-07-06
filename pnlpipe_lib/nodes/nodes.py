@@ -52,9 +52,9 @@ class PathNode(dag.Node):
     # def path():
 
     def readCurrentValue(self):
-        log.debug(self.tag + ' path: ' + str(self.path()) +
+        log.debug(self.tag + ' path: ' + str(self.output()) +
                   ' (readCurrentValue)')
-        return self.path().stat().st_mtime
+        return self.output().stat().st_mtime
 
 
 class InputKey(PathNode):
@@ -63,7 +63,7 @@ class InputKey(PathNode):
         self.params = [inputKey]
         PathNode.__init__(self, locals())
 
-    def path(self):
+    def output(self):
         return lookupPathKey(self.inputKey, self.caseid,
                              pnlpipe_lib.INPUT_KEYS)
 
@@ -80,17 +80,17 @@ class InputKey(PathNode):
         return True
 
     def build(self, db):
-        if not self.path().exists():
+        if not self.output().exists():
             raise Exception(
                 "Input file doesn\'t exist: {}\nCheck that the path of your input key '{}' is correct.".format(
-                    self.path(), self.inputKey))
+                    self.output(), self.inputKey))
 
 
 class GeneratedNode(PathNode):
     def isLeaf(self):
         return False
 
-    def path(self):
+    def output(self):
         ext = getattr(self, 'ext', '.nrrd')
         if not ext.startswith('.'):
             ext = '.' + ext

@@ -102,7 +102,7 @@ def readComboPaths(paramsFile):
                     continue
                 assertIsNode(node, pipelineKey)
                 p = SubjectPath(
-                    caseid=caseid, pipelineKey=pipelineKey, path=node.path())
+                    caseid=caseid, pipelineKey=pipelineKey, path=node.output())
                 comboPaths['paths'][pipelineKey].append(p)
         result.append(comboPaths)
     return result

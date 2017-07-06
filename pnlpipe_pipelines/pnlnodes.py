@@ -122,8 +122,8 @@ class DwiHcp(GeneratedNode):
         ) as tmpdir:
             preproc = local[HCPPipelines.getPath(self.version_HCPPipelines) /
                             'DiffusionPreprocessing/DiffPreprocPipeline.sh']
-            posPaths = [n.path() for n in self.posDwis]
-            negPaths = [n.path() for n in self.negDwis]
+            posPaths = [n.output() for n in self.posDwis]
+            negPaths = [n.output() for n in self.negDwis]
             datadir = tmpdir / 'hcp/data'
             from os import getpid
             hcpdir = OUTDIR / self.caseid / 'hcp-{}'.format(getpid())
@@ -143,9 +143,9 @@ class DwiHcp(GeneratedNode):
                     (OUTDIR / self.caseid / 'T1w').delete()
                     sys.exit(1)
             (OUTDIR / self.caseid / 'T1w').delete()
-            (datadir / 'data.nii.gz').move(self.path())
-            (datadir / 'bvals').move(self.path().with_suffix('.bval', depth=2))
-            (datadir / 'bvecs').move(self.path().with_suffix('.bvec', depth=2))
+            (datadir / 'data.nii.gz').move(self.output())
+            (datadir / 'bvals').move(self.output().with_suffix('.bval', depth=2))
+            (datadir / 'bvecs').move(self.output().with_suffix('.bvec', depth=2))
 
 
 class DwiEd(GeneratedNode):
@@ -159,7 +159,7 @@ class DwiEd(GeneratedNode):
     def build(self, db):
         needDeps(self, self.deps, db)
         with BRAINSTools.env(self.bthash):
-            eddy_py['-i', self.dwi.path(), '-o', self.path(), '--force'] & FG
+            eddy_py['-i', self.dwi.output(), '-o', self.output(), '--force'] & FG
 
 
 class DwiXc(GeneratedNode):
@@ -174,8 +174,8 @@ class DwiXc(GeneratedNode):
         needDeps(self, self.deps, db)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             tmpdwi = tmpdir / (self.caseid + '-dwi.nrrd')
-            dwiconvert_py['-f', '-i', self.dwi.path(), '-o', tmpdwi] & FG
-            alignAndCenter_py['-i', tmpdwi, '-o', self.path()] & FG
+            dwiconvert_py['-f', '-i', self.dwi.output(), '-o', tmpdwi] & FG
+            alignAndCenter_py['-i', tmpdwi, '-o', self.output()] & FG
 
 
 class DwiEpi(GeneratedNode):
@@ -190,9 +190,9 @@ class DwiEpi(GeneratedNode):
         needDeps(self)
         with BRAINSTools.env(self.bthash):
             from pnlscripts.util.scripts import epi_py
-            epi_py('--force', '--dwi', self.dwi.path(), '--dwimask',
-                   self.dwimask.path(), '--t2', self.t2.path(), '--t2mask',
-                   self.t2mask.path(), '-o', self.path())
+            epi_py('--force', '--dwi', self.dwi.output(), '--dwimask',
+                   self.dwimask.output(), '--t2', self.t2.output(), '--t2mask',
+                   self.t2mask.output(), '-o', self.output())
 
 
 class DwiMaskBet(GeneratedNode):
@@ -204,8 +204,8 @@ class DwiMaskBet(GeneratedNode):
     def build(self):
         needDeps(self)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
-            bet_py('--force', '-f', self.threshold, '-i', self.dwi.path(),
-                   '-o', self.path())
+            bet_py('--force', '-f', self.threshold, '-i', self.dwi.output(),
+                   '-o', self.output())
 
 
 class UkfDefault(GeneratedNode):
@@ -221,11 +221,11 @@ class UkfDefault(GeneratedNode):
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
-            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
-            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            dwiconvert_py('-i', self.dwi.output(), '-o', tmpdwi)
+            convertImage(self.dwimask.output(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
-                      self.path()] + defaultUkfParams
+                      self.output()] + defaultUkfParams
             ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
@@ -247,11 +247,11 @@ class Ukf(GeneratedNode):
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
-            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
-            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            dwiconvert_py('-i', self.dwi.output(), '-o', tmpdwi)
+            convertImage(self.dwimask.output(), tmpdwimask, self.bthash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
-                      self.path()] + list(self.ukfparams)
+                      self.output()] + list(self.ukfparams)
             ukfpath = UKFTractography.getPath(self.ukfhash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
@@ -269,8 +269,8 @@ class StrctXc(GeneratedNode):
         needDeps(self, self.deps, db)
         with BRAINSTools.env(self.bthash), TemporaryDirectory() as tmpdir:
             nrrd = tmpdir / 'strct.nrrd'
-            convertImage(self.strct.path(), nrrd, self.bthash)
-            alignAndCenter_py['-i', nrrd, '-o', self.path()] & FG
+            convertImage(self.strct.output(), nrrd, self.bthash)
+            alignAndCenter_py['-i', nrrd, '-o', self.output()] & FG
 
 
 class MaskRigid(GeneratedNode):
@@ -288,12 +288,12 @@ class MaskRigid(GeneratedNode):
             movingmask = tmpdir / 'movingmask.nrrd'
             fixed = tmpdir / 'fixed.nrrd'
             out = tmpdir / 'fixedmask.nrrd'
-            convertImage(self.movingStrct.path(), moving, self.bthash)
-            convertImage(self.movingStrctMask.path(), movingmask, self.bthash)
-            convertImage(self.fixedStrct.path(), fixed, self.bthash)
+            convertImage(self.movingStrct.output(), moving, self.bthash)
+            convertImage(self.movingStrctMask.output(), movingmask, self.bthash)
+            convertImage(self.fixedStrct.output(), fixed, self.bthash)
             makeRigidMask_py('-i', moving, '--labelmap', movingmask,
                              '--target', fixed, '-o', out)
-            out.move(self.path())
+            out.move(self.output())
 
 
 class T1wMaskMabs(GeneratedNode):
@@ -308,14 +308,14 @@ class T1wMaskMabs(GeneratedNode):
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so
             # we need to pass in a conventionally named one
-            tmpt1 = tmpdir / ('t1' + ''.join(self.t1.path().suffixes))
+            tmpt1 = tmpdir / ('t1' + ''.join(self.t1.output().suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
-            ConvertBetweenFileFormats[self.t1.path(), tmpt1] & FG
+            ConvertBetweenFileFormats[self.t1.output(), tmpt1] & FG
             trainingCsv = trainingDataT1AHCC.getPath(
                 self.trainingDataT1AHCC) / 'trainingDataT1AHCC-hdr.csv'
             atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir,
                      trainingCsv] & FG
-            (tmpdir / 'mask.nrrd').copy(self.path())
+            (tmpdir / 'mask.nrrd').copy(self.output())
 
 
 class FreeSurferUsingMask(GeneratedNode):
@@ -332,8 +332,8 @@ class FreeSurferUsingMask(GeneratedNode):
         # make sure FREESURFER_HOME is set to right version
         pnlpipe_software.FreeSurfer.validate(self.version_FreeSurfer)
         from pnlscripts.util.scripts import fs_py
-        fs_py['-i', self.t1.path(), '-m', self.t1mask.path(), '-f', '-o',
-              self.path().dirname.dirname] & FG
+        fs_py['-i', self.t1.output(), '-m', self.t1mask.output(), '-f', '-o',
+              self.output().dirname.dirname] & FG
 
 
 class FsInDwiDirect(GeneratedNode):
@@ -345,16 +345,16 @@ class FsInDwiDirect(GeneratedNode):
 
     def build(self, db):
         needDeps(self, self.deps, db)
-        fssubjdir = self.fs.path().dirname.dirname
+        fssubjdir = self.fs.output().dirname.dirname
         with TemporaryDirectory() as tmpdir, BRAINSTools.env(self.bthash):
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
-            dwiconvert_py('-i', self.dwi.path(), '-o', tmpdwi)
-            convertImage(self.dwimask.path(), tmpdwimask, self.bthash)
+            dwiconvert_py('-i', self.dwi.output(), '-o', tmpdwi)
+            convertImage(self.dwimask.output(), tmpdwimask, self.bthash)
             fs2dwi_py['-f', fssubjdir, '-t', tmpdwi, '-m', tmpdwimask, '-o',
                       tmpoutdir, 'direct'] & FG
-            local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.path())
+            local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.output())
 
 
 class FsInDwiUsingT2(GeneratedNode):
@@ -367,7 +367,7 @@ class FsInDwiUsingT2(GeneratedNode):
 
     def build(self):
         needDeps(self)
-        fssubjdir = self.fs.path().dirname.dirname
+        fssubjdir = self.fs.output().dirname.dirname
         with TemporaryDirectory() as tmpdir, BRAINSTools.env(self.bthash):
             tmpoutdir = tmpdir / (self.caseid + '-fsindwi')
             dwi = tmpdir / 'dwi.nrrd'
@@ -378,17 +378,17 @@ class FsInDwiUsingT2(GeneratedNode):
             t1mask = tmpdir / 't1mask.nrrd'
             t2mask = tmpdir / 't2mask.nrrd'
             fssubjdir.copy(fs)
-            dwiconvert_py('-i', self.dwi.path(), '-o', dwi)
-            convertImage(self.dwimask.path(), dwimask, self.bthash)
-            convertImage(self.t2.path(), t2, self.bthash)
-            convertImage(self.t1.path(), t1, self.bthash)
-            convertImage(self.t2mask.path(), t2mask, self.bthash)
-            convertImage(self.t1mask.path(), t1mask, self.bthash)
+            dwiconvert_py('-i', self.dwi.output(), '-o', dwi)
+            convertImage(self.dwimask.output(), dwimask, self.bthash)
+            convertImage(self.t2.output(), t2, self.bthash)
+            convertImage(self.t1.output(), t1, self.bthash)
+            convertImage(self.t2mask.output(), t2mask, self.bthash)
+            convertImage(self.t1mask.output(), t1mask, self.bthash)
             script = local['pnlpipe_pipelines/pnlscripts/old/fs2dwi_T2.sh']
             script['--fsdir', fs, '--dwi', dwi, '--dwimask', dwimask, '--t2',
                    t2, '--t2mask', t2mask, '--t1', t1, '--t1mask', t1mask,
                    '-o', tmpoutdir] & FG
-            convertImage(tmpoutdir / 'wmparc-in-bse.nrrd', self.path(),
+            convertImage(tmpoutdir / 'wmparc-in-bse.nrrd', self.output(),
                          self.bthash)
 
 
@@ -403,12 +403,12 @@ class Wmql(GeneratedNode):
 
     def build(self, db):
         needDeps(self, self.deps, db)
-        if self.path().up().exists():
-            self.path().up().delete()
+        if self.output().up().exists():
+            self.output().up().delete()
         with tract_querier.env(self.tqhash):
             from pnlscripts.util.scripts import wmql_py
-            wmql_py['-i', self.ukf.path(), '--fsindwi', self.fsindwi.path(),
-                    '-o', self.path().dirname] & FG
+            wmql_py['-i', self.ukf.output(), '--fsindwi', self.fsindwi.output(),
+                    '-o', self.output().dirname] & FG
 
 
 class TractMeasures(GeneratedNode):
@@ -421,7 +421,7 @@ class TractMeasures(GeneratedNode):
         needDeps(self, self.deps, db)
         measureTracts_py = local[
             'pnlpipe_pipelines/pnlscripts/measuretracts/measureTracts.py']
-        vtks = self.wmql.path().up() // '*.vtk'
+        vtks = self.wmql.output().up() // '*.vtk'
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
-                         self.wmql.showCompressedDAG(), '-o', self.path(
+                         self.wmql.showCompressedDAG(), '-o', self.output(
                          ), '-i', vtks] & FG

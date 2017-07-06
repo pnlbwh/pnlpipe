@@ -15,7 +15,7 @@ class Wc(GeneratedNode):
         for file in files:
             with open(file, 'r') as f:
                 words = words + f.read().split()
-        with open(self.path(), 'w') as f:
+        with open(self.output(), 'w') as f:
             f.write(str(len(words)))
 
 DEFAULT_TARGET = 'wc'

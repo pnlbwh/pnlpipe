@@ -25,7 +25,7 @@ class DwiMaskSlicer(GeneratedNode):
             Slicer['--launch', slicerDir / 'DiffusionWeightedVolumeMasking', self.dwi.path(),
                    'b0.nrrd', 'otsumask.nrrd', '--baselineBValueThreshold', '1000', '--removeislands'] & FG
             Slicer['--launch', 'ResampleScalarVolume', 'otsumask.nrrd', 'otsumask.nii'] & FG
-            maskfilter['-scale', 2, 'otsumask.nii', 'clean', self.path(),
+            maskfilter['-scale', 2, 'otsumask.nii', 'clean', self.output(),
                        '-force'] & FG
 
 class DiceCoefficient(GeneratedNode):
@@ -43,7 +43,7 @@ class DiceCoefficient(GeneratedNode):
             ImageMath[3, tmptxt, "DiceAndMinDistSum", self.maskManual.path(), self.mask.path()] & FG
             with open(tmptxt, 'r') as f:
                 coeff = f.read().split(' ')[-1]
-            with open(self.path(), 'w') as f:
+            with open(self.output(), 'w') as f:
                 f.write(coeff)
 
 

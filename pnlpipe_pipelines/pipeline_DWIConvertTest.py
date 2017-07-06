@@ -30,7 +30,7 @@ class DwiNrrd(GeneratedNode):
     def build(self):
         needDeps(self)
         with pnlpipe_software.BRAINSTools.env(self.hash_BRAINSTools):
-            dwiconvert_py['-i', self.dwi.path(), '-o', self.path()] & FG
+            dwiconvert_py['-i', self.dwi.path(), '-o', self.output()] & FG
 
 class DwiFSL(GeneratedNode):
     def __init__(self, caseid, dwi, hash_BRAINSTools):
@@ -41,7 +41,7 @@ class DwiFSL(GeneratedNode):
     def build(self):
         needDeps(self)
         with pnlpipe_software.BRAINSTools.env(self.hash_BRAINSTools):
-            dwiconvert_py['-i', self.dwi.path(), '-o', self.path()] & FG
+            dwiconvert_py['-i', self.dwi.path(), '-o', self.output()] & FG
 
 class NrrdCompareCsv(GeneratedNode):
     def __init__(self, caseid, nrrd1, nrrd2, hash_nrrdchecker, hash_BRAINSTools):
@@ -59,7 +59,7 @@ class NrrdCompareCsv(GeneratedNode):
         csv = pd.read_csv(StringIO(stdout))
         csv['caseid'] = self.caseid
         csv['hash_BRAINSTools'] = self.hash_BRAINSTools
-        csv.to_csv(self.path(), index=False)
+        csv.to_csv(self.output(), index=False)
 
 
 def makePipeline(caseid

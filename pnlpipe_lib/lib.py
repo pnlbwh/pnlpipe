@@ -31,7 +31,7 @@ def writeDB(node, db):
 def need(parentNode, childNode, db):
     log.debug('{} needs {}'.format(parentNode.showDAG(), childNode.showDAG()))
     val = update(childNode)
-    db['deps'][pickle.dumps(childNode)] = (childNode.path().__str__(), val)
+    db['deps'][pickle.dumps(childNode)] = (childNode.output().__str__(), val)
 
 
 def needDeps(node, deps, db):
@@ -43,11 +43,11 @@ def needDeps(node, deps, db):
 
 
 def build(node):
-    node.path().dirname.mkdir()
+    node.output().dirname.mkdir()
     db = {'value': None, 'deps': {}}
     node.build(db)
-    if not node.path().exists():
-        raise Exception('{}: output wasn\'t created'.format(node.path()))
+    if not node.output().exists():
+        raise Exception('{}: output wasn\'t created'.format(node.output()))
     db['value'] = node.readCurrentValue()
     writeDB(node, db)
     log.info(' Built, recorded mtime').sub()
@@ -56,24 +56,24 @@ def build(node):
 
 def update(node):
     if isinstance(node, InputKey):
-        log.info(' * Update {} (path: {})'.format(node.showDAG(), node.path(
+        log.info(' * Update {} (path: {})'.format(node.showDAG(), node.output(
         ))).add()
     else:
-        relativePath = str(node.path()).replace(str(local.cwd) + '/', '')
+        relativePath = str(node.output()).replace(str(local.cwd) + '/', '')
         log.info(' * Update {}'.format(relativePath)).add()
 
     log.info(' Check if node exists or has been modified')
     db = readDB(node)
-    currentValue = None if not node.path().exists() else node.readCurrentValue(
+    currentValue = None if not node.output().exists() else node.readCurrentValue(
     )
     nodeChanged = False
     rebuild = False
     if db == None:
-        log.info(' doesn\'t exist (has no db), build'.format(node.path()))
+        log.info(' doesn\'t exist (has no db), build'.format(node.output()))
         node.db = {'value': None, 'deps': {}}
         rebuild = True
     elif currentValue == None:
-        log.info(' File missing ({}), rebuild'.format(node.path()))
+        log.info(' File missing ({}), rebuild'.format(node.output()))
         rebuild = True
     elif db['value'] != currentValue:
         log.debug('old value: {}, new value: {}'.format(db['value'],
