@@ -7,17 +7,15 @@ except ImportError:
         'Did you forget to load python environment? (e.g. source activate pnlpipe)')
 import pnlpipe_software
 import pnlpipe_pipelines
-import pnlpipe_lib.cli.pipecmd
-import pnlpipe_lib.cli.cmd.install
+import pnlpipe_cli.pipecmd
+import pnlpipe_cli.readparams as readparams
+import pnlpipe_cli.cmd.install
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s',
-    datefmt="%Y-%m-%d %H:%M")
-logger = logging.getLogger(__name__)
-
+import pnlpipe_config
 
 class App(cli.Application):
+    verbose = cli.Flag(['-d', '--debug'], help='Turn on debug logging')
+
     def main(self, *args):
         if args:
             print("Unknown command {0!r}".format(args[0]))
@@ -26,10 +24,22 @@ class App(cli.Application):
             print("No command given")
             return 1  # error exit code
 
+        if self.verbose:
+            loglevel = logging.DEBUG
+        elif hasattr(pnlpipe_config, 'LOG_LEVEL'):
+            loglevel = pnlpipe_config.LOG_LEVEL
+        else:
+            loglevel = logging.INFO
+        logging.basicConfig(
+            level=loglevel,
+            format='%(asctime)s - %(levelname)5s - %(name)s:  %(message)s',
+            datefmt="%Y-%m-%d %H:%M")
+        logger = logging.getLogger(__name__)
+
 
 def classSoftwareFactory(name,
                          makeFn,
-                         BaseClass=pnlpipe_lib.cli.cmd.install.SoftwareCommand):
+                         BaseClass=pnlpipe_cli.cmd.install.SoftwareCommand):
     def wrapFunction(self, *args, **kwargs):
         return make(*args, **kwargs)
 
@@ -38,20 +48,20 @@ def classSoftwareFactory(name,
 
 
 
-def classFactory(name,
-                 makePipelineFn,
+def makeSubcommandClass(pipeline_name,
+                 make_pipelineFn,
                  statusFn,
-                 defaultTarget,
-                 BaseClass=pnlpipe_lib.cli.pipecmd.PipelineSubcommand):
+                 default_target,
+                 BaseClass=pnlpipe_cli.pipecmd.PipelineSubcommand):
     def wrappedMakePipeline(self, *args, **kwargs):
-        return makePipelineFn(*args, **kwargs)
+        return make_pipelineFn(*args, **kwargs)
 
-    paramsFile = local.path('pnlpipe_params') / (name + '.params')
-    newclass = type(name, (BaseClass, ), {"name": name,
-                                          "makePipeline": wrappedMakePipeline,
-                                          "makePipeline_orig": makePipelineFn,
-                                          "paramsFile": paramsFile,
-                                          "defaultTarget": defaultTarget})
+    params_file = readparams.params_file(pipeline_name)
+    newclass = type(pipeline_name, (BaseClass, ), {"pipeline_name": pipeline_name,
+                                          "make_pipeline": wrappedMakePipeline,
+                                          "make_pipeline_orig": make_pipelineFn,
+                                          "params_file": params_file,
+                                          "default_target": default_target})
 
     if statusFn:
 
@@ -59,37 +69,35 @@ def classFactory(name,
             return statusFn(*args, **kwargs)
 
         setattr(newclass, 'status', wrappedStatus)
+
     return newclass
 
 
 if __name__ == '__main__':
-    import pnlpipe_lib.cli.cmd.export
-    import pnlpipe_lib.cli.pipecmd.init
-    import pnlpipe_lib.cli.pipecmd.make
-    import pnlpipe_lib.cli.pipecmd.run
-    import pnlpipe_lib.cli.pipecmd.status
-    import pnlpipe_lib.cli.pipecmd.symlink
-    import pnlpipe_lib.cli.pipecmd.ls
-    import pnlpipe_lib.cli.pipecmd.missing
-    import pnlpipe_lib.cli.pipecmd.keys
+    import pnlpipe_cli.cmd.export
+    import pnlpipe_cli.pipecmd.init
+    import pnlpipe_cli.pipecmd.make
+    import pnlpipe_cli.pipecmd.run
+    import pnlpipe_cli.pipecmd.status
+    import pnlpipe_cli.pipecmd.symlink
+    import pnlpipe_cli.pipecmd.ls
+    import pnlpipe_cli.pipecmd.keys
 
-    App.subcommand("install", pnlpipe_lib.cli.cmd.install.SoftwareCommand)
-    App.subcommand("export", pnlpipe_lib.cli.cmd.export.Export)
+    App.subcommand("install", pnlpipe_cli.cmd.install.SoftwareCommand)
+    App.subcommand("export", pnlpipe_cli.cmd.export.Export)
 
-    for m in pnlpipe_pipelines.getModules():
-        name = m.__name__[9:]
-        statusFn = getattr(m, 'status', None)
-        defaultTarget = getattr(m, 'DEFAULT_TARGET', None)
-        SubcommandClass = classFactory(name, m.makePipeline, statusFn,
-                                       defaultTarget)
-        App.subcommand(name, SubcommandClass)
-        SubcommandClass.subcommand("run",     pnlpipe_lib.cli.pipecmd.run.Run)
-        SubcommandClass.subcommand("make",    pnlpipe_lib.cli.pipecmd.make.Make)
-        SubcommandClass.subcommand("init",    pnlpipe_lib.cli.pipecmd.init.Init)
-        SubcommandClass.subcommand("symlink", pnlpipe_lib.cli.pipecmd.symlink.SymLink)
-        SubcommandClass.subcommand("status",  pnlpipe_lib.cli.pipecmd.status.Status)
-        SubcommandClass.subcommand("ls",      pnlpipe_lib.cli.pipecmd.ls.Ls)
-        SubcommandClass.subcommand("missing", pnlpipe_lib.cli.pipecmd.missing.Missing)
-        SubcommandClass.subcommand("keys",    pnlpipe_lib.cli.pipecmd.keys.Keys)
+    for pipeline_name, pipeline_module in pnlpipe_pipelines.modules():
+        statusFn = getattr(pipeline_module, 'status', None)
+        default_target = getattr(pipeline_module, 'DEFAULT_TARGET', None)
+        SubcommandClass = makeSubcommandClass(pipeline_name, pipeline_module.make_pipeline, statusFn,
+                                              default_target)
+        App.subcommand(pipeline_name, SubcommandClass)
+        SubcommandClass.subcommand("run",     pnlpipe_cli.pipecmd.run.Run)
+        SubcommandClass.subcommand("make",    pnlpipe_cli.pipecmd.make.Make)
+        SubcommandClass.subcommand("init",    pnlpipe_cli.pipecmd.init.Init)
+        SubcommandClass.subcommand("symlink", pnlpipe_cli.pipecmd.symlink.SymLink)
+        SubcommandClass.subcommand("status",  pnlpipe_cli.pipecmd.status.Status)
+        SubcommandClass.subcommand("ls",      pnlpipe_cli.pipecmd.ls.Ls)
+        SubcommandClass.subcommand("keys",    pnlpipe_cli.pipecmd.keys.Keys)
 
     App.run()

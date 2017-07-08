@@ -8,20 +8,20 @@ DEFAULT_VERSION = '3.17.0'
 
 
 def make(version=DEFAULT_VERSION):
-    if checkExists(getPath(version)):
+    if checkExists(get_path(version)):
         return
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
         d = downloadGithubArchive(GITHUB_REPO, 'v' + version)
-        d.move(getPath(version))
-        logging.info("Made '{}'".format(getPath(version)))
+        d.move(get_path(version))
+        logging.info("Made '{}'".format(get_path(version)))
 
 
-def getPath(version=DEFAULT_VERSION):
+def get_path(version=DEFAULT_VERSION):
     return getSoftDir() / ('HCPPipelines-' + version)
 
 
-def envDict(version):
-    repo = getPath(version)
+def env_dict(version):
+    repo = get_path(version)
     return {
         'PATH': repo / 'DiffusionPreprocessing',
         'HCPPIPEDIR': repo,
@@ -32,4 +32,4 @@ def envDict(version):
 
 
 def env(bthash):
-    return envFromDict(envDict(bthash))
+    return envFromDict(env_dict(bthash))

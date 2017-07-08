@@ -45,5 +45,5 @@ def make(version=DEFAULT_VERSION):
         print(e)
         print('')
 
-def getPath(version=DEFAULT_VERSION):
+def get_path(version=DEFAULT_VERSION):
     return os.environ.get('FREESURFER_HOME', '(FREESURFER_HOME not set)')

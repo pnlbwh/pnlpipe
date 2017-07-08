@@ -2,14 +2,16 @@ import sys
 import os
 from pnlpipe_software import getSoftDir, checkExists, TemporaryDirectory, downloadGithubRepo, getCommitInfo, envFromDict
 import logging
+logger = logging.getLogger(__name__)
 from plumbum import local, FG
 from plumbum.cmd import wget, tar
 
-DEFAULT_HASH = '133ad94'
+DEFAULT_HASH = 'ffc358f'
 
 def make(hash=DEFAULT_HASH):
-    if checkExists(getPath(hash)):
-        return
+    if hash != 'master':
+        if checkExists(get_path(hash)):
+            return
 
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
         tmpdir = local.path(tmpdir)
@@ -20,11 +22,14 @@ def make(hash=DEFAULT_HASH):
             stack['setup'] & FG
             stack['build'] & FG
             binary = stack('exec', 'which', 'nrrdchecker')[:-1]
-            local.path(binary).move(getPath(hash))
-        getPath(hash).symlink(getPath(date))
+            local.path(binary).move(get_path(sha))
+        symlink = get_path(date)
+        print("Make symlink: {} -> {}".format(symlink, get_path(sha)))
+        get_path(date).unlink()
+        get_path(sha).symlink(get_path(date))
 
-        logging.info("Made '{}'".format(getPath(hash)))
-        logging.info("Made '{}'".format(getPath(date)))
+        logger.info("Made '{}'".format(get_path(sha)))
+        logger.info("Made '{}'".format(get_path(date)))
 
-def getPath(hash=DEFAULT_HASH):
+def get_path(hash=DEFAULT_HASH):
     return getSoftDir() / ('nrrdchecker-' + hash)

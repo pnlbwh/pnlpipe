@@ -2,6 +2,7 @@ from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, chec
 from plumbum import local, FG
 from plumbum.cmd import cmake, chmod
 import logging
+logger = logging.getLogger(__name__)
 import os
 
 DEFAULT_HASH = '41353e8'
@@ -128,21 +129,23 @@ def make(commit=DEFAULT_HASH):
     os.chmod(str(out / 'antsRegistrationSyN.sh'), st.st_mode | stat.S_IEXEC)
     # (blddir / 'ANTs/Scripts/antsRegistrationSyN.sh').copy(out)
     with open(out / 'env.sh', 'w') as f:
-        f.write("PATH={}:$PATH\n".format(out))
-        f.write("ANTSPATH={}\n".format(out))
+        f.write("export PATH={}:$PATH\n".format(out))
+        f.write("export ANTSPATH={}\n".format(out))
     chmod('a-w', out.glob('*'))
     chmod('a-w', out)
     out.symlink(symlink)
     blddir.delete()
+    logger.info("Made '{}'".format(get_path(sha)))
+    logger.info("Made '{}'".format(symlink))
 
 
-def getPath(bthash=DEFAULT_HASH):
+def get_path(bthash=DEFAULT_HASH):
     btpath = getSoftDir() / ('BRAINSTools-bin-' + bthash)
     return btpath
 
-def envDict(bthash):
-    btpath = getPath(bthash)
+def env_dict(bthash):
+    btpath = get_path(bthash)
     return { 'PATH': btpath, 'ANTSPATH': btpath}
 
 def env(bthash):
-    return envFromDict(envDict(bthash))
+    return envFromDict(env_dict(bthash))

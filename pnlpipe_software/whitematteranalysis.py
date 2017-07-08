@@ -38,14 +38,14 @@ def make(commit=DEFAULT_HASH):
     out.symlink(date_symlink)
 
 
-def getPath(hash=DEFAULT_HASH):
+def get_path(hash=DEFAULT_HASH):
     path = getSoftDir() / '{}-{}'.format(NAME, hash)
     return path
 
-def envDict(hash):
-    return {'PATH': getPath(hash) / 'bin'
-           ,'PYTHONPATH': getPath(hash)
+def env_dict(hash):
+    return {'PATH': get_path(hash) / 'bin'
+           ,'PYTHONPATH': get_path(hash)
     }
 
 def env(bthash):
-    return envFromDict(envDict(bthash))
+    return envFromDict(env_dict(bthash))

@@ -10,7 +10,7 @@ PARAMS := params.$(PIPE)
 # E.g. make
 .PHONY: all clean pyclean bclean
 all:
-	./pipe $(PIPE) run
+	./pnlpipe $(PIPE) run
 
 clean:
 	@echo "Not implemented yet (did you mean bclean?)"
@@ -22,25 +22,25 @@ pyclean:
 bclean:
 	rm *.err *.out
 
-# Run pipeline for given subject id, overrides caseid field in params.<pipe>
+# Run pipeline for given subject id, overrides caseid field in params.<pnlpipe>
 # file for each parameter combo.
 # E.g. make 001
 %:
-	./pipe $(PIPE) run $*
+	./pnlpipe $(PIPE) run $*
 
 t: ; bsub -J "hcptest" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 bash t.sh
 
 # Run pipeline using lsf
 # E.g. make bsub8
-bsub16: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pipe $(PIPE) run
-bsub8: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 ./pipe $(PIPE) run
-bsub4: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pipe $(PIPE) run
+bsub16: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 16 ./pnlpipe $(PIPE) run
+bsub8: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 8 ./pnlpipe $(PIPE) run
+bsub4: ; bsub -J "$(PIPE)" -o "%J.out" -e "%J.err" -q "big-multi" -n 4 ./pnlpipe $(PIPE) run
 
 # Run pipeline for given subject id using lsf
 # E.g. make 001-bsub8
-%-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pipe $(PIPE) run $*
-%-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pipe $(PIPE) run $*
-%-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pipe $(PIPE) run $*
+%-bsub4: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 4 ./pnlpipe $(PIPE) run $*
+%-bsub8: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 8 ./pnlpipe $(PIPE) run $*
+%-bsub16: ; bsub -J $* -o "$*-%J.out" -e "$*-%J.err" -q "big-multi" -n 16 ./pnlpipe $(PIPE) run $*
 
 .PHONY: caselist caselist-bsub8 caselist-bsub4
 caselist: $(CASELIST)
@@ -65,7 +65,7 @@ virtualenv: python_env/_venv
 nix: python_env/_pip_packages.nix
 conda: python_env/environment.yml
 	conda env create -f $<
-	@echo "Now run 'source activate pnlpipe'"
+	@echo "Now run 'source activate pnlpnlpipe'"
 
 python_env/_venv: python_env/requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<

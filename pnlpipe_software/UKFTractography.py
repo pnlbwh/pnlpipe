@@ -42,7 +42,7 @@ def make(commit=DEFAULT_HASH):
     logging.info("Made '{}'".format(dateSymlink))
 
 
-def getPath(ukfhash=DEFAULT_HASH):
+def get_path(ukfhash=DEFAULT_HASH):
     binary = getSoftDir() / ('UKFTractography-' + ukfhash)
     return binary
     # if not binary.exists():

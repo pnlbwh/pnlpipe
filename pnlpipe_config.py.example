@@ -1,4 +1,12 @@
-OUTDIR = '_data'
+import logging
+import pnlpipe_lib.dag as dag
+LOG_LEVEL = logging.DEBUG
+
+DBDIR = '_data/db'
+def node_to_filepath(node):
+    dagstr = dag.showCompressedDAG(node).replace('/', '|')
+    return '_data/' + dagstr
+
 INPUT_KEYS = {
 'caseid': '003_GNX_007',
 'dwi': '../testdata/INTRuST/003_GNX_007-dwi-Ed.nhdr',

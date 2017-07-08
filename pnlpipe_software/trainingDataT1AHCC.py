@@ -8,7 +8,7 @@ def make(commit):
     """Downloads t1 training set. Has masks, amygdala-hippocampus (left/right), and cingulate (left/right). Makes '<dest>/trainingDataT1AHCC'"""
     installTraining('trainingDataT1AHCC', commit)
 
-def getPath(hash):
+def get_path(hash):
     return local.path(getSoftDir() / 'trainingDataT1AHCC-' + hash)
 
 

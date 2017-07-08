@@ -8,5 +8,5 @@ def make(commit):
     from pnlpipe_software.trainingDataT1AHCC import installTraining
     installTraining('trainingDataT2Masks', commit)
 
-def getPath(hash):
+def get_path(hash):
     return local.path(getSoftDir() / repo + '-' + hash)

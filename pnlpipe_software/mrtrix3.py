@@ -8,7 +8,7 @@ from plumbum.cmd import wget, tar
 DEFAULT_HASH = '97e4b3b'
 
 def make(hash=DEFAULT_HASH):
-    if checkExists(getPath(hash)):
+    if checkExists(get_path(hash)):
         return
 
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
@@ -18,14 +18,14 @@ def make(hash=DEFAULT_HASH):
         with local.cwd(repo):
             os.system('./configure')
             os.system('./build')
-            os.system('mv ./release {}'.format(getPath(hash)))
-        getPath(hash).symlink(getPath(date))
+            os.system('mv ./release {}'.format(get_path(hash)))
+        get_path(hash).symlink(get_path(date))
 
-def getPath(hash=DEFAULT_HASH):
+def get_path(hash=DEFAULT_HASH):
     return getSoftDir() / ('mrtrix3-' + hash)
 
-def envDict(hash):
-    return {'PATH': getPath(hash) / 'bin' }
+def env_dict(hash):
+    return {'PATH': get_path(hash) / 'bin' }
 
 def env(bthash):
-    return envFromDict(envDict(bthash))
+    return envFromDict(env_dict(bthash))
