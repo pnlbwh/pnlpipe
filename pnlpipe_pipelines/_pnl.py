@@ -1,9 +1,9 @@
 from pnlpipe_lib import *
+import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
 import hashlib
 from plumbum import local, FG
 from pnlscripts import TemporaryDirectory, dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py
-from plumbum.commands.modifiers import ExecutionModifier
 import logging
 from python_log_indenter import IndentedLoggerAdapter
 logger = logging.getLogger(__name__)
@@ -20,30 +20,6 @@ tract_querier_hash = 'c57d670'
 ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              "--recordLength", 1.7, "--seedFALimit", 0.18, "--seedsPerVoxel",
              10, "--stepLength", 0.3]
-
-
-
-class LOG(ExecutionModifier):
-    __slots__ = ("retcode", "timeout")
-
-    def __init__(self, retcode=0, timeout=None, extra=None):
-        self.retcode = retcode
-        self.timeout = timeout
-
-    def __rand__(self, cmd):
-        from pnlpipe_lib.update import log as updatelog
-        if log.indent_level != updatelog.indent_level - 1:
-            log.pop(99)
-            log.add(updatelog.indent_level).sub()
-        log.info('{}'.format(cmd))
-        cmd(retcode=self.retcode,
-            stdin=None,
-            stdout=None,
-            stderr=None,
-            timeout=self.timeout)
-
-
-LOG = LOG()
 
 
 def caseid_node_to_filepath(node, ext, caseid_dir=True, extra_words=[]):
@@ -75,6 +51,36 @@ def caseid_node_to_filepath(node, ext, caseid_dir=True, extra_words=[]):
         return local.path(config.OUTDIR) / caseid / (nodestem + ext)
     return local.path(config.OUTDIR) / (nodestem + ext)
 
+
+@node(params=['key', 'caseid'])
+class InputPathFromKey(Node):
+    def output(self):
+        return lookupInputKey(self.key, self.caseid)
+
+    def stamp(self):
+        def get_associated_files(filepath):
+            result = []
+            if '.nii' in filepath.suffixes:
+                bval = filepath.with_suffix('.bval', depth=2)
+                bvec = filepath.with_suffix('.bvec', depth=2)
+                result.extend([f for f in [bval, bvec] if f.exists()])
+            if '.nhdr' in filepath.suffixes:
+                rawgz = filepath.with_suffix('.raw.gz')
+                raw = filepath.with_suffix('.raw')
+                if raw.exists():
+                    raise Exception(
+                        "'{}' has an unzipped raw file, zip the nhdr first(e.g. unu save -e gzip -f nrrd -i nhdr -o nhdr) ")
+                if rawgz.exists():
+                    result.append(rawgz)
+            return result
+
+        allfiles = get_associated_files(self.output()) + [self.output()]
+        if len(allfiles) > 1:
+            return reduce_hash([filehash(f) for f in allfiles], 'md5')
+        return filehash(self.output())
+
+    def show(self):
+        return self.output()
 
 
 class AutoOutput(Node):
@@ -122,24 +128,6 @@ def convertImage(i, o, bthash):
     with BRAINSTools.env(bthash):
         from plumbum.cmd import ConvertBetweenFileFormats
         ConvertBetweenFileFormats(i, o)
-
-
-@node(params=['key', 'caseid'])
-class InputFileFromKey(Node):
-    def output(self):
-        return lookupInputKey(self.params['key'], self.params['caseid'])
-
-    def show(self):
-        return self.output()
-
-
-@node(params=['key', 'caseid'])
-class InputDirFromKey(Node):
-    def output(self):
-        return lookupInputKey(self.params['key'], self.params['caseid'])
-
-    def show(self):
-        return self.output()
 
 
 @node(params=['BRAINSTools_hash'], deps=['dwi'])
@@ -329,3 +317,16 @@ class TractMeasures(CsvOutput):
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
                          self.deps['wmql'].showCompressedDAG(
                          ), '-o', self.output(), '-i', vtks] & FG
+
+
+def showCompressedDAG(node):
+    def isLeaf(n):
+        if isinstance(n, InputPathFromKey):
+            return True
+        if isinstance(n, InputFile):
+            return True
+        if not n.children:
+            return True
+        return False
+
+    return dag.showCompressedDAG(node, isLeaf=isLeaf)

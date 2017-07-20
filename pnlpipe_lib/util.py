@@ -5,9 +5,40 @@ import warnings as _warnings
 import hashlib
 from tempfile import mkdtemp
 from plumbum import local
+from plumbum.commands.modifiers import ExecutionModifier
+import logging
+from python_log_indenter import IndentedLoggerAdapter
+logger = logging.getLogger(__name__)
+log = IndentedLoggerAdapter(logger, indent_char='.')
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
+
+
+class LOG(ExecutionModifier):
+    __slots__ = ("retcode", "timeout")
+
+    def __init__(self, retcode=0, timeout=None, extra=None):
+        self.retcode = retcode
+        self.timeout = timeout
+
+    def __rand__(self, cmd):
+        from .update import log as updatelog
+        # if log.indent_level != updatelog.indent_level - 1:
+        if log.indent_level != updatelog.indent_level - 1:
+            log.pop(99)
+            log.add(updatelog.indent_level)
+        log.info('  {}'.format(cmd))
+        cmd(retcode=self.retcode,
+            stdin=None,
+            stdout=None,
+            stderr=None,
+            timeout=self.timeout)
+
+
+LOG = LOG()
+
+
 
 class MissingInputPathsKeyException(Exception):
     pass

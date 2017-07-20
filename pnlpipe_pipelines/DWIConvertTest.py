@@ -1,38 +1,40 @@
-import sys
-from pnlpipe_pipelines._pnl import node, Node, caseid_node_to_filepath, dwiconvert_py, InputDirFromKey
-from pnlpipe_software import BRAINSTools, nrrdchecker
-from plumbum import local, FG, TEE
+from plumbum import local
+from pnlpipe_pipelines._pnl import *
+from pnlpipe_lib import OUTDIR
+import pnlpipe_lib.dag as dag
+import pnlpipe_software as soft
 import pandas as pd
+import sys
 if sys.version_info[0] < 3:
     from StringIO import StringIO
 else:
     from io import StringIO
+import logging
+log = logging.getLogger(__name__)
 
-DEFAULT_TARGET = 'csv'
 
-
-@node(params=['BRAINSTools_hash', 'DWIConvert_flags'],
-      deps=['dwi'])
+@node(params=['BRAINSTools_hash', 'DWIConvert_flags'], deps=['dwi'])
 class DwiNrrd(Node):
     def static_build(self):
-        with BRAINSTools.env(self.hash_BRAINSTools):
+        with soft.BRAINSTools.env(self.BRAINSTools_hash):
             dwiconvert_py['-i', self.dwi, '-o', self.output(), '--flags',
-                          self.DWIConvert_flags]
+                          self.DWIConvert_flags] & LOG
 
     def output(self):
-        caseid_node_to_filepath(
-            self, '.nrrd', caseid_dir=False, extra_words=self.DWIConvert_flags)
+        # return hash_filepath(
+        #     self, '.nrrd', caseid_dir=False, extra_words=self.DWIConvert_flags)
+        return OUTDIR / showCompressedDAG(self) + '.nrrd'
 
 
-@node(params=['BRAINSTools_hash', 'DWIConvert_flags'],
-      deps=['dwi'])
+@node(params=['BRAINSTools_hash', 'DWIConvert_flags'], deps=['dwi'])
 class DwiNifti(Node):
     def static_build(self):
-        with BRAINSTools.env(self.params['hash_BRAINSTools']):
-            dwiconvert_py['-i', self.dwi, '-o', self.output()] & FG
+        with soft.BRAINSTools.env(self.BRAINSTools_hash):
+            dwiconvert_py['-i', self.dwi, '-o', self.output(), '--flags',
+                          self.DWIConvert_flags] & LOG
 
     def output(self):
-        caseid_node_to_filepath(
+        return hash_filepath(
             self,
             '.nii.gz',
             caseid_dir=False,
@@ -44,22 +46,20 @@ class DwiNifti(Node):
     deps=['nrrd1', 'nrrd2'])
 class NrrdCompareCsv(Node):
     def static_build(self):
-        binarypath = nrrdchecker.get_path(
-            self.hash_nrrdchecker)
+        binarypath = soft.nrrdchecker.get_path(self.nrrdchecker_hash)
         nrrdchecker = local[binarypath]
-        stdout = nrrdchecker('-i', self.nrrd1, '-r', self.nrrd2)
+        stdout = nrrdchecker('-i', self.nrrd1, '-i', self.nrrd2)
         csv = pd.read_csv(StringIO(stdout))
         csv['caseid'] = self.caseid
         csv['BRAINSTools_hash'] = self.BRAINSTools_hash
-        csv.to_csv(self.output(), index=False)
+        csv.to_csv(self.output().__str__(), index=False)
 
     def output(self):
-        caseid_node_to_filepath(
+        return hash_filepath(
             self,
             '.csv',
             caseid_dir=False,
-            extra_words=self.BRAINSTools_hash)
-
+            extra_words=[self.BRAINSTools_hash])
 
 
 def make_pipeline(caseid,
@@ -70,25 +70,33 @@ def make_pipeline(caseid,
 
     params = locals()
 
-    tags = {'_name': "BRAINSTools DWIConvert test"}
+    tags = {}
 
-    tags['dicomdir'] = InputDirFromKey([inputDicomKey, caseid])
+    tags['dicomdir'] = InputPathFromKey([inputDicomKey, caseid])
 
     tags['dwinrrd'] = DwiNrrd(params, deps=[tags['dicomdir']])
 
-    tags['dwinifti'] = DwiNifti(params, deps=[tags['dicomdir']])
+    tags['dwifsl'] = DwiNifti(params, deps=[tags['dicomdir']])
 
-    tags['dwinrrdFromFSL'] = DwiNrrd(params, deps=[tags['dwifsl']])
+    tags['dwifslnrrd'] = DwiNrrd(params, deps=[tags['dwifsl']])
 
     tags['csv'] = NrrdCompareCsv(
-        params, deps=[tags['dwinrrd'], tags['dwinrrdFromFSL']])
+        params, deps=[tags['dwinrrd'], tags['dwifslnrrd']])
 
     return tags
 
 
-def status(combos):
-    for combo in combos:
-        for p in combo['paramPoints']:
-            pipeline = make_pipeline(**p)
-            with open(pipeline['csv'].path(), 'r') as f:
-                print f.read()
+DEFAULT_TARGET = 'csv'
+
+
+def status(grouped_combos):
+    log.info("Combine all csvs into one")
+    csvs = []
+    for paramid, combo, caseids in grouped_combos:
+        pipelines = [make_pipeline(**dict(combo, caseid=caseid)) for caseid in caseids]
+        csvs.extend([pipeline['csv'].output().__str__() for pipeline in pipelines])
+
+    df = pd.concat([pd.read_csv(f) for f in csvs])
+    outcsv = (OUTDIR / (__name__ + '-all.csv')).__str__()
+    df.to_csv(outcsv)
+    log.info("Made '{}'".format(outcsv))

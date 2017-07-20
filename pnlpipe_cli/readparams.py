@@ -6,6 +6,7 @@ from collections import defaultdict
 import importlib
 import pnlpipe_pipelines
 import pnlpipe_config
+from pnlpipe_lib import Node
 
 OBSID_KEY = getattr(pnlpipe_config, 'OBSID_KEY', 'caseid')
 
@@ -66,12 +67,6 @@ def _expand_param_dicts(param_dicts):
                         for value_combo in value_combos]
         all_param_combos.extend(param_combos)
     return _unique(all_param_combos)
-
-
-from collections import namedtuple
-SubjectPath = namedtuple('SubjectPath', 'caseid pipelineKey path')
-
-from pnlpipe_lib import Node
 
 
 def _assert_is_node(node, key):
@@ -151,8 +146,6 @@ def make_pipeline(pipeline_name, combo, caseid=None):
             "make_pipeline(..) returned None, did you forget to return dictionary in pnlpipe_pipelines/pipeline_{}?".format(
                 pipeline_name))
     return pipeline
-
-
 
 
 def readComboPaths(pipeline_name):

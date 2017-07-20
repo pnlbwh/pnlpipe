@@ -1,4 +1,5 @@
 import abc, six
+from itertools import groupby
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -54,31 +55,30 @@ def showDAG(node):
     if not node.children:
         if node.value:
             return '{}:{}'.format(node.tag, node.value)
-        return '{}'.format(node.tag)
+        return '{}:None'.format(node.tag)
     childDAGStrings = [showDAG(n) for n in node.children]
     return '{}({})'.format(node.tag, ','.join(childDAGStrings))
 
-
-from itertools import groupby
 
 def _getRepeatedNodes(node, isLeaf=isLeaf):
     if isLeaf(node):
         return []
     grandchildren = concat([preorder(d, isLeaf) for d in node.children])
     grandchildren = sorted(grandchildren, key=lambda x: showDAG(x))
-    groupedDAGStrings = [(s,list(g)) for (s,g) in groupby(grandchildren, lambda x: showDAG(x))]
-    repeatedDAGStrings = [(s,ns) for (s,ns) in groupedDAGStrings if len(ns) > 1]
+    groupedDAGStrings = [(s, list(
+        g)) for (s, g) in groupby(grandchildren, lambda x: showDAG(x))]
+    repeatedDAGStrings = [(s, ns) for (s, ns) in groupedDAGStrings
+                          if len(ns) > 1]
     return repeatedDAGStrings
 
 
 def _showDAGWithoutRepeats(n, repeatedDAGStrings, isLeaf=isLeaf):
-    if showDAG(n) in [s for s,_ in repeatedDAGStrings]:
+    if showDAG(n) in [s for s, _ in repeatedDAGStrings]:
         return ''
     if isLeaf(n):
         return showDAG(n)
-    childDAGStrings = filter(
-        lambda x: x != '',
-        [_showDAGWithoutRepeats(d, repeatedDAGStrings, isLeaf) for d in n.children])
+    childDAGStrings = filter(lambda x: x != '', [_showDAGWithoutRepeats(
+        d, repeatedDAGStrings, isLeaf) for d in n.children])
     if childDAGStrings:
         return '{}({})'.format(n.tag, ','.join(childDAGStrings))
     else:
@@ -91,15 +91,16 @@ def showCompressedDAG(node, isLeaf=isLeaf):
     repeatedDAGStrings = _getRepeatedNodes(node, isLeaf)
     depStrings = filter(lambda x: x != '',
                         [_showDAGWithoutRepeats(d, repeatedDAGStrings, isLeaf)
-                            for d in node.children])
+                         for d in node.children])
     # now remove repeated nodes from other repeated nodes
     trimmedRepeats = []
     for s, ns in repeatedDAGStrings:
         trimmed = _showDAGWithoutRepeats(
-            ns[0], [(x, ys) for (x, ys) in repeatedDAGStrings if x != s], isLeaf)
+            ns[0], [(x, ys) for (x, ys) in repeatedDAGStrings if x != s],
+            isLeaf)
         trimmedRepeats.append(trimmed)
 
     if repeatedDAGStrings:
         return '{}({})-{}'.format(node.tag, ','.join(depStrings),
-                                    '-'.join(sorted(trimmedRepeats)))
+                                  '-'.join(sorted(trimmedRepeats)))
     return '{}({})'.format(node.tag, ','.join(depStrings))

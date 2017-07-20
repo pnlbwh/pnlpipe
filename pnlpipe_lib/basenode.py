@@ -41,29 +41,26 @@ class Node(dag.Node):
 
     def show(self):
         """Representation of Node/DAG in string format"""
-        # return pnlpipe_config.show_node(self)
-        return self.output() - local.cwd
+        return local.path(self.output()) - local.cwd
 
     def write_provenance(self):
-        def find_src_nodes(root):
-            nodes = dag.preorder(root)
-            src_nodes = [n for n in nodes if not n.deps]
-            return src_nodes
+        def isLeaf(n):
+            if isinstance(n, dag.Leaf):
+                return True
+            if not n.deps:
+                return True
+            return False
+        srcnodes = [n for n in dag.preorder(self) if not isinstance(n, dag.Leaf) and not n.deps]
         nodepath = local.path(self.output())
         outpath = nodepath + '.provenance'
-        print find_src_nodes(self)
-        src_paths = [n.output() for n in find_src_nodes(self)]
+        srcpaths = {n.output() for n in srcnodes}
         with open(outpath, 'w') as f:
             f.write('Compressed DAG:\n')
-            f.write(dag.showCompressedDAG(self) + '\n\n')
-            f.write('Input Paths:\n')
-            f.write('\n'.join(src_paths) + '\n\n')
+            f.write(dag.showCompressedDAG(self, isLeaf=isLeaf) + '\n\n')
+            f.write('Source Paths:\n')
+            f.write('\n'.join(srcpaths) + '\n\n')
             f.write('Full DAG:\n')
             f.write(dag.showDAG(self))
-
-
-def relativeOutput(node):
-    return str(local.path(node.output())).replace(str(local.cwd) + '/', '')
 
 
 def _check_args(argType, given, sig, cls, expectedType=object):
@@ -89,6 +86,11 @@ def _check_dict_args(argType, given, sig, cls, expectedType=object):
 
 
 def _makeinit(Cls, paramNames, depNames):
+    if not paramNames:
+        paramNames = []
+    if not depNames:
+        depNames = []
+
     def nodeinit(self, params=None, deps=None):
         if not params:
             params = []
@@ -118,7 +120,7 @@ def _makeinit(Cls, paramNames, depNames):
     return nodeinit
 
 
-def node(params=[], deps=[]):
+def node(params=None, deps=None):
     paramNames = params
     depNames = deps
 

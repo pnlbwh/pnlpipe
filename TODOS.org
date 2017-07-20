@@ -5,12 +5,10 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
-** ENH/BUG: make Input type that accepts multiple files such as nhdr/raw.gz
-** add validators to pipeline (e.g. dwi validator/nrrdchecker)
-** STY: add caseid flag to env/make
-** add permutation check to bse.py (currently assumes correct dwi permutation)
+** BUG: update status functions
+** ENH: provenance file: extract and list all the parameters used
+** ENH: add caseid flag to env/make
+** ENH: add validators to pipeline (e.g. dwi validator/nrrdchecker)
+** ENH: add permutation check to bse.py (currently assumes correct dwi permutation)
 ** ENH: add check for correct DWI axes permutation
-** STY: pp_software: if building  master, don't say building '...-master'
-
-   OHS
-617-732-6034
+** STY: software: if building  master, don't say building '...-master'

@@ -52,7 +52,7 @@ def dirhash(dirname,
         print [f for f in files if include_file(f)]
         hashvalues.extend([filehash(local.path(root) / f, hashfunc)
                            for f in files if include_file(f)])
-    return _reduce_hash(hashvalues, hashfunc)
+    return reduce_hash(hashvalues, hashfunc)
 
 def _get_hasher(hashfunc):
     hash_func = HASH_FUNCS.get(hashfunc)
@@ -73,7 +73,7 @@ def filehash(filepath, hashfunc='md5'):
     return hasher.hexdigest()
 
 
-def _reduce_hash(hashlist, hashfunc):
+def reduce_hash(hashlist, hashfunc):
     hasher = _get_hasher(hashfunc)
     for hashvalue in sorted(hashlist):
         hasher.update(hashvalue.encode('utf-8'))

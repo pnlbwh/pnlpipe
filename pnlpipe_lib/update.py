@@ -47,11 +47,12 @@ def _exists(node):
 
 
 def _dbfile(node):
-    if node.output().startswith(local.cwd):
-        relative = node.output() - local.path(config.OUTDIR)
+    nodepath = local.path(node.output())
+    if nodepath.startswith(local.cwd):
+        relative = nodepath - local.path(config.OUTDIR)
     else:
-        relative = node.output()
-    return local.path(DBDIR + relative.__str__() + '.db')
+        relative = nodepath
+    return local.path(DBDIR + '/' + relative.__str__() + '.db')
 
 
 def _readDB(node):
@@ -70,6 +71,8 @@ def _writeDB(node, db):
 
 def need(parentNode, childNode, db):
     # log.info('Need: {}{}{}'.format(bcolors.OKGREEN,childNode.show(), bcolors.ENDC))
+    if not childNode.output():
+        raise TypeError("{}.output() returns NoneType, make sure it returns a valid output path.".format(childNode))
     log.debug('Need: {}'.format(childNode.show()))
     val = update(childNode)
     db['deps'][pickle.dumps(childNode)] = (childNode.output().__str__(), val)
@@ -91,7 +94,7 @@ def _build(node):
         nodepath.dirname.mkdir()
         log.info('Run {}.build()'.format(node.tag)).add()
         _nodebuild(node, db)
-        nodepath = node.output()
+        nodepath = local.path(node.output())
         if nodepath.exists() and \
            nodepath.is_dir() and \
            not nodepath.list():
@@ -104,14 +107,15 @@ def _build(node):
     db['value'] = node.stamp()
     log.debug('Node value is: {}'.format(db['value']))
     _writeDB(node, db)
-    log.info('Done')
+    # log.info('Done')
+    log.info('Done: {}{}{}'.format(bcolors.OKGREEN,node.show(),bcolors.ENDC))
     if node.deps:
         log.sub()
     return db['value']
 
 
 def upToDate(node):
-    log.info('Check if output path is missing or has been modified')
+    log.debug('Check if output path is missing or has been modified')
     db = _readDB(node)
     currentValue = None if not _exists(node) else node.stamp()
     nodeChanged = False
@@ -133,11 +137,11 @@ def upToDate(node):
         log.info('Source node hasn\'t changed, db up to date')
         return True
 
-    log.info('Check if dependencies are unchanged').add()
+    log.info('Check if dependencies are unchanged:').add()
     changedDeps = []
     for i, (depKey, (_, dbDepValue)) in enumerate(db['deps'].items()):
         depNode = pickle.loads(depKey)
-        log.info('{}. {}'.format(i + 1, depNode.show())).add()
+        log.info('{}. {}'.format(i + 1, depNode.show()))
         # log.info('Output path: {}'.format(basenode.relativeOutput(depNode)))
         depValue = depNode.stamp()
         log.debug(
@@ -147,19 +151,21 @@ def upToDate(node):
             log.info('Dependency changed ({}), rebuild'.format(depNode.show(
             ))).sub().sub()
             return False
-        log.info('Dependency unchanged').sub()
-    # log.sub()
-    log.info('Dependencies are unchanged').sub()
+        if not upToDate(depNode):
+            return False
+        log.info('Dependency unchanged')
+    log.sub()
+    log.info('Dependencies are unchanged')
+    log.info('Done: {}{}{}'.format(bcolors.OKGREEN,node.show(),bcolors.ENDC))
     return True
 
 
 def update(node):
-    log.info('Make: {}{}{}'.format(bcolors.HEADER, node.show(),
+    log.info('Need: {}{}{}'.format(bcolors.HEADER, node.show(),
                                    bcolors.ENDC))
     # log.add()
-    # log.info('Output path: {}'.format(basenode.relativeOutput(node)))
     if upToDate(node):
-        log.info('Done')
+        # log.info('Done')
         # log.sub()
         return node.stamp()
     val = _build(node)

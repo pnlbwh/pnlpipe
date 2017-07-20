@@ -10,6 +10,7 @@ import os.path
 import fnmatch
 import pnlpipe_config as config
 
+OUTDIR = local.path(config.OUTDIR)
 
 def rawgz_symlink(nhdr, symlink):
     nhdr = local.path(nhdr)
@@ -23,11 +24,25 @@ def rawgz_symlink(nhdr, symlink):
         raise Exception("Can't find .raw.gz for '{}'".format(nhdr))
     return { (symlink.dirname / rawgz.name) : rawgz }
 
+def bvec_symlink(nifti, symlink):
+    symlink = local.path(symlink)
+    nifti = local.path(nifti)
+    bvec = nifti.with_suffix('.bvec', depth=2)
+    bval = nifti.with_suffix('.bval', depth=2)
+    result = {}
+    if bvec.exists():
+        result[bvec] = symlink.dirname / bvec.name
+    if bval.exists():
+        result[bval] = symlink.dirname / bval.name
+    return result
 
-MULTI_SYMLINKS = {'.nhdr': rawgz_symlink}
+
+MULTI_SYMLINKS = {'.nhdr': rawgz_symlink,
+                  '.nii.gz': bvec_symlink}
 
 
 def make_symlink(src, symlink):
+    src = local.path(src)
     src.symlink(symlink)
     for ext, extra_symlink_fn in MULTI_SYMLINKS.items():
         if src.endswith(ext):
@@ -41,10 +56,11 @@ def make_symlink(src, symlink):
 
 def to_symlink(node, tag, pipeline_name, paramid):
     nodepath = local.path(node.output())
-    ext = '.'.join(nodepath.suffixes[-2:])
+    ext = ''.join(nodepath.suffixes[-2:])
     filename = '{}-{}{}{}'.format(tag, pipeline_name, paramid, ext)
-    filepath = (local.path(config.OUTDIR) /
-                config.node_to_filepath(node)).dirname / filename
+    # filepath = (local.path(config.OUTDIR) /
+    #             config.node_to_filepath(node)).dirname / filename
+    filepath = local.path(node.output()).dirname / filename
     return filepath
 
 
@@ -67,15 +83,14 @@ class SymLink(cli.Application):
                             os.unlink(extra_symlink)
                 print("Remove {}".format(symlink))
                 os.unlink(symlink)
-                provenance = symlink + '.provenance'
-                if os.path.exists(provenance):
-                    os.unlink(provenance)
 
         for paramid, combo, caseids in read_grouped_combos(pipename):
             if not caseids:
                 pipeline = make_pipeline(pipename, combo)
                 for tag, node in pipeline.items():
                     if not node.output().exists():
+                        continue
+                    if not node.output().startswith(OUTDIR):
                         continue
                     symlink = to_symlink(node, tag, pipename, paramid)
                     symlink.dirname.mkdir()
@@ -93,7 +108,9 @@ class SymLink(cli.Application):
                 for caseid in caseids:
                     pipeline = make_pipeline(pipename, combo, caseid)
                     for tag, node in pipeline.items():
-                        if not node.output().exists():
+                        if not local.path(node.output()).exists():
+                            continue
+                        if not node.output().startswith(OUTDIR):
                             continue
                         symlink = to_symlink(node, tag, pipename, paramid)
                         symlink.dirname.mkdir()
