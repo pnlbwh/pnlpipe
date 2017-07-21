@@ -76,9 +76,6 @@ class Ls(cli.Application):
                 continue
 
             for caseid in caseids:
-                # if caseid in ignore_caseids:
-                #     continue
-                # combo['caseid'] = caseid
                 pipeline = make_pipeline(pipeline_name, combo, caseid)
                 for key in keys:
                     if key not in pipeline.keys():

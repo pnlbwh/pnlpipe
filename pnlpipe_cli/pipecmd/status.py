@@ -31,6 +31,7 @@ class Status(cli.Application):
             print('', file=sys.stderr)
             print("## Parameter Combination {} ({} case(s))".format(
                 paramid, len(caseids)), file=sys.stderr)
+            print('', file=sys.stderr)
             printVertical(combo)
 
             for caseid in caseids:

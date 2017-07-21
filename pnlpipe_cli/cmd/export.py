@@ -1,29 +1,28 @@
-from plumbum import cli, local, FG
-from pnlpipe_cli.readparams import readComboPaths
+from plumbum import cli, local
+from pnlpipe_cli.readparams import read_grouped_combos, make_pipeline
+import pnlpipe_config
+import pnlpipe_pipelines
 import pnlpipe_lib
 import sys
-if sys.version_info[0] < 3:
-    from StringIO import StringIO
-else:
-    from io import StringIO
-import csv
 import yaml
 from collections import OrderedDict
-import pnlpipe_pipelines as pnlpipe_pipelinesDir
 
 PROJECT_YML = 'pnlproj.yml'
 PROJECT_INFO_YML = 'projectInfo.yml'
 PNL_PROJECTS_DB = 'PNL_PROJECTS_DB'
+
 
 class Export(cli.Application):
     """Makes 'pnlproj.yml' from your configured pipeline(s)."""
 
     force = cli.Flag(['-f', '--force'], default=False, help='force overwrite')
 
-    def main(self, *pipelineNames):
+    def main(self, *pipeline_names):
 
-        if not pipelineNames:
-            print("List the pnlpipe_pipelines for which you want a {} file generated.".format(PROJECT_YML))
+        if not pipeline_names:
+            print(
+                "List the pipeline names for which you want a {} file generated.".format(
+                    PROJECT_YML))
             print
             self.help()
             sys.exit(1)
@@ -37,12 +36,14 @@ class Export(cli.Application):
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
 
-        pnlpipe_pipelines = []
+        projdicts = []
+
         for subprojectyml in (local.cwd // 'pnlproj-*yml'):
             with open(subprojectyml, 'r') as f:
                 y = yaml.load(f)
-            print("Found '{}', adding it to pnlpipe_pipelines in '{}'".format(subprojectyml, PROJECT_YML))
-            pnlpipe_pipelines.append(y)
+            print("Found '{}', adding it to 'pipelines' in '{}'".format(
+                subprojectyml, PROJECT_YML))
+            projdicts.append(y)
 
         if local.path(PROJECT_INFO_YML).exists():
             print(
@@ -59,39 +60,39 @@ class Export(cli.Application):
             print(
                 "Didn't find '{}', using defaults to populate 'projectInfo' field in '{}'".format(
                     PROJECT_INFO_YML, PROJECT_YML))
-            pi = {'grandId': ''}
+            pi = {'grantId': ''}
             pi['description'] = ''
 
         result = {}
         result['projectInfo'] = pi
 
-        srcPathsStr = '\n'.join(['{:<8}:  {}'.format(k,v) for k,v in pnlpipe_lib.INPUT_KEYS.items()])
+        srcPathsStr = '\n'.join(['{:<8}:  {}'.format(k, v)
+                                 for k, v in pnlpipe_config.INPUT_KEYS.items()])
         result['projectInfo']['description'] = result['projectInfo']['description'] + \
                                                '\n\n\nInput Keys (from {}):\n\n'.format('pnlpipe_config.py') + srcPathsStr
 
-        for pipelineName in pipelineNames:
-            paramFile = local.path(pipelineName + '.params')
-            pipelineModule = pnlpipe_pipelinesDir.importModule(pipelineName)
-            pipelineDoc = pipelineModule.make_pipeline.__doc__
-            if not paramFile.exists():
-                raise Exception("Pipeline '{}' not configured, make a '{}.params' file first.".format(pipelineName, pipelineName))
-            combos = readComboPaths(pipelineName + '.params')
-            for combo in combos:
-                pipeline = {}
-                pipelineDescription = pipelineDoc
-                pipeline['parameters'] = combo['paramCombo']
-                if '_description' in pipeline['parameters'].keys():
-                    pipeline['description'] = pipelineModule.__file__ + ' docstring: \n' + pipelineDoc + '\n\n' + 'User Comments:\n' + pipeline['parameters']['_description']
-                    del pipeline['parameters']['_description']
-                pipeline['paths'] = {}
-                pipeline['paths']['caselist'] = combo['caseids']
-                for pathKey, subjectPaths in combo['paths'].items():
-                    s = subjectPaths[0]
-                    pipeline['paths'][pathKey] = s.path.relative_to(local.cwd).__str__()
-                    pipeline['paths']['caseid'] = s.caseid
-                pnlpipe_pipelines.append(pipeline)
+        for pipeline_name in pipeline_names:
+            mod = pnlpipe_pipelines.import_module(pipeline_name)
+            doc = mod.make_pipeline.__doc__
+            for paramid, combo, caseids in read_grouped_combos(pipeline_name):
+                projdict = {}
+                projdict['description'] = doc
+                projdict['parameters'] = combo
+                if '_description' in combo.keys():
+                    projdict['description'] = '{} docstring: \n {}\n\nUserComments:\n{}'.format(mod.__file__, doc, projdict['parameters']['_description'])
+                    del projdict['parameters']['_description']
+                projdict['paths'] = {}
+                projdict['paths']['caselist'] = caseids
 
-        result['pnlpipe_pipelines'] = pnlpipe_pipelines
+                pipeline = make_pipeline(pipeline_name, combo, caseids[0])
+                projdict['paths']['caseid'] = caseids[0]
+                for tag, node in pipeline.items():
+                    nodepath = local.path(node.output())
+                    projdict['paths'][tag] = nodepath.relative_to(local.cwd).__str__()
+
+                projdicts.append(projdict)
+
+        result['pipelines'] = projdicts
 
         with open(PROJECT_YML, 'w') as f:
             yaml.dump(result, f, default_flow_style=False)

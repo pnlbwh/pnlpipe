@@ -18,9 +18,9 @@ def make_pipeline(caseid,
 
     tags = {}
 
-    tags['dwi'] = InputFileFromKey([inputDwiKey, caseid])
+    tags['dwi'] = InputPathFromKey([inputDwiKey, caseid])
 
-    tags['t1'] = InputFileFromKey([inputT1Key, caseid])
+    tags['t1'] = InputPathFromKey([inputT1Key, caseid])
 
     tags['dwixc'] = DwiXc(params, deps=[tags['dwi']])
 

@@ -89,7 +89,7 @@ class AutoOutput(Node):
         """Extension of output"""
 
     def output(self):
-        return caseid_node_to_filepath(self, self.ext)
+        return hash_filepath(self, self.ext)
 
 
 class NrrdOutput(AutoOutput):

@@ -5,6 +5,7 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
+** BUG: update export command
 ** ENH: add caseid flag to env/make
 ** ENH: add validators to pipeline (e.g. dwi validator/nrrdchecker)
 ** ENH: add permutation check to bse.py (currently assumes correct dwi permutation)
