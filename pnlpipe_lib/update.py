@@ -70,11 +70,12 @@ def _writeDB(node, db):
 
 
 def need(parentNode, childNode, db):
+    # log.info('Need: {}{}{}'.format(bcolors.HEADER, childNode.show(),
+    #                                bcolors.ENDC))
     if not childNode.output():
         raise TypeError("{}.output() returns NoneType, make sure it returns a valid output path.".format(childNode))
-    log.debug('Need: {}'.format(childNode.show()))
-    val = update(childNode)
-    db['deps'][pickle.dumps(childNode)] = (childNode.output().__str__(), val)
+    stamp = update(childNode)
+    db['deps'][pickle.dumps(childNode)] = (childNode.output().__str__(), stamp)
 
 
 def need_deps(node, db):
@@ -102,7 +103,7 @@ def _build(node):
         if not _exists(node):
             raise Exception('{}: output wasn\'t created'.format(nodepath))
         node.write_provenance()
-    log.info('Record value')
+    log.debug('Record value')
     db['value'] = node.stamp()
     log.debug('Node value is: {}'.format(db['value']))
     _writeDB(node, db)
@@ -112,9 +113,18 @@ def _build(node):
 
 def upToDate(node):
     log.debug('upToDate: check: {}{}{}'.format(bcolors.WARNING, node.show(), bcolors.ENDC)).push().add()
+
+    # Source path is up to date if it exists
+    if not node.deps:
+        if not _exists(node):
+            raise Exception("{}: input path doesn't exist".format(node.output()))
+        log.pop()
+        return None
+
     db = _readDB(node)
     currentValue = None if not _exists(node) else node.stamp()
     outdatedNode = None
+
     if db == None:
         reason = "Has no entry in database"
         log.debug(reason)
@@ -129,8 +139,6 @@ def upToDate(node):
                                                         currentValue))
         log.debug(reason)
         outdatedNode = (node, reason)
-    elif not node.deps:
-        log.debug('Source node hasn\'t changed')
     else:
         log.debug('Path exists and has not been modified')
         log.debug('Check if dependencies are unchanged:')
@@ -144,11 +152,13 @@ def upToDate(node):
             log.debug(
                 'upToDate(): current value: {depValue}, db value: {dbDepValue}'.format(
                     **locals()))
-            # if (depValue != dbDepValue):
-            #     reason = 'Has been modified'
-            #     log.debug(reason)
-            #     outdatedNode = (depNode, reason)
-            #     break
+            # We check this instead of recursing because an input path could conceivably
+            # change during a run, making previously built nodes out of date.
+            if (depValue != dbDepValue):
+                reason = 'Has been modified'
+                log.debug(reason)
+                outdatedNode = (depNode, reason)
+                break
             outdatedNode = upToDate(depNode)
             if outdatedNode:
                 break
@@ -158,19 +168,27 @@ def upToDate(node):
 
 def update(node):
     log.info('Update: {}{}{}'.format(bcolors.HEADER, node.show(),
-                                   bcolors.ENDC)).push().add()
-    outdatedNode = upToDate(node)
-    if outdatedNode:
-        if node.show() == outdatedNode[0].show():
-            log.info("Stale: {}".format(outdatedNode[1]))
+                                   bcolors.ENDC))
+
+    # upToDate already has this check of a source path, but putting it here so
+    # we can emit a better log message
+    if not node.deps:  # is input path
+        if not _exists(node):
+            raise Exception("{}: input path doesn't exist".format(node.output()))
+        stamp = node.stamp()
+        log.info('Exists: {}{}{} ({})'.format(bcolors.OKGREEN, node.show(), bcolors.ENDC, stamp))
+    else: # is generated path
+        log.push().add()
+        outdatedNode = upToDate(node)
+        if outdatedNode:
+            if node.show() == outdatedNode[0].show():
+                log.info("Stale: {}".format(outdatedNode[1]))
+            else:
+                log.info("Stale: {}: {}".format(outdatedNode[1], outdatedNode[0].show()))
+            stamp = _build(node)
         else:
-            log.info("Stale: {}: {}".format(outdatedNode[1], outdatedNode[0].show()))
-        val = _build(node)
-    else:
-        # log.info("Node is up to date")
-        val = node.stamp()
+            stamp = node.stamp()
+        log.pop()
+        log.info('Done: {}{}{}'.format(bcolors.OKGREEN, node.show(), bcolors.ENDC))
 
-    log.pop()
-    log.info('Done: {}{}{}'.format(bcolors.OKGREEN, node.show(), bcolors.ENDC))
-
-    return val
+    return stamp
