@@ -16,9 +16,12 @@
 Run the standard PNL pipeline:
 
     ./pipe std init # set parameters for 'std' pipeline, makes `pnlpipe_params/std.params`
+
     # Add your parameters to std.params, or leave the defaults
+
     ./pipe std make # builds the prerequisite software specified in `std.params`
-    ./pipe std run # runs the 'std' pipeline using all parameter combinations in `std.params`
+
+    ./pipe std run # runs the 'std' pipeline for all the parameter combinations in `std.params`
 
 All output will be generated in `_data/<caseid>/`, including the final tract
 measures csv. To run the EPI correction pipeline, replace `std` with `epi`.
