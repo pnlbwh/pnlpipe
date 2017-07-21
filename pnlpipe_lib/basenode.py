@@ -10,7 +10,8 @@ import pnlpipe_config
 class Node(dag.Node):
     @property
     def children(self):
-        return self.deps.values() + [dag.Leaf(p,v) for (p,v) in self.params.items()]
+        return self.deps.values() + [dag.Leaf(p, v)
+                                     for (p, v) in self.params.items()]
 
     @property
     def tag(self):
@@ -36,8 +37,9 @@ class Node(dag.Node):
             return filehash(outpath, hashfunc='md5')
         if outpath.is_dir():
             return dirhash(str(outpath), hashfunc='md5', ignore_hidden=True)
-        raise Exception('{}: output path is neither a file nor directory.'.format(self.tag))
-
+        raise Exception(
+            '{}: output path is neither a file nor directory.'.format(
+                self.tag))
 
     def show(self):
         """Representation of Node/DAG in string format"""
@@ -50,7 +52,13 @@ class Node(dag.Node):
             if not n.deps:
                 return True
             return False
-        srcnodes = [n for n in dag.preorder(self) if not isinstance(n, dag.Leaf) and not n.deps]
+
+        allnodes = dag.preorder(self)
+        srcnodes = [n for n in allnodes
+                    if not isinstance(n, dag.Leaf) and not n.deps]
+        parameters = {"{}: {}".format(n.tag, 'None'
+                                      if not n.value else n.value)
+                      for n in allnodes if isinstance(n, dag.Leaf)}
         nodepath = local.path(self.output())
         outpath = nodepath + '.provenance'
         srcpaths = {n.output() for n in srcnodes}
@@ -59,6 +67,8 @@ class Node(dag.Node):
             f.write(dag.showCompressedDAG(self, isLeaf=isLeaf) + '\n\n')
             f.write('Source Paths:\n')
             f.write('\n'.join(srcpaths) + '\n\n')
+            f.write('Parameters:\n')
+            f.write('\n'.join(parameters) + '\n\n')
             f.write('Full DAG:\n')
             f.write(dag.showDAG(self))
 
@@ -77,8 +87,8 @@ def _check_args(argType, given, sig, cls, expectedType=object):
 def _check_dict_args(argType, given, sig, cls, expectedType=object):
     for key in sig:
         if key not in given.keys():
-            raise TypeError("{}(..): missing key '{}' in {}".format(
-                cls, key, argType))
+            raise TypeError("{}(..): missing key '{}' in {}".format(cls, key,
+                                                                    argType))
     if not all([isinstance(v, expectedType) for v in given.values()]):
         raise TypeError(
             "{}(..) expects its '{}' dict argument to have values all of type {}.".format(
@@ -96,8 +106,10 @@ def _makeinit(Cls, paramNames, depNames):
             params = []
         if not deps:
             deps = []
-        for argname, arginput, argkeywords, argtype in [('params', params, paramNames, object),
-                                               ('deps', deps, depNames, Node)]:
+        for argname, arginput, argkeywords, argtype in [
+            ('params', params, paramNames, object),
+            ('deps', deps, depNames, Node)
+        ]:
             if isinstance(arginput, list):
                 _check_args(argname, arginput, argkeywords, Cls.__name__,
                             argtype)
@@ -106,11 +118,12 @@ def _makeinit(Cls, paramNames, depNames):
             elif isinstance(arginput, dict):
                 _check_dict_args(argname, arginput, argkeywords, Cls.__name__,
                                  argtype)
-                _arginput = dict((k,arginput[k]) for k in argkeywords)
+                _arginput = dict((k, arginput[k]) for k in argkeywords)
                 setattr(self, '_' + argname, _arginput)
             else:
                 raise Exception(
-                    "{}(..): Wrong input type for {}, must be a list or a dictionary".format(Cls.__name__, argname))
+                    "{}(..): Wrong input type for {}, must be a list or a dictionary".format(
+                        Cls.__name__, argname))
             for k in argkeywords:
                 if isinstance(_arginput[k], Node):
                     setattr(self, k, _arginput[k].output())
@@ -135,12 +148,14 @@ def node(params=None, deps=None):
             method = getattr(Cls, abstractmethod)
 
             if isinstance(method, abc.abstractproperty):
-                raise Exception("basenode: {} is missing abstract property '{}'".format(
-                    Cls, abstractmethod))
+                raise Exception(
+                    "basenode: {} is missing abstract property '{}'".format(
+                        Cls, abstractmethod))
 
             if isinstance(method, abc.abstractmethod):
-                raise Exception("basenode: {} is missing abstract method '{}'".format(
-                    Cls, abstractmethod))
+                raise Exception(
+                    "basenode: {} is missing abstract method '{}'".format(
+                        Cls, abstractmethod))
 
             if not callable(method):
                 raise Exception("basenode: {} has invalid method '{}'".format(

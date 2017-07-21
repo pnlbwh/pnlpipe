@@ -5,7 +5,6 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 ** ENH: add ukf params
 * Todo
-** BUG: update status functions
 ** ENH: provenance file: extract and list all the parameters used
 ** ENH: add caseid flag to env/make
 ** ENH: add validators to pipeline (e.g. dwi validator/nrrdchecker)

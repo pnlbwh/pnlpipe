@@ -1,4 +1,4 @@
-from plumbum import local
+from plumbum import local, colors
 import yaml
 import pickle
 import logging
@@ -70,7 +70,6 @@ def _writeDB(node, db):
 
 
 def need(parentNode, childNode, db):
-    # log.info('Need: {}{}{}'.format(bcolors.OKGREEN,childNode.show(), bcolors.ENDC))
     if not childNode.output():
         raise TypeError("{}.output() returns NoneType, make sure it returns a valid output path.".format(childNode))
     log.debug('Need: {}'.format(childNode.show()))
@@ -84,6 +83,7 @@ def need_deps(node, db):
 
 
 def _build(node):
+    log.push()
     nodepath = local.path(node.output())
     db = {'value': None, 'deps': {}}
     if not node.deps:  # is input file
@@ -92,7 +92,7 @@ def _build(node):
             )))
     else:
         nodepath.dirname.mkdir()
-        log.info('Run {}.build()'.format(node.tag)).add()
+        log.info('Run {}.build()'.format(node.tag))
         _nodebuild(node, db)
         nodepath = local.path(node.output())
         if nodepath.exists() and \
@@ -102,72 +102,75 @@ def _build(node):
         if not _exists(node):
             raise Exception('{}: output wasn\'t created'.format(nodepath))
         node.write_provenance()
-        # log.sub()
     log.info('Record value')
     db['value'] = node.stamp()
     log.debug('Node value is: {}'.format(db['value']))
     _writeDB(node, db)
-    # log.info('Done')
-    log.info('Done: {}{}{}'.format(bcolors.OKGREEN,node.show(),bcolors.ENDC))
-    if node.deps:
-        log.sub()
+    log.pop()
     return db['value']
 
 
 def upToDate(node):
-    log.debug('Check if output path is missing or has been modified')
+    log.debug('upToDate: check: {}{}{}'.format(bcolors.WARNING, node.show(), bcolors.ENDC)).push().add()
     db = _readDB(node)
     currentValue = None if not _exists(node) else node.stamp()
-    nodeChanged = False
+    outdatedNode = None
     if db == None:
-        log.info("Has no entry in database, build".format(
-            node.output()))
-        return False
+        reason = "Has no entry in database"
+        log.debug(reason)
+        outdatedNode = (node, reason)
     elif currentValue == None:
-        log.info('File missing ({}), rebuild'.format(node.output()))
-        return False
+        reason = "Path is missing ({})".format(node.output())
+        log.debug(reason)
+        outdatedNode = (node, reason)
     elif db['value'] != currentValue:
+        reason = "Value has changed"
         log.debug('old value: {}, new value: {}'.format(db['value'],
                                                         currentValue))
-        log.info("Value has changed, rebuild")
-        return False
-    log.info('Node output exists and has not been modified')
-
-    if not node.deps:
-        log.info('Source node hasn\'t changed, db up to date')
-        return True
-
-    log.info('Check if dependencies are unchanged:').add()
-    changedDeps = []
-    for i, (depKey, (_, dbDepValue)) in enumerate(db['deps'].items()):
-        depNode = pickle.loads(depKey)
-        log.info('{}. {}'.format(i + 1, depNode.show()))
-        # log.info('Output path: {}'.format(basenode.relativeOutput(depNode)))
-        depValue = depNode.stamp()
-        log.debug(
-            'upToDate(): current value: {depValue}, db value: {dbDepValue}'.format(
-                **locals()))
-        if (depValue != dbDepValue):
-            log.info('Dependency changed ({}), rebuild'.format(depNode.show(
-            ))).sub().sub()
-            return False
-        if not upToDate(depNode):
-            return False
-        log.info('Dependency unchanged')
-    log.sub()
-    log.info('Dependencies are unchanged')
-    log.info('Done: {}{}{}'.format(bcolors.OKGREEN,node.show(),bcolors.ENDC))
-    return True
+        log.debug(reason)
+        outdatedNode = (node, reason)
+    elif not node.deps:
+        log.debug('Source node hasn\'t changed')
+    else:
+        log.debug('Path exists and has not been modified')
+        log.debug('Check if dependencies are unchanged:')
+        changedDeps = []
+        log.debug("Check subtree for modified dependencies")
+        for i, (depKey, (_, dbDepValue)) in enumerate(db['deps'].items()):
+            depNode = pickle.loads(depKey)
+            log.debug('{}. Check: {}{}{}'.format(i+1, bcolors.WARNING, depNode.show(), bcolors.ENDC))
+            # log.info('Output path: {}'.format(basenode.relativeOutput(depNode)))
+            depValue = depNode.stamp()
+            log.debug(
+                'upToDate(): current value: {depValue}, db value: {dbDepValue}'.format(
+                    **locals()))
+            # if (depValue != dbDepValue):
+            #     reason = 'Has been modified'
+            #     log.debug(reason)
+            #     outdatedNode = (depNode, reason)
+            #     break
+            outdatedNode = upToDate(depNode)
+            if outdatedNode:
+                break
+    log.pop()
+    return outdatedNode
 
 
 def update(node):
-    log.info('Need: {}{}{}'.format(bcolors.HEADER, node.show(),
-                                   bcolors.ENDC))
-    # log.add()
-    if upToDate(node):
-        # log.info('Done')
-        # log.sub()
-        return node.stamp()
-    val = _build(node)
-    # log.sub()
+    log.info('Update: {}{}{}'.format(bcolors.HEADER, node.show(),
+                                   bcolors.ENDC)).push().add()
+    outdatedNode = upToDate(node)
+    if outdatedNode:
+        if node.show() == outdatedNode[0].show():
+            log.info("Stale: {}".format(outdatedNode[1]))
+        else:
+            log.info("Stale: {}: {}".format(outdatedNode[1], outdatedNode[0].show()))
+        val = _build(node)
+    else:
+        # log.info("Node is up to date")
+        val = node.stamp()
+
+    log.pop()
+    log.info('Done: {}{}{}'.format(bcolors.OKGREEN, node.show(), bcolors.ENDC))
+
     return val

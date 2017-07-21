@@ -22,7 +22,7 @@ ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              10, "--stepLength", 0.3]
 
 
-def caseid_node_to_filepath(node, ext, caseid_dir=True, extra_words=[]):
+def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
     def _hashstring(s):
         hasher = hashlib.md5()
         hasher.update(s)
