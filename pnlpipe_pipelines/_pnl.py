@@ -31,8 +31,12 @@ def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
     def _find_caseid(root):
         nodes = dag.preorder(root)
         caseid_nodes = [n for n in nodes if n.tag == 'caseid']
+        caseids = {n.value for n in caseid_nodes}
+        if len(caseids) > 1:
+            raise Exception("{}: More than one caseid found in this DAG!".format(
+                dag.showCompressedDAG(root)))
         if not caseid_nodes:
-            raise Exception("No caseid found for this DAG: {}".format(
+            raise Exception("{}: No caseid found in this DAG".format(
                 dag.showCompressedDAG(node)))
         return caseid_nodes[0].value
 

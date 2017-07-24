@@ -1,9 +1,10 @@
 from __future__ import print_function
 from plumbum import local, FG, cli
 import yaml
+import pnlpipe_config
 import sys
 import logging
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 from pnlpipe_lib import *
 from ..display import printVertical
 from ..readparams import read_grouped_combos, software_params, make_pipeline
@@ -11,6 +12,7 @@ import pnlpipe_pipelines
 import pnlpipe_software
 import importlib
 
+OBSID_KEY = getattr(pnlpipe_config, 'OBSID_KEY', 'caseid')
 
 class Run(cli.Application):
     """Runs pipeline"""
@@ -29,13 +31,17 @@ class Run(cli.Application):
         mandatory=False,
         help="parameter id, run pipeline only for this parameter combination")
 
+    question = cli.Flag(
+        ['-q', '--question'], default=False, help="Update no target, just print if up to date or not")
+
     def main(self, *arg_caseids):
         pipeline_name = self.parent.pipeline_name
+        log.info('Run {} pipeline'.format(pipeline_name))
         target = self.want
         if not target:
             target = pnlpipe_pipelines.default_target(pipeline_name)
 
-        logger.info('Check that prerequisite software exists')
+        log.info('Check that prerequisite software exists')
         missing_software_modules = []
         missing_software = []
         grouped_combos = read_grouped_combos(pipeline_name, assert_valid_combos=True)
@@ -48,13 +54,15 @@ class Run(cli.Application):
                     missing_software_modules.append(modulefile)
                     continue
                 module = pnlpipe_software.import_module(softname)
-                if not local.path(module.get_path(version)).exists():
+                softpath = local.path(module.get_path(version))
+                if not softpath.exists():
                     missing_software.append(module.get_path(version))
+                log.info("{} exists".format(softpath))
 
         for f in missing_software_modules:
-            logger.warning("missing {}".format(f))
+            log.warning("missing {}".format(f))
         for p in missing_software:
-            logger.warning("missing: {}".format(p))
+            log.warning("missing: {}".format(p))
         if missing_software_modules:
             sys.exit(1)
         if missing_software:
@@ -80,21 +88,34 @@ Run './pipe {} make' to build all prequisite pnlpipe_software and make sure FREE
 
             # if parameters don't have an observation id type key
             if not caseids:
-                logger.info('Running {} pipeline'.format(pipeline_name))
                 printVertical(combo)
                 pipeline = make_pipeline(pipeline_name, combo)
-                # logger.info("Make target '{}'".format(pipeline[target].show()))
+                # log.info("Make target '{}'".format(pipeline[target].show()))
                 update(pipeline[target])
                 continue
             else:
                 caseids = arg_caseids if arg_caseids else caseids
                 for caseid in caseids:
-                    logger.info('Running {} pipeline'.format(pipeline_name))
-                    print("# Case '{}'".format(caseid), file=sys.stderr)
-                    printVertical(combo)
+                    # print(['caseid']+combo.keys())
+                    # print(dict(combo,caseid=caseid))
+                    print('')
+                    fullCombo = {}
+                    fullCombo.update(combo)
+                    fullCombo[OBSID_KEY] = caseid
+                    printVertical(fullCombo, keys=[OBSID_KEY] + combo.keys())
+                    print('')
                     pipeline = make_pipeline(pipeline_name, combo, caseid)
-                    logger.info("Make target tagged '{}'".format(target))
-                    update(pipeline[target])
+                    log.info("Make target tagged '{}'".format(target))
+                    if self.question:
+                        nodeAndReason = upToDate(pipeline[target])
+                        if nodeAndReason:
+                            print("'{}' is stale".format(pipeline[target].show()))
+                            print("Reason: {}: {}".format(nodeAndReason[0].show(), nodeAndReason[1]))
+                            print()
+                        else:
+                            print("{}: is up to date.".format(pipeline[target].show()))
+                    else:
+                        update(pipeline[target])
 
                 # try:
                 #     pnlpipe_lib.update(pipeline[want])

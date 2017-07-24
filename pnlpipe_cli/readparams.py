@@ -104,7 +104,7 @@ def _group_by(combos, exclude_key):
         combos = list(combos)
         new_combo = {k: v for k, v in combos[0].items() if k != exclude_key}
         excluded_values = [combo[exclude_key] for combo in combos]
-        result.append((new_combo, excluded_values))
+        result.append((new_combo, sorted(excluded_values)))
 
     if not result:
         raise Exception("_group_by has an empty result")

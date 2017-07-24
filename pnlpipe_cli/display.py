@@ -5,9 +5,11 @@ import logging
 import pnlpipe_lib
 import pnlpipe_lib.nodes
 
-def printVertical(d, prepend='', fd=sys.stderr):
-    for k, v in d.items():
-        fd.write("{}{:<25} {:<15}".format(prepend, k, v) + '\n')
+def printVertical(d, prepend='', keys=None, fd=sys.stderr):
+    if not keys:
+        keys = d.keys()
+    for k in keys:
+        fd.write("{}{:<25} {:<15}".format(prepend, k, d[k]) + '\n')
 
 
 def printTable(d, colList=None):

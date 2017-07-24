@@ -48,7 +48,7 @@ def make_env_files(pipeline_name, use_full_paths=False):
 
         with open(envfile, 'w') as f:
             f.write('# Parameter combination {}\n'.format(paramid))
-            printVertical(combo, '#  ', f)
+            printVertical(combo, prepend='#  ', fd=f)
             f.write('\n')
 
             # Generated output paths
