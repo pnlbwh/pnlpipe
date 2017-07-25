@@ -75,7 +75,7 @@ class Export(cli.Application):
             doc = mod.make_pipeline.__doc__
             for paramid, combo, caseids in read_grouped_combos(pipeline_name):
                 projdict = {}
-                projdict['description'] = doc
+                projdict['description'] = doc or "None."
                 projdict['parameters'] = combo
                 if '_description' in combo.keys():
                     projdict['description'] = '{} docstring: \n {}\n\nUserComments:\n{}'.format(mod.__file__, doc, projdict['parameters']['_description'])
