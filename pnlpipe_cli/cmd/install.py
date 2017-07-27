@@ -19,7 +19,8 @@ where softwareModule is one of:
             return 1
         pnlpipe_softwareModule = pnlpipe_software.import_module(softwareModule)
         if self.ver:
-            logger.info("Make '{}'".format(pnlpipe_softwareModule.get_path(self.ver)))
+            #logger.info("Make '{}'".format(pnlpipe_softwareModule.get_path(self.ver)))
+            logger.info("Make '{}', version: {}".format(softwareModule, self.ver))
             pnlpipe_softwareModule.make(self.ver)
         else:
             logger.info("Make '{}'".format(pnlpipe_softwareModule.get_path()))

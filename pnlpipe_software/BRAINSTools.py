@@ -4,6 +4,7 @@ from plumbum.cmd import cmake, chmod
 import logging
 logger = logging.getLogger(__name__)
 import os
+import stat
 
 DEFAULT_HASH = '41353e8'
 

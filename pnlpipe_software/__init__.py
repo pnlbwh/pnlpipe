@@ -94,8 +94,8 @@ def downloadGithubArchive(ownerrepo, version='master'):
 
 def getCommitInfo(repo_path):
     with local.cwd(local.path(repo_path)):
-        sha = git('rev-parse', '--short', 'HEAD')[:-1]
-        date = git('show', '-s', '--format=%cd', '--date=short')[:-1]
+        sha = git('rev-parse', '--short', 'HEAD').strip()
+        date = git('show', '-s', '--format=%cd', '--date=short').strip()
     return (sha, date)
 
 
