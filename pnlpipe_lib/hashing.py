@@ -49,7 +49,6 @@ def dirhash(dirname,
             dirname, topdown=True, followlinks=followlinks):
         if ignore_hidden and re.search(r'/\.', root):
             continue
-        print [f for f in files if include_file(f)]
         hashvalues.extend([filehash(local.path(root) / f, hashfunc)
                            for f in files if include_file(f)])
     return reduce_hash(hashvalues, hashfunc)

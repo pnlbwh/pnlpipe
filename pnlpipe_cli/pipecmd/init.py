@@ -20,7 +20,8 @@ class Init(cli.Application):
                 "'{}' already exists, won't overwrite (use '--force' to overwrite it).".format(
                     paramsFile))
             return
-        local.path(paramsFile).delete()
+        paramsFile.delete()
+        paramsFile.dirname.mkdir()
         args, _, _, defaults = inspect.getargspec(
             self.parent.make_pipeline_orig)
         if defaults:

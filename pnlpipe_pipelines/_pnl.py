@@ -22,6 +22,7 @@ ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              10, "--stepLength", 0.3]
 
 
+#TODO remove caseid from hash
 def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
     def _hashstring(s):
         hasher = hashlib.md5()
@@ -77,6 +78,9 @@ class InputPathFromKey(Node):
                 if rawgz.exists():
                     result.append(rawgz)
             return result
+
+        if self.output().is_dir():
+            return dirhash(self.output())
 
         allfiles = get_associated_files(self.output()) + [self.output()]
         if len(allfiles) > 1:
