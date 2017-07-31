@@ -3,3 +3,4 @@ _*
 caselist.txt
 #.*
 inputPaths.yml
+!__init__.py

@@ -85,7 +85,7 @@ class Ls(cli.Application):
                 for tag, node in pipeline.items():
                     if tag not in keys:
                         continue
-                    if self.print_missing == node.output().exists(
+                    if self.print_missing == local.path(node.output()).exists(
                     ) and not self.print_all:
                         continue
                     if self.print_caseid_only:
