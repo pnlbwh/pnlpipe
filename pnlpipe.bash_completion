@@ -1,0 +1,27 @@
+_show_complete()
+{
+    local cur prev pipeline_names
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    # prev="${COMP_WORDS[COMP_CWORD-1]}"
+    # opts=`./pnlpipe --help | grep '  --' | awk '{print $1}'`
+    pipeline_names=$(cd pnlpipe_pipelines; ls *.py | grep  -v '_' | sed 's/.py//' | tr '\n' ' ')
+    pipecmds=$(cd pnlpipe_cli/pipecmd; ls *.py | grep  -v '_' | sed 's/.py//' | tr '\n' ' ')
+
+    # if [[ ${cur} == -* ]] ; then
+    #     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    #     return 0
+    # fi
+
+
+    case ${COMP_CWORD} in
+        1)
+            COMPREPLY=( $(compgen -W "${pipeline_names}" -- ${cur}) )
+            ;;
+        *)
+            COMPREPLY=( $(compgen -W "${pipecmds}" -- ${cur}) )
+            ;;
+    esac
+}
+
+complete -F _show_complete pnlpipe
