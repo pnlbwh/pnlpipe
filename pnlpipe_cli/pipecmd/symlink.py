@@ -74,13 +74,12 @@ class SymLink(cli.Application):
         for symlink in find(config.OUTDIR, '-type', 'l').split():
             if fnmatch.fnmatch(symlink, '*-{}?.*'.format(pipename)):
                 for ext, multi_symlink_fn in MULTI_SYMLINKS.items():
-                    if not symlink.endswith(ext):
-                        continue
-                    multi_symlinks = multi_symlink_fn(os.path.realpath(symlink), symlink)
-                    for extra_symlink, _ in multi_symlinks.items():
-                        print("Remove {}".format(extra_symlink))
-                        if extra_symlink.exists():
-                            os.unlink(extra_symlink)
+                    if symlink.endswith(ext):
+                        multi_symlinks = multi_symlink_fn(os.path.realpath(symlink), symlink)
+                        for extra_symlink, _ in multi_symlinks.items():
+                            print("Remove extra {}".format(extra_symlink))
+                            if extra_symlink.exists():
+                                os.unlink(extra_symlink)
                 print("Remove {}".format(symlink))
                 os.unlink(symlink)
 
@@ -105,6 +104,7 @@ class SymLink(cli.Application):
                     paramid))
                 printVertical(combo)
                 print('')
+                print(caseids)
                 for caseid in caseids:
                     pipeline = make_pipeline(pipename, combo, caseid)
                     for tag, node in pipeline.items():
@@ -112,7 +112,8 @@ class SymLink(cli.Application):
                             continue
                         if not node.output().startswith(OUTDIR):
                             continue
+                        print("tag: {}".format(tag))
                         symlink = to_symlink(node, tag, pipename, paramid)
+                        print("Make '{}' --> '{}' ".format(symlink, node.output()))
                         symlink.dirname.mkdir()
-                        print("'{}' --> '{}' ".format(symlink, node.output()))
                         make_symlink(node.output(), symlink)

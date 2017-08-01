@@ -76,12 +76,13 @@ def makeSubcommandClass(pipeline_name,
 if __name__ == '__main__':
     import pnlpipe_cli.cmd.export
     import pnlpipe_cli.pipecmd.init
-    import pnlpipe_cli.pipecmd.make
+    import pnlpipe_cli.pipecmd.setup
     import pnlpipe_cli.pipecmd.run
     import pnlpipe_cli.pipecmd.status
     import pnlpipe_cli.pipecmd.symlink
     import pnlpipe_cli.pipecmd.ls
-    import pnlpipe_cli.pipecmd.keys
+    import pnlpipe_cli.pipecmd.tags
+    import pnlpipe_cli.pipecmd.info
 
     App.subcommand("install", pnlpipe_cli.cmd.install.SoftwareCommand)
     App.subcommand("export", pnlpipe_cli.cmd.export.Export)
@@ -93,11 +94,12 @@ if __name__ == '__main__':
                                               default_target)
         App.subcommand(pipeline_name, SubcommandClass)
         SubcommandClass.subcommand("run",     pnlpipe_cli.pipecmd.run.Run)
-        SubcommandClass.subcommand("make",    pnlpipe_cli.pipecmd.make.Make)
+        SubcommandClass.subcommand("setup",    pnlpipe_cli.pipecmd.setup.Setup)
         SubcommandClass.subcommand("init",    pnlpipe_cli.pipecmd.init.Init)
         SubcommandClass.subcommand("symlink", pnlpipe_cli.pipecmd.symlink.SymLink)
         SubcommandClass.subcommand("status",  pnlpipe_cli.pipecmd.status.Status)
         SubcommandClass.subcommand("ls",      pnlpipe_cli.pipecmd.ls.Ls)
-        SubcommandClass.subcommand("keys",    pnlpipe_cli.pipecmd.keys.Keys)
+        SubcommandClass.subcommand("tags",    pnlpipe_cli.pipecmd.tags.Tags)
+        SubcommandClass.subcommand("info",    pnlpipe_cli.pipecmd.info.Info)
 
     App.run()

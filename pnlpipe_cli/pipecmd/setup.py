@@ -7,7 +7,7 @@ import logging
 import pnlpipe_software
 
 
-class Make(cli.Application):
+class Setup(cli.Application):
     """ Builds necessary pnlpipe_software for pipeline and creates shell environment files. """
 
     fullPaths = cli.Flag(

@@ -2,7 +2,7 @@ from plumbum import cli, local
 from pnlpipe_cli.readparams import read_combos, make_pipeline
 
 
-class Keys(cli.Application):
+class Tags(cli.Application):
     """Prints pipeline's keys."""
 
     def main(self):

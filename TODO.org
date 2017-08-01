@@ -3,10 +3,13 @@
  - then FsInDwi doens't need to convert to nrrd first as well as fs2dwi.py
 ** add antsJointFusion
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
-** ENH: add ukf params
 * Todo
+** STY/ENH: add inputkeys values in provenance files
+** ENH: add 'info', 'env', like pnldash
+** STY: change 'keys' to 'tags', add print docstring
+** BUG: fix symlink
+** STY: add 'summarize command, take out of status
 ** ENH: add --dry run flag to say whether it would rebuild or not
-** ENH: add caseid flag to env/make
 ** ENH: add validators to pipeline (e.g. dwi validator/nrrdchecker)
 ** ENH: add permutation check to bse.py (currently assumes correct dwi permutation)
 ** ENH: add check for correct DWI axes permutation
