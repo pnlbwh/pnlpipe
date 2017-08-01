@@ -21,9 +21,9 @@ class DwiNrrd(Node):
                           self.DWIConvert_flags] & LOG
 
     def output(self):
-        # return hash_filepath(
-        #     self, '.nrrd', caseid_dir=False, extra_words=self.DWIConvert_flags)
-        return dag_filepath(self, '.nrrd', caseid_dir=True)
+        return hash_filepath(
+            self, '.nrrd', caseid_dir=True, extra_words=self.DWIConvert_flags)
+        # return dag_filepath(self, '.nrrd', caseid_dir=True)
 
 
 @node(params=['BRAINSTools_hash', 'DWIConvert_flags'], deps=['dwi'])
@@ -34,12 +34,12 @@ class DwiNifti(Node):
                           self.DWIConvert_flags] & LOG
 
     def output(self):
-        return dag_filepath(self, '.nii.gz', caseid_dir=True)
-        # return hash_filepath(
-        #     self,
-        #     '.nii.gz',
-        #     caseid_dir=True,
-        #     extra_words=self.DWIConvert_flags)
+        # return dag_filepath(self, '.nii.gz', caseid_dir=True)
+        return hash_filepath(
+            self,
+            '.nii.gz',
+            caseid_dir=True,
+            extra_words=self.DWIConvert_flags)
 
 
 @node(

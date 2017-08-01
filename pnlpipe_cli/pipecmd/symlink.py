@@ -73,6 +73,8 @@ class SymLink(cli.Application):
         from plumbum.cmd import find
         for symlink in find(config.OUTDIR, '-type', 'l').split():
             if local.path(symlink).name.startswith(pipename):
+                print("Remove {}".format(symlink))
+                os.unlink(symlink)
                 for ext, multi_symlink_fn in MULTI_SYMLINKS.items():
                     if symlink.endswith(ext):
                         multi_symlinks = multi_symlink_fn(os.path.realpath(symlink), symlink)
@@ -80,8 +82,6 @@ class SymLink(cli.Application):
                             print("Remove extra {}".format(extra_symlink))
                             if extra_symlink.exists():
                                 os.unlink(extra_symlink)
-                print("Remove {}".format(symlink))
-                os.unlink(symlink)
 
         for paramid, combo, caseids in read_grouped_combos(pipename):
             if not caseids:
