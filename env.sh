@@ -1,3 +1,3 @@
-base=$(readlink -m ${BASH_SOURCE[0]}) && base=${base%/*}
-export PATH=$base:$base/pnlscripts:$PATH
-source $base/pnlpipe.bash_completion
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export PATH=$DIR:$DIR/pnlscripts:$PATH
+source $DIR/pnlpipe.bash_completion
