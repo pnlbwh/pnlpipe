@@ -57,7 +57,7 @@ def make_symlink(src, symlink):
 def to_symlink(node, tag, pipeline_name, paramid):
     nodepath = local.path(node.output())
     ext = ''.join(nodepath.suffixes[-2:])
-    filename = '{}-{}{}{}'.format(tag, pipeline_name, paramid, ext)
+    filename = '{}-{}-{}{}'.format(pipeline_name, paramid, tag, ext)
     # filepath = (local.path(config.OUTDIR) /
     #             config.node_to_filepath(node)).dirname / filename
     filepath = local.path(node.output()).dirname / filename
@@ -72,7 +72,7 @@ class SymLink(cli.Application):
 
         from plumbum.cmd import find
         for symlink in find(config.OUTDIR, '-type', 'l').split():
-            if fnmatch.fnmatch(symlink, '*-{}?.*'.format(pipename)):
+            if local.path(symlink).name.startswith(pipename):
                 for ext, multi_symlink_fn in MULTI_SYMLINKS.items():
                     if symlink.endswith(ext):
                         multi_symlinks = multi_symlink_fn(os.path.realpath(symlink), symlink)
@@ -104,7 +104,6 @@ class SymLink(cli.Application):
                     paramid))
                 printVertical(combo)
                 print('')
-                print(caseids)
                 for caseid in caseids:
                     pipeline = make_pipeline(pipename, combo, caseid)
                     for tag, node in pipeline.items():

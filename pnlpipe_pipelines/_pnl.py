@@ -22,14 +22,7 @@ ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              10, "--stepLength", 0.3]
 
 
-#TODO remove caseid from hash
-def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
-    def _hashstring(s):
-        hasher = hashlib.md5()
-        hasher.update(s)
-        return hasher.hexdigest()[:10]
-
-    def _find_caseid(root):
+def _find_caseid(root):
         nodes = dag.preorder(root)
         caseid_nodes = [n for n in nodes if n.tag == 'caseid']
         caseids = {n.value for n in caseid_nodes}
@@ -40,6 +33,22 @@ def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
             raise Exception("{}: No caseid found in this DAG".format(
                 dag.showCompressedDAG(node)))
         return caseid_nodes[0].value
+
+
+def dag_filepath(node, ext, caseid_dir=True):
+        caseid = _find_caseid(node)
+        if ext and not ext.startswith('.'):
+            ext = '.' + ext
+        if caseid_dir:
+            return local.path(config.OUTDIR) / caseid / showCompressedDAG(node) + ext
+        return local.path(config.OUTDIR) / showCompressedDAG(node) + ext
+
+
+def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
+    def _hashstring(s):
+        hasher = hashlib.md5()
+        hasher.update(s)
+        return hasher.hexdigest()[:10]
 
     caseid = _find_caseid(node)
     extras = [caseid] + extra_words if extra_words else [caseid]
