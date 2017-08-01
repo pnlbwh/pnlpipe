@@ -96,7 +96,7 @@ def status(grouped_combos):
         pipelines = [make_pipeline(**dict(combo, caseid=caseid)) for caseid in caseids]
         csvs.extend([pipeline['csv'].output().__str__() for pipeline in pipelines])
 
-    df = pd.concat([pd.read_csv(f) for f in csvs])
+    df = pd.concat([pd.read_csv(f, converters={'BRAINSTools_hash': str}) for f in csvs])
     outcsv = (OUTDIR / (__name__ + '-all.csv')).__str__()
     df.to_csv(outcsv)
     log.info("Made '{}'".format(outcsv))
