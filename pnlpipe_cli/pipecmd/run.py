@@ -68,11 +68,11 @@ class Run(cli.Application):
         if missing_software:
             errmsg = """
 Some pnlpipe_software components are missing and so some parts of the pipeline won't run.
-Run './pipe {} make' to build all prequisite pnlpipe_software.
+Run './pnlpipe {} make' to build all prequisite pnlpipe_software.
             """.format(pipeline_name)
             errmsgFS = """
 Some pnlpipe_software components are missing and so some parts of the pipeline won't run.
-Run './pipe {} make' to build all prequisite pnlpipe_software and make sure FREESURFER_HOME is set.
+Run './pnlpipe {} make' to build all prequisite pnlpipe_software and make sure FREESURFER_HOME is set.
             """.format(pipeline_name)
 
             # TODO ad hoc check for FreeSurfer

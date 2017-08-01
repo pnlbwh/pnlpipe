@@ -90,6 +90,7 @@ DEFAULT_TARGET = 'csv'
 
 
 def status(grouped_combos):
+
     log.info("Combine all csvs into one")
     csvs = []
     for paramid, combo, caseids in grouped_combos:
@@ -100,3 +101,10 @@ def status(grouped_combos):
     outcsv = (OUTDIR / (__name__ + '-all.csv')).__str__()
     df.to_csv(outcsv)
     log.info("Made '{}'".format(outcsv))
+
+    rmd = local.path(__file__).dirname / 'DWIConvertTest.Rmd'
+    rmd.copy(OUTDIR)
+    rcmd = 'library(rmarkdown); render("{}/DWIConvertTest.Rmd", output_dir="{}")'.format(OUTDIR, OUTDIR)
+    from plumbum.cmd import R
+    R('-e', rcmd)
+    log.info("Made '{}/DWIConvertTest.html'".format(OUTDIR))

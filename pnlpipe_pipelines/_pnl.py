@@ -42,13 +42,12 @@ def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
         return caseid_nodes[0].value
 
     caseid = _find_caseid(node)
-    if extra_words:
-        nodestem = '{}-{}-{}-{}'.format(node.tag, caseid,
-                                        '-'.join(extra_words),
-                                        _hashstring(dag.showDAG(node)))
-    else:
-        nodestem = '{}-{}-{}'.format(node.tag, caseid,
-                                     _hashstring(dag.showDAG(node)))
+    extras = [caseid] + extra_words if extra_words else [caseid]
+    dagstr = dag.showDAG(node)
+    for extra in extras:
+        dagstr = dagstr.replace(extra, '')
+    nodestem = '{}-{}-{}'.format(node.tag, '-'.join(extras),
+                                     _hashstring(dagstr))
     if ext and not ext.startswith('.'):
         ext = '.' + ext
 
