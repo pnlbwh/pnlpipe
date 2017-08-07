@@ -1,5 +1,6 @@
 from plumbum import local
-from pnlpipe_pipelines._pnl import node, NrrdOutput, NiftiOutput, CsvOutput, InputPathFromKey
+from plumbum.path.utils import copy, gui_open
+from pnlpipe_pipelines._pnl import node, NrrdOutput, NiftiOutput, CsvOutput, InputPathFromKey, dwiconvert_py, LOG, find_tag
 import pnlpipe_software as soft
 import pandas as pd
 import sys
@@ -19,7 +20,7 @@ class DwiNrrd(NrrdOutput):
                           self.DWIConvert_flags] & LOG
 
     def extra_output_names(self):
-        return self.DWIConvert_flags.split()
+        return [self.BRAINSTools_hash] + self.DWIConvert_flags.split()
 
 
 @node(params=['BRAINSTools_hash', 'DWIConvert_flags'], deps=['dwi'])
@@ -30,24 +31,31 @@ class DwiNifti(NiftiOutput):
                           self.DWIConvert_flags] & LOG
 
     def extra_output_names(self):
-        return self.DWIConvert_flags.split()
+        return [self.BRAINSTools_hash] + self.DWIConvert_flags.split()
 
 
 @node(
-    params=['caseid', 'nrrdchecker_hash', 'BRAINSTools_hash'],
+    params=['nrrdchecker_hash'],
     deps=['nrrd1', 'nrrd2'])
 class NrrdCompareCsv(NrrdOutput):
     def static_build(self):
+        BRAINSTools_hash = find_tag(self, 'BRAINSTools_hash')
+        caseid = find_tag(self, 'caseid')
+        DWIConvert_flags = find_tag(self.deps['nrrd1'], 'DWIConvert_flags')
+
         binarypath = soft.nrrdchecker.get_path(self.nrrdchecker_hash)
         nrrdchecker = local[binarypath]
         stdout = nrrdchecker('-i', self.nrrd1, '-i', self.nrrd2)
         csv = pd.read_csv(StringIO(stdout))
-        csv['caseid'] = self.caseid
-        csv['BRAINSTools_hash'] = self.BRAINSTools_hash
+        csv['caseid'] = caseid
+        csv['BRAINSTools_hash'] = BRAINSTools_hash
+        csv['DWIConvert_flags'] = DWIConvert_flags
         csv.to_csv(self.output().__str__(), index=False)
 
     def extra_output_names(self):
-        return [self.BRAINSTools_hash]
+        bthash = find_tag(self, 'BRAINSTools_hash')
+        DWIConvert_flags = find_tag(self, 'DWIConvert_flags').split()
+        return [bthash] + DWIConvert_flags
 
 
 def make_pipeline(caseid,
@@ -99,3 +107,6 @@ def summarize(extra_flags=None):
     from plumbum.cmd import R
     R('-e', rcmd)
     log.info("Made '{}/DWIConvertTest.html'".format(OUTDIR))
+
+    if extra_flags:
+        gui_open("{}/DWIConvertTest.html".format(OUTDIR))

@@ -7,8 +7,8 @@ import sys
 
 class Summarize(cli.Application):
     """Calls a pipeline's summarize function that creates an overall summary report"""
-    extraFlags = cli.SwitchAttr(
-        ['--extra'], help="Extra flags passed to the pipeline's status function")
+    extra_flags = cli.SwitchAttr(
+        ['--extra', '-e'], help="Extra flags passed to the pipeline's summarize function")
 
     def main(self, *args):
         if args:
@@ -16,8 +16,8 @@ class Summarize(cli.Application):
             return 1
 
         if hasattr(self.parent, 'summarize'):
-            if self.extraFlags:
-                self.parent.summarize(extraFlags=self.extraFlags.split())
+            if self.extra_flags:
+                self.parent.summarize(self.extra_flags.split())
             else:
                 self.parent.summarize()
         else:

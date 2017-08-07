@@ -1,4 +1,4 @@
-from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG
+from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
 from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
 from plumbum import local, FG
 from pnlscripts import TemporaryDirectory, dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py

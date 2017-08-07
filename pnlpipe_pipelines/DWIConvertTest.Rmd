@@ -10,14 +10,14 @@ d[key %like% '^DWMRI_gradient', key2 := 'DWMRI_gradient']
 # Summary
 
 ```{r summarize, echo=FALSE}
-d2 = d[!d$isequal,.('Num. diff keys'=.N), by=.(caseid, BRAINSTools_hash)]
+d2 = d[!d$isequal,.('Num. diff keys'=.N), by=.(caseid, BRAINSTools_hash, DWIConvert_flags)]
 DT::datatable(d2, options = list(bPaginate=F, dom='t'))
 ```
 
 # Details
 
 ```{r echo=FALSE}
-d2 = d[!d$isequal,.(key, valueRef, value), by=.(caseid, BRAINSTools_hash)]
+d2 = d[!d$isequal,.(key, dwinrrd=valueRef, dwifslnrrd=value), by=.(caseid, BRAINSTools_hash, DWIConvert_flags)]
 DT::datatable(d2, options = list(bPaginate=F))
 
 ```

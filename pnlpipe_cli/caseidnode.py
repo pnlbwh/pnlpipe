@@ -13,18 +13,8 @@ log = IndentedLoggerAdapter(logger, indent_char='.')
 OUTDIR = local.path(pnlpipe_config.OUTDIR)
 
 
-def _find_caseid(root):
-    nodes = dag.preorder(root)
-    caseid_nodes = [n for n in nodes if n.tag == 'caseid']
-    caseids = {n.value for n in caseid_nodes}
-    if len(caseids) > 1:
-        raise Exception("{}: More than one caseid found in this DAG!".format(
-            dag.showCompressedDAG(root)))
-    if not caseid_nodes:
-        raise Exception("{}: No caseid found in this DAG".format(
-            dag.showCompressedDAG(node)))
-    return caseid_nodes[0].value
-
+def find_caseid(root):
+    return find_tag(root, 'caseid')
 
 def _lookupInputKey(key, caseid):
     try:
@@ -40,7 +30,7 @@ It might be misspelled, or you might need to add it if it's missing.
 
 
 def dag_filepath(node, ext, caseid_dir=True):
-    caseid = _find_caseid(node)
+    caseid = find_caseid(node)
     if ext and not ext.startswith('.'):
         ext = '.' + ext
     if caseid_dir:
@@ -54,7 +44,7 @@ def hash_filepath(node, ext, caseid_dir=True, extra_words=None):
         hasher.update(s)
         return hasher.hexdigest()[:10]
 
-    caseid = _find_caseid(node)
+    caseid = find_caseid(node)
     extras = [caseid] + extra_words if extra_words else [caseid]
     dagstr = dag.showDAG(node)
     for extra in extras:

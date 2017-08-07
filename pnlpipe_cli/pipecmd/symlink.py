@@ -77,7 +77,7 @@ class SymLink(cli.Application):
             symlink = local.path(symlink)
             if not symlink.name.startswith(pipename):
                 continue
-            if not symlink.exists():
+            if not symlink.is_symlink():
                 continue
             print("Remove {}".format(symlink))
             os.unlink(symlink)

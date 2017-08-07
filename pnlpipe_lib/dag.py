@@ -104,3 +104,16 @@ def showCompressedDAG(node, isLeaf=isLeaf):
         return '{}({})-{}'.format(node.tag, ','.join(depStrings),
                                   '-'.join(sorted(trimmedRepeats)))
     return '{}({})'.format(node.tag, ','.join(depStrings))
+
+
+def find_tag(root, tag, must_exist=True, unique=True):
+    nodes = preorder(root)
+    tag_nodes = [n for n in nodes if n.tag == tag]
+    values = {n.value for n in tag_nodes}
+    if unique and len(values) > 1:
+        raise Exception("{}: More than one {} found in this DAG!".format(
+            showCompressedDAG(root), tag))
+    if must_exist and not tag_nodes:
+        raise Exception("{}: No {} found in this DAG".format(
+            showCompressedDAG(node), tag))
+    return tag_nodes[0].value
