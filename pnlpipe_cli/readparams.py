@@ -124,7 +124,7 @@ def read_grouped_combos(pipeline_name,
             assert_valid_combo(combo, pipeline_name)
 
     return [(x,y,z) for x,(y,z) in \
-            enumerate(_group_by(combos, exclude_key))]
+            enumerate(_group_by(combos, exclude_key), 1)]
 
 
 def make_pipeline(pipeline_name, combo, caseid):

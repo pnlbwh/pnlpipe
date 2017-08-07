@@ -1,5 +1,13 @@
 from plumbum import cli
 
+class ParamApp(cli.Application):
+    paramid = cli.SwitchAttr(
+        ['-p', '--paramid'],
+        int,
+        default=0,
+        mandatory=False,
+        help="parameter id, run pipeline only for this parameter combination")
+
 class PipelineSubcommand(cli.Application):
     def main(self, *args):
         if args:

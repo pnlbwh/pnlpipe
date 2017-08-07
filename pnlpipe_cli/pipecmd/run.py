@@ -6,6 +6,7 @@ import sys
 import logging
 log = logging.getLogger(__name__)
 from pnlpipe_lib import *
+from . import ParamApp
 from ..display import printVertical
 from ..readparams import read_grouped_combos, make_pipeline, get_software
 import pnlpipe_pipelines
@@ -15,7 +16,7 @@ import pnlpipe_software
 def _concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
 
-class Run(cli.Application):
+class Run(ParamApp):
     """Runs pipeline"""
 
     want = cli.SwitchAttr(
@@ -25,12 +26,6 @@ class Run(cli.Application):
         ['-k'],
         default=False,
         help="keep going if possible when there's an exception")
-
-    param_id = cli.SwitchAttr(
-        ['-p', '--paramid'],
-        int,
-        mandatory=False,
-        help="parameter id, run pipeline only for this parameter combination")
 
     question = cli.Flag(
         ['-q', '--question'], default=False, help="Update no target, just print if up to date or not")
@@ -91,7 +86,7 @@ Run './pnlpipe {} setup' to build all prequisite pnlpipe_software and make sure 
             sys.exit(1)
 
         for paramid, combo, caseids in grouped_combos:
-            if self.param_id and paramid != self.param_id:
+            if self.paramid and paramid != self.paramid:
                 continue
             print('')
             print("## Pipeline {} ({} cases)".format(paramid, len(caseids)))

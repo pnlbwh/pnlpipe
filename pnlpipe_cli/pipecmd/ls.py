@@ -2,6 +2,7 @@ from __future__ import print_function
 from plumbum import cli, local
 from ..display import printVertical
 from ..readparams import read_grouped_combos, make_pipeline
+from . import ParamApp
 import logging
 import sys
 
@@ -20,7 +21,7 @@ def print_node_path(nodepath,
     print(nodepath)
 
 
-class Ls(cli.Application):
+class Ls(ParamApp):
 
     print_csv = cli.Flag(
         ['-c', '--csv'],
@@ -54,8 +55,10 @@ class Ls(cli.Application):
 
         pipeline_name = self.parent.pipeline_name
 
-        for paramid, combo, caseids \
-            in read_grouped_combos(pipeline_name):
+        for paramid, combo, caseids in read_grouped_combos(pipeline_name):
+
+            if self.paramid and paramid != self.paramid:
+                continue
 
             print('', file=sys.stderr)
             print("## Parameter Combination {} ({} cases)".format(
