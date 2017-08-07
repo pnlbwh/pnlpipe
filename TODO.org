@@ -4,6 +4,7 @@
 ** add antsJointFusion
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 * Todo
+** STY: replace _env.sh with env command
 ** STY: parameter combo 0 -> combo 1
 ** STY: static_build -> build
 ** STY/ENH: add inputkeys values in provenance files

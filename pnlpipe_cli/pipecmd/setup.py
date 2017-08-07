@@ -1,14 +1,18 @@
 from plumbum import local, cli
 import pnlpipe_cli
 from pnlpipe_cli import printVertical
-from pnlpipe_cli.readparams import read_combos, read_grouped_combos, software_params, params_file, make_pipeline, OBSID_KEY
+from pnlpipe_cli.readparams import read_combos, read_grouped_combos, params_file, make_pipeline, OBSID_KEY, get_software
 import importlib
 import logging
 import pnlpipe_software
 
 
+def _concat(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
+
+
 class Setup(cli.Application):
-    """ Builds necessary pnlpipe_software for pipeline and creates shell environment files. """
+    """Builds necessary pnlpipe_software for the pipeline. """
 
     fullPaths = cli.Flag(
         ['-p'],
@@ -16,14 +20,15 @@ class Setup(cli.Application):
 
     def main(self):
         logging.info("Build prerequisite pnlpipe_software")
-        for combo in read_combos(self.parent.pipeline_name):
-            for softname, version in software_params(combo).items():
-                module = pnlpipe_software.import_module(softname)
+        combos = read_combos(self.parent.pipeline_name)
+        software = set(_concat([get_software(combo).items() for combo in combos]))
+        for name, version in software:
+                module = pnlpipe_software.import_module(name)
                 logging.info("Make {}".format(module.get_path(version)))
                 module.make(version)
 
-        logging.info("Make shell environment files")
-        make_env_files(self.parent.pipeline_name, self.fullPaths)
+        # logging.info("Make shell environment files")
+        # make_env_files(self.parent.pipeline_name, self.fullPaths)
 
 
 def escape_path(filepath):
@@ -35,12 +40,9 @@ def make_env_files(pipeline_name, use_full_paths=False):
     outdir = local.path(params_file(pipeline_name)).dirname
     for f in  outdir // ('_' + pipeline_name + '*.sh'):
         f.delete()
-    # with open('outputPaths.yml', 'w') as fyml:
+
     for paramid, combo, caseids in read_grouped_combos(pipeline_name):
-        if caseids:
-            pipeline = make_pipeline(pipeline_name, combo, caseids[0])
-        else:
-            pipeline = make_pipeline(pipeline_name, combo)
+        pipeline = make_pipeline(pipeline_name, combo, caseids[0])
 
         envfile = outdir / ('{}_env{}.sh'.format(pipeline_name, paramid))
 
@@ -61,8 +63,7 @@ def make_env_files(pipeline_name, use_full_paths=False):
                                      # node.output(), paramid)
                 f.write('export {}={}\n\n'.format(tag, nodepath))
 
-            if caseids:
-                f.write('export {}={}\n\n'.format(OBSID_KEY, caseids[0]))
+            f.write('export {}={}\n\n'.format(OBSID_KEY, caseids[0]))
 
             # Software environment
             env_dicts = []
@@ -74,6 +75,6 @@ def make_env_files(pipeline_name, use_full_paths=False):
             for var, val in softVars.items():
                 f.write('export {}={}\n\n'.format(var, val))
 
-            # TODO Ad hoc addition of pnlscripts
+            # TODO remove ad hoc addition of pnlscripts?
             f.write("export PATH={}:$PATH\n".format(
                 local.path('pnlscripts')))

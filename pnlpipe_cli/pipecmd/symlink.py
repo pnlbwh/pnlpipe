@@ -84,35 +84,20 @@ class SymLink(cli.Application):
                                 os.unlink(extra_symlink)
 
         for paramid, combo, caseids in read_grouped_combos(pipename):
-            if not caseids:
-                pipeline = make_pipeline(pipename, combo)
+            print('')
+            print("# Make symlinks for parameter combination {}".format(
+                paramid))
+            printVertical(combo)
+            print('')
+            for caseid in caseids:
+                pipeline = make_pipeline(pipename, combo, caseid)
                 for tag, node in pipeline.items():
-                    if not node.output().exists():
+                    if not local.path(node.output()).exists():
                         continue
                     if not node.output().startswith(OUTDIR):
                         continue
+                    print("tag: {}".format(tag))
                     symlink = to_symlink(node, tag, pipename, paramid)
+                    print("Make '{}' --> '{}' ".format(symlink, node.output()))
                     symlink.dirname.mkdir()
-                    print(
-                        "Make symlink '{}' --> '{}' ".format(symlink,
-                                                             node.output()),
-                        file=sys.stderr)
                     make_symlink(node.output(), symlink)
-            else:
-                print('')
-                print("# Make symlinks for parameter combination {}".format(
-                    paramid))
-                printVertical(combo)
-                print('')
-                for caseid in caseids:
-                    pipeline = make_pipeline(pipename, combo, caseid)
-                    for tag, node in pipeline.items():
-                        if not local.path(node.output()).exists():
-                            continue
-                        if not node.output().startswith(OUTDIR):
-                            continue
-                        print("tag: {}".format(tag))
-                        symlink = to_symlink(node, tag, pipename, paramid)
-                        print("Make '{}' --> '{}' ".format(symlink, node.output()))
-                        symlink.dirname.mkdir()
-                        make_symlink(node.output(), symlink)

@@ -63,18 +63,6 @@ class Ls(cli.Application):
             printVertical(combo)
             print('', file=sys.stderr)
 
-            # if no observation ids for this pipeline (defined in pnlpipe_config)
-            if not caseids:
-                pipeline = make_pipeline(pipeline_name, combo)
-                for tag, node in pipeline.items():
-                    if tag not in keys:
-                        continue
-                    if self.print_missing == node.output().exists(
-                    ) and not self.print_all:
-                        continue
-                    print(node.output())
-                continue
-
             for caseid in caseids:
                 pipeline = make_pipeline(pipeline_name, combo, caseid)
                 for key in keys:

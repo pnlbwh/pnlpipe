@@ -5,50 +5,8 @@ from itertools import izip_longest
 from collections import OrderedDict
 from ..readparams import params_file
 
-class Init(cli.Application):
-    """Makes parameter file that is used as input for this pipeline."""
 
-    force = cli.Flag(
-        ['--force'], help='Force overwrite existing parameter file.')
-
-    def main(self):
-
-        pipelineName = self.parent.__class__.__name__
-        paramsFile = params_file(self.parent.pipeline_name)
-        if paramsFile.exists() and not self.force:
-            print(
-                "'{}' already exists, won't overwrite (use '--force' to overwrite it).".format(
-                    paramsFile))
-            return
-        paramsFile.delete()
-        paramsFile.dirname.mkdir()
-        args, _, _, defaults = inspect.getargspec(
-            self.parent.make_pipeline_orig)
-        if defaults:
-            x = izip_longest(
-                reversed(args), reversed(defaults), fillvalue='*mandatory*')
-        else:
-            x = izip_longest(reversed(args), [], fillvalue='*mandatory*')
-        # paramDict = OrderedDict(reversed(list(x)))
-        paramDict = OrderedDict(reversed(map(lambda y: (y[0], [y[1]]), x)))
-        # get a default caseid
-        paramDict['caseid'] = ['./caselist.txt']
-#         if (not local.path('caselist.txt').exists()
-#             ) and local.path(inputPathsFile).exists():
-#             with open(inputPathsFile, 'r') as f:
-#                 inputPaths = yaml.load(f)
-#                 if not isinstance(inputPaths, dict):
-#                     errmsg = """Error reading {} as a dictionary, is it in the correct format?                    E.g.
-# dwi: path/to/001-dwi.nrrd
-# t1: path/to/001-t1.nrrd
-# caseid: caseid""".format(inputPathsFile)
-#                     raise Exception(errmsg)
-#                 paramDict['caseid'] = [inputPaths.get('caseid',
-#                                                       './caselist.txt')]
-        """ http://stackoverflow.com/a/8661021 """
-        represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
-        yaml.add_representer(OrderedDict, represent_dict_order)
-        help_message = \
+PARAMS_HELP = \
 """# Use one of the following formats for 'caseid'
 #    caseid: '001'
 #    caseid: ['001', '002', '003']
@@ -71,11 +29,39 @@ class Init(cli.Application):
 # naming the generated output.
 
 """
+
+class Init(cli.Application):
+    """Makes parameter file that is used as input for this pipeline."""
+
+    force = cli.Flag(
+        ['--force'], help='Force overwrite existing parameter file.')
+
+    def main(self):
+        pipelineName = self.parent.__class__.__name__
+        paramsFile = params_file(self.parent.pipeline_name)
+        if paramsFile.exists() and not self.force:
+            print(
+                "'{}' already exists, won't overwrite (use '--force' to overwrite it).".format(
+                    paramsFile))
+            return
+        paramsFile.delete()
+        paramsFile.dirname.mkdir()
+        args, _, _, defaults = inspect.getargspec(
+            self.parent.make_pipeline_orig)
+        if defaults:
+            x = izip_longest(
+                reversed(args), reversed(defaults), fillvalue='*mandatory*')
+        else:
+            x = izip_longest(reversed(args), [], fillvalue='*mandatory*')
+        paramDict = OrderedDict(reversed(map(lambda y: (y[0], [y[1]]), x)))
+        paramDict['caseid'] = ['./caselist.txt']
+        represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
+        yaml.add_representer(OrderedDict, represent_dict_order)
         with open(paramsFile, 'w') as f:
-            f.write(help_message)
+            f.write(PARAMS_HELP)
             yaml.dump(paramDict, f, default_flow_style=None)
         print("Made '{}'".format(paramsFile))
         print("Before running the pipeline, replace the '*mandatory*' fields:")
         print("# Edit {}, add your parameters".format(paramsFile))
-        print("./pnlpipe {} make".format(pipelineName))
+        print("./pnlpipe {} setup".format(pipelineName))
         print("./pnlpipe {} run".format(pipelineName))

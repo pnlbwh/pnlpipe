@@ -10,6 +10,8 @@ from pnlpipe_lib import Node
 
 OBSID_KEY = 'caseid'
 
+def _concat(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
 
 def params_file(pipeline_name):
     return local.path('pnlpipe_params') / (pipeline_name + '.params')
@@ -125,15 +127,11 @@ def read_grouped_combos(pipeline_name,
             enumerate(_group_by(combos, exclude_key))]
 
 
-def make_pipeline(pipeline_name, combo, caseid=None):
+def make_pipeline(pipeline_name, combo, caseid):
     if not isinstance(combo, dict):
         raise TypeError(
             "make_pipeline: expects parameter combination dictionary")
-    args = combo
-    if caseid:
-        args = {}
-        args.update(combo)
-        args[OBSID_KEY] = caseid
+    args = dict(combo, caseid=caseid)
     module = pnlpipe_pipelines.import_module(pipeline_name)
     args = {k: v for k, v in args.items() if not k.startswith('_')}
     pipeline = module.make_pipeline(**args)
@@ -170,7 +168,6 @@ def readComboPaths(pipeline_name):
         result.append(comboPaths)
     return result
 
-
 def assert_valid_combo(combo, pipeline_name):
     if not '*mandatory*' in combo.values():
         return True
@@ -179,7 +176,7 @@ def assert_valid_combo(combo, pipeline_name):
             params_file(pipeline_name)))
 
 
-def software_params(combo):
+def get_software(combo):
     def softname(key):
         if key.endswith('_hash'):
             return key[:-5]
@@ -188,3 +185,9 @@ def software_params(combo):
         return ''
 
     return {softname(k): v for k, v in combo.items() if softname(k)}
+
+# def get_software(combos):
+#     """combos is a dict or list of dicts"""
+#     if isinstance(combos, dict):
+#         return _get_software(combos)
+#     return set(_concat([_get_software(combo).items() for combo in combos]))
