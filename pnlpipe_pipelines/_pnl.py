@@ -4,10 +4,14 @@ from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
 import hashlib
 from plumbum import local, FG
 from pnlscripts import TemporaryDirectory, dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py
+import pnlpipe_config
 import logging
 from python_log_indenter import IndentedLoggerAdapter
 logger = logging.getLogger(__name__)
 log = IndentedLoggerAdapter(logger, indent_char='.')
+
+OUTDIR = local.path(pnlpipe_config.OUTDIR)
+
 
 # defaults that pipelines can use
 bet_threshold = 0.1
@@ -40,8 +44,8 @@ def dag_filepath(node, ext, caseid_dir=True):
         if ext and not ext.startswith('.'):
             ext = '.' + ext
         if caseid_dir:
-            return local.path(config.OUTDIR) / caseid / showCompressedDAG(node) + ext
-        return local.path(config.OUTDIR) / showCompressedDAG(node) + ext
+            return OUTDIR / caseid / showCompressedDAG(node) + ext
+        return OUTDIR / showCompressedDAG(node) + ext
 
 
 def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
@@ -61,8 +65,21 @@ def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
         ext = '.' + ext
 
     if caseid_dir:
-        return local.path(config.OUTDIR) / caseid / (nodestem + ext)
-    return local.path(config.OUTDIR) / (nodestem + ext)
+        return OUTDIR / caseid / (nodestem + ext)
+    return OUTDIR / (nodestem + ext)
+
+
+def lookupInputKey(key, caseid):
+    try:
+        pathFormat = pnlpipe_config.INPUT_KEYS[key]
+        caseid_placeholder = pnlpipe_config.INPUT_KEYS['caseid_placeholder']
+        filepath = local.path(pathFormat.replace(caseid_placeholder, caseid))
+        return filepath
+    except KeyError as e:
+        msg = """Key '{}' not found in pnlpipe_config.py:INPUT_KEYS.
+It might be misspelled, or you might need to add it if it's missing.
+""".format(e.args[0])
+        raise Exception(msg)
 
 
 # class PNLNode(Node):

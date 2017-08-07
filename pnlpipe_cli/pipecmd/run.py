@@ -10,9 +10,13 @@ from ..display import printVertical
 from ..readparams import read_grouped_combos, software_params, make_pipeline
 import pnlpipe_pipelines
 import pnlpipe_software
-import importlib
+
 
 OBSID_KEY = getattr(pnlpipe_config, 'OBSID_KEY', 'caseid')
+
+
+def _concat(l):
+    return l if l == [] else [item for sublist in l for item in sublist]
 
 class Run(cli.Application):
     """Runs pipeline"""
@@ -47,39 +51,45 @@ class Run(cli.Application):
         grouped_combos = read_grouped_combos(pipeline_name, assert_valid_combos=True)
 
         # Check that prerequisite software is installed
-        for paramid, combo, caseids in grouped_combos:
-            for softname, version in software_params(combo).items():
-                modulefile = pnlpipe_software.module_file(softname)
-                if not modulefile.exists():
-                    missing_software_modules.append(modulefile)
-                    continue
-                module = pnlpipe_software.import_module(softname)
-                softpath = local.path(module.get_path(version))
-                if not softpath.exists():
-                    missing_software.append(module.get_path(version))
-                log.info("{} exists".format(softpath))
+        software = set(
+                    _concat([software_params(combo).items() for (_,combo,_) in grouped_combos]))
+        for softname, version in software:
+            modulefile = pnlpipe_software.module_file(softname)
+            if not modulefile.exists():
+                missing_software_modules.append(modulefile)
+                continue
+            module = pnlpipe_software.import_module(softname)
+            softpath = local.path(module.get_path(version))
+            if not softpath.exists():
+                missing_software.append(module.get_path(version))
+                continue
+            log.info("{} exists".format(softpath))
 
         for f in missing_software_modules:
-            log.warning("missing {}".format(f))
+            log.critical("missing {}".format(f))
         for p in missing_software:
-            log.warning("missing: {}".format(p))
+            log.critical("missing: {}".format(p))
         if missing_software_modules:
             sys.exit(1)
         if missing_software:
             errmsg = """
 Some pnlpipe_software components are missing and so some parts of the pipeline won't run.
-Run './pnlpipe {} make' to build all prequisite pnlpipe_software.
+Run './pnlpipe {} setup' to build all prequisite pnlpipe_software.
             """.format(pipeline_name)
             errmsgFS = """
 Some pnlpipe_software components are missing and so some parts of the pipeline won't run.
-Run './pnlpipe {} make' to build all prequisite pnlpipe_software and make sure FREESURFER_HOME is set.
+Run './pnlpipe {} setup' to build all prequisite pnlpipe_software and make sure FREESURFER_HOME is set.
             """.format(pipeline_name)
 
             # TODO ad hoc check for FreeSurfer
             for soft in missing_software:
                 if 'FREESURFER_HOME' in soft:
-                    raise Exception(errmsgFS)
-            raise Exception(errmsg)
+                    print(errmsgFS)
+                    sys.exit(1)
+                    # raise Exception(errmsgFS)
+            # raise Exception(errmsg)
+            print(errmsg)
+            sys.exit(1)
 
         for paramid, combo, caseids in grouped_combos:
 
@@ -94,6 +104,8 @@ Run './pnlpipe {} make' to build all prequisite pnlpipe_software and make sure F
                 update(pipeline[target])
                 continue
             else:
+                print("## Pipeline {} ({} cases)".format(paramid, len(caseids)))
+                printVertical(combo)
                 caseids = arg_caseids if arg_caseids else caseids
                 for caseid in caseids:
                     # print(['caseid']+combo.keys())
@@ -102,9 +114,10 @@ Run './pnlpipe {} make' to build all prequisite pnlpipe_software and make sure F
                     fullCombo = {}
                     fullCombo.update(combo)
                     fullCombo[OBSID_KEY] = caseid
+                    print('Parameters:')
                     printVertical(fullCombo, keys=[OBSID_KEY] + combo.keys())
                     print('')
-                    pipeline = make_pipeline(pipeline_name, combo, caseid)
+                    pipeline = make_pipeline(pipeline_name, combo, caseid=caseid)
                     log.info("Make target tagged '{}'".format(target))
                     if self.question:
                         nodeAndReason = upToDate(pipeline[target])
