@@ -104,19 +104,22 @@ Run './pnlpipe {} setup' to build all prequisite pnlpipe_software and make sure 
                 update(pipeline[target])
                 continue
             else:
+                print('')
                 print("## Pipeline {} ({} cases)".format(paramid, len(caseids)))
-                printVertical(combo)
                 caseids = arg_caseids if arg_caseids else caseids
+                print('')
+                print('Parameters:')
+                printVertical(dict(combo, caseids=caseids))
                 for caseid in caseids:
                     # print(['caseid']+combo.keys())
                     # print(dict(combo,caseid=caseid))
                     print('')
-                    fullCombo = {}
-                    fullCombo.update(combo)
-                    fullCombo[OBSID_KEY] = caseid
-                    print('Parameters:')
-                    printVertical(fullCombo, keys=[OBSID_KEY] + combo.keys())
-                    print('')
+                    # fullCombo = {}
+                    # fullCombo.update(combo)
+                    # fullCombo[OBSID_KEY] = caseid
+                    # print('Parameters:')
+                    # printVertical(fullCombo, keys=[OBSID_KEY] + combo.keys())
+                    print('Update caseid: {}'.format(caseid))
                     pipeline = make_pipeline(pipeline_name, combo, caseid=caseid)
                     log.info("Make target tagged '{}'".format(target))
                     if self.question:

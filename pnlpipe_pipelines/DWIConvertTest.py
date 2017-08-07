@@ -1,9 +1,6 @@
 from plumbum import local
-from pnlpipe_pipelines._pnl import *
-from pnlpipe_lib import OUTDIR
-import pnlpipe_lib.dag as dag
+from pnlpipe_pipelines._pnl import node, NrrdOutput, NiftiOutput, CsvOutput, InputPathFromKey
 import pnlpipe_software as soft
-from pnlpipe_cli import read_grouped_combos
 import pandas as pd
 import sys
 if sys.version_info[0] < 3:
@@ -15,38 +12,31 @@ log = logging.getLogger(__name__)
 
 
 @node(params=['BRAINSTools_hash', 'DWIConvert_flags'], deps=['dwi'])
-class DwiNrrd(Node):
+class DwiNrrd(NrrdOutput):
     def static_build(self):
         with soft.BRAINSTools.env(self.BRAINSTools_hash):
             dwiconvert_py['-i', self.dwi, '-o', self.output(), '--flags',
                           self.DWIConvert_flags] & LOG
 
-    def output(self):
-        return hash_filepath(
-            self, '.nrrd', caseid_dir=True, extra_words=self.DWIConvert_flags)
-        # return dag_filepath(self, '.nrrd', caseid_dir=True)
+    def extra_output_names(self):
+        return self.DWIConvert_flags.split()
 
 
 @node(params=['BRAINSTools_hash', 'DWIConvert_flags'], deps=['dwi'])
-class DwiNifti(Node):
+class DwiNifti(NiftiOutput):
     def static_build(self):
         with soft.BRAINSTools.env(self.BRAINSTools_hash):
             dwiconvert_py['-i', self.dwi, '-o', self.output(), '--flags',
                           self.DWIConvert_flags] & LOG
 
-    def output(self):
-        # return dag_filepath(self, '.nii.gz', caseid_dir=True)
-        return hash_filepath(
-            self,
-            '.nii.gz',
-            caseid_dir=True,
-            extra_words=self.DWIConvert_flags)
+    def extra_output_names(self):
+        return self.DWIConvert_flags.split()
 
 
 @node(
     params=['caseid', 'nrrdchecker_hash', 'BRAINSTools_hash'],
     deps=['nrrd1', 'nrrd2'])
-class NrrdCompareCsv(Node):
+class NrrdCompareCsv(NrrdOutput):
     def static_build(self):
         binarypath = soft.nrrdchecker.get_path(self.nrrdchecker_hash)
         nrrdchecker = local[binarypath]
@@ -56,12 +46,8 @@ class NrrdCompareCsv(Node):
         csv['BRAINSTools_hash'] = self.BRAINSTools_hash
         csv.to_csv(self.output().__str__(), index=False)
 
-    def output(self):
-        return hash_filepath(
-            self,
-            '.csv',
-            caseid_dir=True,
-            extra_words=[self.BRAINSTools_hash])
+    def extra_output_names(self):
+        return [self.BRAINSTools_hash]
 
 
 def make_pipeline(caseid,
@@ -93,6 +79,7 @@ DEFAULT_TARGET = 'csv'
 
 def summarize(extra_flags=None):
     from pnlpipe_lib import OUTDIR
+    from pnlpipe_cli import read_grouped_combos
 
     pipename = local.path(__file__).stem
     log.info("Combine all csvs into one")

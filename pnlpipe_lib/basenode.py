@@ -138,23 +138,20 @@ def node(params=None, deps=None):
     depNames = deps
 
     def class_rebuilder(Cls):
-        for abstractmethod in Cls.__abstractmethods__:
+        abstractmethods = Node.__abstractmethods__ | getattr(Cls,'__abstractmethods__', frozenset())
+
+        for abstractmethod in abstractmethods:
             if abstractmethod in ['params', 'deps']:
                 continue
 
             if not hasattr(Cls, abstractmethod):
-                raise Exception("basenode: {} is missing method {}".format(
+                raise Exception("basenode: {} is missing method '{}'".format(
                     Cls, abstractmethod))
             method = getattr(Cls, abstractmethod)
 
             if isinstance(method, abc.abstractproperty):
                 raise Exception(
                     "basenode: {} is missing abstract property '{}'".format(
-                        Cls, abstractmethod))
-
-            if isinstance(method, abc.abstractmethod):
-                raise Exception(
-                    "basenode: {} is missing abstract method '{}'".format(
                         Cls, abstractmethod))
 
             if not callable(method):

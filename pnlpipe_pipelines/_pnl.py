@@ -1,17 +1,12 @@
-from pnlpipe_lib import *
-import pnlpipe_lib.dag as dag
+from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG
 from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
-import hashlib
 from plumbum import local, FG
 from pnlscripts import TemporaryDirectory, dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py
-import pnlpipe_config
+import pnlpipe_cli.caseidnode as caseidnode
 import logging
 from python_log_indenter import IndentedLoggerAdapter
 logger = logging.getLogger(__name__)
 log = IndentedLoggerAdapter(logger, indent_char='.')
-
-OUTDIR = local.path(pnlpipe_config.OUTDIR)
-
 
 # defaults that pipelines can use
 bet_threshold = 0.1
@@ -26,97 +21,9 @@ ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              10, "--stepLength", 0.3]
 
 
-def _find_caseid(root):
-        nodes = dag.preorder(root)
-        caseid_nodes = [n for n in nodes if n.tag == 'caseid']
-        caseids = {n.value for n in caseid_nodes}
-        if len(caseids) > 1:
-            raise Exception("{}: More than one caseid found in this DAG!".format(
-                dag.showCompressedDAG(root)))
-        if not caseid_nodes:
-            raise Exception("{}: No caseid found in this DAG".format(
-                dag.showCompressedDAG(node)))
-        return caseid_nodes[0].value
-
-
-def dag_filepath(node, ext, caseid_dir=True):
-        caseid = _find_caseid(node)
-        if ext and not ext.startswith('.'):
-            ext = '.' + ext
-        if caseid_dir:
-            return OUTDIR / caseid / showCompressedDAG(node) + ext
-        return OUTDIR / showCompressedDAG(node) + ext
-
-
-def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
-    def _hashstring(s):
-        hasher = hashlib.md5()
-        hasher.update(s)
-        return hasher.hexdigest()[:10]
-
-    caseid = _find_caseid(node)
-    extras = [caseid] + extra_words if extra_words else [caseid]
-    dagstr = dag.showDAG(node)
-    for extra in extras:
-        dagstr = dagstr.replace(extra, '')
-    nodestem = '{}-{}-{}'.format(node.tag, '-'.join(extras),
-                                     _hashstring(dagstr))
-    if ext and not ext.startswith('.'):
-        ext = '.' + ext
-
-    if caseid_dir:
-        return OUTDIR / caseid / (nodestem + ext)
-    return OUTDIR / (nodestem + ext)
-
-
-def lookupInputKey(key, caseid):
-    try:
-        pathFormat = pnlpipe_config.INPUT_KEYS[key]
-        caseid_placeholder = pnlpipe_config.INPUT_KEYS['caseid_placeholder']
-        filepath = local.path(pathFormat.replace(caseid_placeholder, caseid))
-        return filepath
-    except KeyError as e:
-        msg = """Key '{}' not found in pnlpipe_config.py:INPUT_KEYS.
-It might be misspelled, or you might need to add it if it's missing.
-""".format(e.args[0])
-        raise Exception(msg)
-
-
-# class PNLNode(Node):
-#     def write_provenance(self):
-#             def isLeaf(n):
-#                 if isinstance(n, dag.Leaf):
-#                     return True
-#                 if not n.deps:
-#                     return True
-#                 return False
-
-#             allnodes = dag.preorder(self)
-#             srcnodes = [n for n in allnodes
-#                         if not isinstance(n, dag.Leaf) and not n.deps]
-#             parameters = {"{}: {}".format(n.tag, 'None'
-#                                         if not n.value else n.value)
-#                         for n in allnodes if isinstance(n, dag.Leaf)}
-#             nodepath = local.path(self.output())
-#             outpath = nodepath + '.provenance'
-#             srcpaths = {n.output() for n in srcnodes}
-#             with open(outpath, 'w') as f:
-#                 f.write('Compressed DAG:\n')
-#                 f.write(dag.showCompressedDAG(self, isLeaf=isLeaf) + '\n\n')
-#                 f.write('Source Paths:\n')
-#                 f.write('\n'.join(srcpaths) + '\n\n')
-#                 f.write('Parameters:\n')
-#                 f.write('\n'.join(parameters) + '\n\n')
-#                 f.write('Full DAG:\n')
-#                 f.write(dag.showDAG(self))
-
-
 
 @node(params=['key', 'caseid'])
-class InputPathFromKey(Node):
-    def output(self):
-        return lookupInputKey(self.key, self.caseid)
-
+class InputPathFromKey(caseidnode.InputPathFromKey):
     def stamp(self):
         def get_associated_files(filepath):
             result = []
@@ -142,44 +49,32 @@ class InputPathFromKey(Node):
             return reduce_hash([filehash(f) for f in allfiles], 'md5')
         return filehash(self.output())
 
-    def show(self):
-        return self.output()
 
-
-class AutoOutput(Node):
-    @abc.abstractproperty
-    def ext(self):
-        """Extension of output"""
-
-    def output(self):
-        return hash_filepath(self, self.ext)
-
-
-class NrrdOutput(AutoOutput):
+class NrrdOutput(caseidnode.AutoOutput):
     @property
     def ext(self):
         return '.nrrd'
 
 
-class NiftiOutput(AutoOutput):
+class NiftiOutput(caseidnode.AutoOutput):
     @property
     def ext(self):
         return '.nii.gz'
 
 
-class DirOutput(AutoOutput):
+class DirOutput(caseidnode.AutoOutput):
     @property
     def ext(self):
         return ''
 
 
-class CsvOutput(AutoOutput):
+class CsvOutput(caseidnode.AutoOutput):
     @property
     def ext(self):
         return '.csv'
 
 
-class VtkOutput(AutoOutput):
+class VtkOutput(caseidnode.AutoOutput):
     @property
     def ext(self):
         return '.vtk'
@@ -380,16 +275,3 @@ class TractMeasures(CsvOutput):
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
                          self.deps['wmql'].showCompressedDAG(
                          ), '-o', self.output(), '-i', vtks] & FG
-
-
-def showCompressedDAG(node):
-    def isLeaf(n):
-        if isinstance(n, InputPathFromKey):
-            return True
-        if isinstance(n, InputFile):
-            return True
-        if not n.children:
-            return True
-        return False
-
-    return dag.showCompressedDAG(node, isLeaf=isLeaf)

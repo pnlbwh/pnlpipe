@@ -9,7 +9,8 @@ def printVertical(d, prepend='', keys=None, fd=sys.stderr):
     if not keys:
         keys = d.keys()
     for k in keys:
-        fd.write("{}{:<25} {:<15}".format(prepend, k, d[k]) + '\n')
+        val = d[k] or 'None'
+        fd.write("{}{:<25} {:<15}".format(prepend, k, val) + '\n')
 
 
 def printTable(d, colList=None):

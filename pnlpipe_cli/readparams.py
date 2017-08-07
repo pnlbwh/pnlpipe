@@ -8,11 +8,7 @@ import pnlpipe_pipelines
 import pnlpipe_config
 from pnlpipe_lib import Node
 
-OBSID_KEY = getattr(pnlpipe_config, 'OBSID_KEY', 'caseid')
-
-
-def concat(l):
-    return l if l == [] else [item for sublist in l for item in sublist]
+OBSID_KEY = 'caseid'
 
 
 def params_file(pipeline_name):
