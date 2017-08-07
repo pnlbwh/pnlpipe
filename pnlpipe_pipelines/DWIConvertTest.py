@@ -3,6 +3,7 @@ from pnlpipe_pipelines._pnl import *
 from pnlpipe_lib import OUTDIR
 import pnlpipe_lib.dag as dag
 import pnlpipe_software as soft
+from pnlpipe_cli import read_grouped_combos
 import pandas as pd
 import sys
 if sys.version_info[0] < 3:
@@ -90,11 +91,13 @@ def make_pipeline(caseid,
 DEFAULT_TARGET = 'csv'
 
 
-def status(grouped_combos):
+def summarize(extra_flags=None):
+    from pnlpipe_lib import OUTDIR
 
+    pipename = local.path(__file__).stem
     log.info("Combine all csvs into one")
     csvs = []
-    for paramid, combo, caseids in grouped_combos:
+    for paramid, combo, caseids in read_grouped_combos(pipename):
         pipelines = [make_pipeline(**dict(combo, caseid=caseid)) for caseid in caseids]
         csvs.extend([pipeline['csv'].output().__str__() for pipeline in pipelines])
 

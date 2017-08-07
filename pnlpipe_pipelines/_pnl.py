@@ -65,6 +65,36 @@ def hash_filepath(node, ext, caseid_dir=True, extra_words=[]):
     return local.path(config.OUTDIR) / (nodestem + ext)
 
 
+# class PNLNode(Node):
+#     def write_provenance(self):
+#             def isLeaf(n):
+#                 if isinstance(n, dag.Leaf):
+#                     return True
+#                 if not n.deps:
+#                     return True
+#                 return False
+
+#             allnodes = dag.preorder(self)
+#             srcnodes = [n for n in allnodes
+#                         if not isinstance(n, dag.Leaf) and not n.deps]
+#             parameters = {"{}: {}".format(n.tag, 'None'
+#                                         if not n.value else n.value)
+#                         for n in allnodes if isinstance(n, dag.Leaf)}
+#             nodepath = local.path(self.output())
+#             outpath = nodepath + '.provenance'
+#             srcpaths = {n.output() for n in srcnodes}
+#             with open(outpath, 'w') as f:
+#                 f.write('Compressed DAG:\n')
+#                 f.write(dag.showCompressedDAG(self, isLeaf=isLeaf) + '\n\n')
+#                 f.write('Source Paths:\n')
+#                 f.write('\n'.join(srcpaths) + '\n\n')
+#                 f.write('Parameters:\n')
+#                 f.write('\n'.join(parameters) + '\n\n')
+#                 f.write('Full DAG:\n')
+#                 f.write(dag.showDAG(self))
+
+
+
 @node(params=['key', 'caseid'])
 class InputPathFromKey(Node):
     def output(self):

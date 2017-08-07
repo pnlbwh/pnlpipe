@@ -5,34 +5,37 @@ from ..readparams import read_grouped_combos, make_pipeline
 from ..display import printVertical
 import sys
 
-def stripKeys(dic, strs):
-    def strip(s, strs):
-        if not strs:
-            return s
-        else:
-            return strip(s.replace(strs[0], ''), strs[1:])
-
-    return {strip(k, strs): v for k, v in dic.items()}
-
+def _print(s=''):
+    print(s, file=sys.stderr)
 
 class Status(cli.Application):
-    extraFlags = cli.SwitchAttr(
-        ['--extra'], help="Extra flags passed to the pipeline's status function")
+    """Prints information about a pipeline and its progress."""
 
     def main(self):
-        # paramDescrips = [stripKeys(
-        #     dict(p['paramCombo']), ['hash_', 'version_']) for p in combos]
-
-
         grouped_combos = read_grouped_combos(self.parent.pipeline_name)
+
+        print("There are {} parameter combination(s) defined in '{}'.".format(len(grouped_combos), self.parent.params_file.relative_to(local.cwd)))
+
         for paramid, combo, caseids in grouped_combos:
             counts = {}
+            caseids = caseids or [None]
 
-            print('', file=sys.stderr)
+            _print()
             print("## Parameter Combination {} ({} case(s))".format(
                 paramid, len(caseids)), file=sys.stderr)
-            print('', file=sys.stderr)
-            printVertical(combo)
+            _print()
+            _print('Parameters:')
+            printVertical(dict(combo, caseids=caseids),
+                          keys=combo.keys() + ['caseids'])
+
+            pipeline = make_pipeline(self.parent.pipeline_name, combo, caseids[0])
+            pathsmap = {'caseid_placeholder': caseids[0]}
+            for tag, node in pipeline.items():
+                pathsmap[tag] = local.path(node.output()).relative_to(local.cwd)
+            _print()
+            _print('Paths:')
+            printVertical(pathsmap, keys=['caseid_placeholder'] + \
+                          [k for k in pathsmap.keys() if k not in ['caseid_placeholder']])
 
             for caseid in caseids:
                 pipeline = make_pipeline(self.parent.pipeline_name, combo, caseid)
@@ -42,17 +45,17 @@ class Status(cli.Application):
                     else:
                         counts[tag] = counts.get(tag, 0) + 0
 
-            counts['cases'] = len(caseids)
+            counts['#cases'] = len(caseids)
             print('', file=sys.stderr)
             header = counts.keys()
-            header.remove('cases')
-            printTable(counts, header + ['cases'])
+            header.remove('#cases')
+            printTable(counts, header + ['#cases'])
 
         # call pipeline's custom status
-        print('')
-        if hasattr(self.parent, 'status'):
-            print
-            if self.extraFlags:
-                self.parent.status(grouped_combos, extraFlags=self.extraFlags.split())
-            else:
-                self.parent.status(grouped_combos)
+        # print('')
+        # if hasattr(self.parent, 'status'):
+        #     print
+        #     if self.extraFlags:
+        #         self.parent.status(grouped_combos, extraFlags=self.extraFlags.split())
+        #     else:
+        #         self.parent.status(grouped_combos)

@@ -22,9 +22,3 @@ Set it in pnlpipe_config.py.
 class InputFile(basenode.Node):
     def output(self):
         return self.params['filepath']
-
-
-# @basenode.node(params=['key', 'obsid'])
-# class InputKey(basenode.Node):
-#     def output(self):
-#         return lookupInputKey(self.params['key'], self.params['obsid'])
