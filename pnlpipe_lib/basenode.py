@@ -61,7 +61,7 @@ class Node(dag.Node):
                       for n in allnodes if isinstance(n, dag.Leaf)}
         nodepath = local.path(self.output())
         outpath = nodepath + '.provenance'
-        srcpaths = {n.output() for n in srcnodes}
+        srcpaths = {"{}: {}".format(n.params, n.output()) for n in srcnodes}
         with open(outpath, 'w') as f:
             f.write('Compressed DAG:\n')
             f.write(dag.showCompressedDAG(self, isLeaf=isLeaf) + '\n\n')

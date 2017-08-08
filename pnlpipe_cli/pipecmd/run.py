@@ -93,7 +93,7 @@ Run './pnlpipe {} setup' to build all prequisite pnlpipe_software and make sure 
             caseids = arg_caseids if arg_caseids else caseids
             print('')
             print('Parameters:')
-            printVertical(dict(combo, caseids=caseids))
+            printVertical(dict(combo, caseids=caseids), keys=combo.keys() + ['caseids'])
             for caseid in caseids:
                 # print(['caseid']+combo.keys())
                 # print(dict(combo,caseid=caseid))
