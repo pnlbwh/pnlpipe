@@ -43,6 +43,10 @@ def _read_param_dicts(ymlfile):
 
 def interpret_caseids(paramval):
     if '/' in paramval[0]:
+        if not local.path(paramval[0]).exists():
+            print("Missing file '{}'. Make this first.".format(paramval[0]))
+            import sys
+            sys.exit(1)
         with open(paramval[0], 'r') as f:
             return [line.split()[0] for line in f.read().splitlines()
                     if not line.startswith('#')]
@@ -111,7 +115,7 @@ def _group_by(combos, exclude_key):
 
 
 def read_grouped_combos(pipeline_name,
-                        assert_valid_combos=False,
+                        assert_valid_combos=True,
                         exclude_key=OBSID_KEY):
     """Return parameter combinations grouped by all values
     except an observational id along with a list of the obervational

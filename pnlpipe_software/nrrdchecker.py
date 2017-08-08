@@ -22,7 +22,8 @@ def make(hash=DEFAULT_HASH):
             stack['setup'] & FG
             stack['build'] & FG
             binary = stack('exec', 'which', 'nrrdchecker')[:-1]
-            local.path(binary).move(get_path(sha))
+            get_path(sha).mkdir()
+            local.path(binary).move(get_path(sha) / 'nrrdchecker')
         symlink = get_path(date)
         print("Make symlink: {} -> {}".format(symlink, get_path(sha)))
         get_path(date).unlink()
@@ -33,3 +34,7 @@ def make(hash=DEFAULT_HASH):
 
 def get_path(hash=DEFAULT_HASH):
     return getSoftDir() / ('nrrdchecker-' + hash)
+
+
+def env_dict(hash):
+    return { 'PATH': get_path(hash)}

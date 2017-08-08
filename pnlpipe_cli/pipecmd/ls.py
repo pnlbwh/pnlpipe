@@ -4,6 +4,7 @@ from ..display import printVertical
 from ..readparams import read_grouped_combos, make_pipeline
 from . import ParamApp
 import logging
+log = logging.getLogger(__name__)
 import sys
 
 
@@ -22,6 +23,7 @@ def print_node_path(nodepath,
 
 
 class Ls(ParamApp):
+    """List given pipeline file paths."""
 
     print_csv = cli.Flag(
         ['-c', '--csv'],
@@ -48,7 +50,8 @@ class Ls(ParamApp):
         default=False,
         help="Print file path whether it exists or not")
 
-    def main(self, *keys):
+    def main(self, *tags):
+
         ignore_caseids = self.ignore_caseids.split()
         if len(ignore_caseids) == 1 and './' in ignore_caseids[0]:
             ignore_caseids = interpret_caseids(ignore_caseids[0])
@@ -68,13 +71,14 @@ class Ls(ParamApp):
 
             for caseid in caseids:
                 pipeline = make_pipeline(pipeline_name, combo, caseid)
-                for key in keys:
-                    if key not in pipeline.keys():
-                        raise Exception(
-                            "Tag '{}' not defined for pipeline '{}' (Run './pnlpipe {} keys' to see list)".format(
-                                key, pipeline_name, pipeline_name))
+                for tag in tags:
+                    if tag not in pipeline.keys():
+                        log.error(
+                            "Tag '{}' not defined for pipeline '{}' (Run './pnlpipe {} status' to see list, or look in 'pnlpipe_pipelines/{}.py)".format(
+                                tag, pipeline_name, pipeline_name, pipeline_name))
+                        sys.exit(1)
                 for tag, node in pipeline.items():
-                    if tag not in keys:
+                    if tag not in tags:
                         continue
                     if self.print_missing == local.path(node.output()).exists(
                     ) and not self.print_all:
