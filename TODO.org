@@ -5,11 +5,8 @@
 ** move atlas.py root flags to subcommands (otherwise help doesn't work)
 * Todo
 ** STY: rename extra_words/be specific on what it does
-** STY: replace _env.sh with env command
 ** STY: static_build -> build
 ** STY/ENH: add inputkeys values in provenance files
-** STY: fix paramid error messages
-** ENH: add --dry run flag to say whether it would rebuild or not
 ** ENH: add validators to pipeline (e.g. dwi validator/nrrdchecker)
 ** ENH: add permutation check to bse.py (currently assumes correct dwi permutation)
 ** ENH: add check for correct DWI axes permutation

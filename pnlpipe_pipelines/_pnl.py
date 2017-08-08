@@ -275,3 +275,33 @@ class TractMeasures(CsvOutput):
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
                          self.deps['wmql'].showCompressedDAG(
                          ), '-o', self.output(), '-i', vtks] & FG
+
+
+def summarize_tractmeasures(pipename, extra_flags=None):
+    from pnlpipe_lib import OUTDIR
+    from pnlpipe_cli import read_grouped_combos, make_pipeline
+
+    log.info("Combine all csvs into one")
+    dfs = []
+    for paramid, combo, caseids in read_grouped_combos(pipename):
+        pipelines = [make_pipeline(pipename, combo, caseid) for caseid in caseids]
+        csvs = ([pipeline['tractmeasures'].output().__str__() for pipeline in pipelines if \
+                     pipeline['tractmeasures'].output().exists()])
+        if csvs:
+            df = pd.concat(filter(lambda x: x is not None, (pd.read_csv(csv) for csv in csvs)))
+            df['pipelineId'] = paramid
+            dfs.append(df)
+    if dfs:
+        from pnlscripts.summarizeTractMeasures import summarize
+        df = pd.concat(dfs)
+        df_summary = summarize(df)
+        #if 'csv' in extraFlags:
+        outcsv = OUTDIR / (pipename + '-tractmeasures.csv')
+        df.to_csv(outcsv.__str__(), header=True, index=False)
+        log.info("Made '{}'".format(outcsv))
+        outcsv_summary = OUTDIR / (pipename + '-tractmeasures-summary.csv')
+        #df_summary.to_csv(outcsv_summary.__str__(), header=True, index=False)
+        df_summary.to_csv(outcsv_summary.__str__(), header=True)
+        log.info("Made '{}'".format(outcsv_summary))
+    else:
+        log.info("No csvs found yet.")

@@ -56,3 +56,8 @@ def make_pipeline(caseid,
     return tags
 
 DEFAULT_TARGET = 'tractmeasures'
+
+
+def summarize(extra_flags=None):
+    pipename = local.path(__file__).stem
+    summarize_tractmeasures(pipename, extra_flags)
