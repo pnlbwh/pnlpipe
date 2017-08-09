@@ -8,25 +8,24 @@ from ..readparams import params_file
 
 PARAMS_HELP = \
 """# Use one of the following formats for 'caseid'
-#    caseid: '001'
 #    caseid: ['001', '002', '003']
 #    caseid:
 #       - '001'
 #       - '002'
 #       - '003'
-#    caseid: ./caselist-controls.txt  # The '/' tells pnlpipe that this is a file
+#    caseid: [./caselist.txt]  # The '/' tells pnlpipe that this is a file
 #
 # Note that you need to wrap your caseid in quotes if it is an integer like
 # above, otherwise the yaml reader will read them as 1, 2, 3, etc. instead of
 # '001', '002', '003'.
 #
-# The values for keys like dwiKey come from the names in inputPaths.yml. For
-# example,
-#    dwiKey: ['dwiharmonized', 'dwi']
+# The values for keys like inputDwiKey come from the names in INPUT_KEYS in
+# pnlpipe_config.py. For # example,
+#
+#    inputDwiKey: ['dwiharmonized', 'dwi']
+#
 # means that the pipeline will be run for the filepaths of 'dwiharmonized' and
-# 'dwi' in inputPaths.yml (caseid will automatically be substituted). These are
-# meant to be descriptive names that describe your input paths and are used in
-# naming the generated output.
+# 'dwi' in pnlpipe.config.INPUT_KEYS. (caseid will automatically be substituted).
 
 """
 

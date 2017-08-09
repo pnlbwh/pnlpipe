@@ -146,7 +146,6 @@ class DwiEpiMask(NrrdOutput):
             (slicecmd | binarizecmd | gzipcmd) & FG
 
 
-
 @node(params=['BRAINSTools_hash'], deps=['strct'])
 class StrctXc(NrrdOutput):
     """Axis aligns and centers structural (nifti or nrrd)"""
