@@ -57,11 +57,15 @@ def makeSubcommandClass(pipeline_name,
         return make_pipelineFn(*args, **kwargs)
 
     params_file = readparams.params_file(pipeline_name)
+    doc = ""
+    if make_pipelineFn.__doc__:
+        doc = make_pipelineFn.__doc__.split('\n')[0]
     newclass = type(pipeline_name, (BaseClass, ), {"pipeline_name": pipeline_name,
                                           "make_pipeline": wrappedMakePipeline,
                                           "make_pipeline_orig": make_pipelineFn,
                                           "params_file": params_file,
-                                          "default_target": default_target})
+                                           "default_target": default_target,
+                                                   "__doc__": doc})
 
     if summarizeFn:
 

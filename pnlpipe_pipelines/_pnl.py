@@ -119,6 +119,34 @@ class DwiMaskBet(NrrdOutput):
                    self.output())
 
 
+@node(params=['BRAINSTools_hash'], deps=['dwi', 'dwimask', 't2', 't2mask'])
+class DwiEpi(NrrdOutput):
+    """DWI EPI correction."""
+
+    def static_build(self):
+        with BRAINSTools.env(self.BRAINSTools_hash):
+            from pnlscripts.util.scripts import epi_py
+            epi_py('--force',
+                   '--dwi', self.dwi,
+                   '--dwimask', self.dwimask,
+                   '--t2', self.t2,
+                   '--t2mask', self.t2mask,
+                   '-o', self.output())
+
+
+@node(params=['BRAINSTools_hash'], deps=['dwi'])
+class DwiEpiMask(NrrdOutput):
+    """Generates a mask from an EPI corrected DWI, which is already skullstripped."""
+
+    def static_build(self):
+        with BRAINSTools.env(self.BRAINSTools_hash):
+            slicecmd = unu["slice", "-a", "3", "-p", 0, "-i", self.dwi]
+            binarizecmd = unu["3op", "ifelse", "-", 1, 0]
+            gzipcmd = unu["save", "-e", "gzip", "-f", "nrrd", "-o", self.output()]
+            (slicecmd | binarizecmd | gzipcmd) & FG
+
+
+
 @node(params=['BRAINSTools_hash'], deps=['strct'])
 class StrctXc(NrrdOutput):
     """Axis aligns and centers structural (nifti or nrrd)"""
@@ -160,6 +188,25 @@ class T1wMaskMabs(NrrdOutput):
             atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir,
                      trainingCsv] & FG
             (tmpdir / 'mask.nrrd').copy(self.output())
+
+
+@node(params=['BRAINSTools_hash'], deps=['moving', 'moving_mask', 'fixed'])
+class MaskRigid(NrrdOutput):
+    """Rigidly transforms a mask from one structural scan to another."""
+
+    def static_build(self):
+        with BRAINSTools.env(self.BRAINSTools_hash), local.tempdir() as tmpdir:
+            from pnlscripts.util.scripts import makeRigidMask_py
+            moving = tmpdir / 'moving.nrrd'
+            movingmask = tmpdir / 'movingmask.nrrd'
+            fixed = tmpdir / 'fixed.nrrd'
+            out = tmpdir / 'fixedmask.nrrd'
+            convertImage(self.moving, moving, self.BRAINSTools_hash)
+            convertImage(self.moving_mask, movingmask, self.BRAINSTools_hash)
+            convertImage(self.fixed, fixed, self.BRAINSTools_hash)
+            makeRigidMask_py('-i', moving, '--labelmap', movingmask,
+                             '--target', fixed, '-o', out)
+            out.move(self.output())
 
 
 @node(params=['FreeSurfer_version'], deps=['t1', 't1mask'])
