@@ -166,47 +166,129 @@ subject directories, you would run
 
     ./pnlpipe std ls -cx fs
 
-The `ls` command helps you inspect your data by piping the results to other
-commands.  Say you want to get the space directions of all your eddy
-corrected DWI's:
+The `ls` command helps you inspect your generated data or use it for other types of
+processing by piping its results to other commands. Say you want to get the
+space directions of all your eddy corrected DWI's, you could do the following:
 
     ./pnlpipe std ls dwied | unu head | grep 'space directions'
 
 
 # PNL: Running on the cluster
 
-The PNL uses a high performance computing cluster for most of its data processing.
-The cluster uses [LSF](https://en.wikipedia.org/wiki/Platform_LSF) to manage batch
-processing, and *pnlpipe* provides a Makefile that allows you to easily submit jobs
-to this system to run your pipelines.
+The PNL uses a high performance computing cluster for most of its data processing,
+and this cluster uses [LSF](https://en.wikipedia.org/wiki/Platform_LSF) to manage batch
+processing. *pnlpipe* provides a Makefile that allows you to easily submit your pipeline jobs
+to this system.
 
-First, edit `Makefile` and replace `std` in the line `PIPE := std` to the name
+Edit `Makefile` and replace `std` in the line `PIPE := std` to the name
 of the pipeline you wish to run. Now you can submit pipeline jobs for individual
-case ids like so:
+case ids like this:
 
     make 001-bsub8 002-bsub8 003-bsub8
 
-This submits an 8 core lsf job for each of the case ids `001`, `002`, and `003`.
-If resources are limited it might be better to ask for 4 core jobs:
+This submits an 8 core LSF job for each of the case ids `001`, `002`, and `003`.
+If resources are limited, 4 cores might be better:
 
     make 001-bsub4 002-bsub4 003-bsub4
 
-For a large case list, this method is too tedious, and it's possible that you accidentally submit
-a job for a case id that's already in the queue or being processed.  A better way is to
+For a large case list, this method is tedious and it's possible that you accidentally submit
+a job for a case id that's already in the queue or running.  A better way is to
 run
 
     make caselist-bsub8  # or, make caselist-bsub4
 
 This will iterate over each case id in `caselist.txt` and submit an 8 core job
 to the LSF system, but only if that case id is not already running (it uses the
-LSF command `bjobs` to figure out what's currently running). If your caselist is
-named something other than `caselist.txt`, edit the `Makefile` and modify the
-line `CASELIST := caselist.txt` to point to your file.
+LSF command `bjobs` to determine this). If your caselist is not named
+`caselist.txt`, edit the `Makefile` and modify the line `CASELIST :=
+caselist.txt` to point to your file.
 
-An alternative to modifying the Makefile is to set its variables on the command
+An alternative to modifying the Makefile is to set the variables on the command
 line:
 
     make PIPE=std CASELIST=caselist2.txt caselist-bsub8
 
 
 # Multiple Parameter Combinations
+
+Sometimes you'd like to run a pipeline using different parameters, for example
+when trying to optimize results, or to test out the effect of different software
+versions. The walkthrough briefly mentioned how to have multiple parameter values,
+but this section will provide more details.
+
+## Lists of parameter values
+
+Each pipeline has one parameters file: `pnlpipe_params/<pipeline>.params`. This
+is a file that is expected to be in [yaml](http://www.yaml.org/start.html)
+format and have either a single dictionary, or a list of dictionaries. The keys
+of the dictionaries are the names of the arguments to the `make_pipeline`
+function in the `pnlpipe_pipelines/<pipeline>.py`, and each key has a list of
+values. When this parameter file is read, every combination of parameter values
+is calculated, and each of these parameter combinations will be printed when you
+run `./pnlpipe <pipeline> status`, and each will be used by pipeline when you
+run `./pnlpipe <pipeline> run`.
+
+Here's a simple example.  Say we have a pipeline `pnlpipe_pipelines/simply.py`,
+with the following signature for `make_pipeline`:
+
+    def make_pipeline(caseid, inputDwiKey, someparam=0.1):
+       ...
+
+When you run `./pnlpipe simple init`, it will make a file like this:
+
+    caseid: [./caselist.txt]
+    inputDwiKey: ['*mandatory*']
+    someparam: [0.1]
+
+Now say that our `pnlpipe_config.py` looks like the following:
+
+        INPUT_KEYS = {
+        'caseid_placeholder': '{case},
+        'dwi': '../{case}/{case}-dwi.nhdr',
+        'dwiharm': '../{case}/{case}-dwi-harm.nhdr'
+        }
+
+where `dwi` stands for our raw DWI's, and `dwiharm` are some preprocessed
+versions. To run the `simple` pipeline on both types of DWI using the same
+caselist, we would make our parameters
+
+    caseid: [./caselist.txt]
+    inputDwiKey: [dwi, dwiharm]
+    someparam: [0.1]
+
+Then `./pnlpipe simple status` will show the parameters, output template paths,
+and progress for 2 parameter combinations, (`dwi`, `0.1`) and (`dwiharm`, `0.1`).
+If we made `someparam: [0.1, 0.2]`, then there would be 4 parameter combinations.
+
+## Lists of parameter dictionaries
+
+Say that for the above example, instead of running the pipeline for `someparam=0.1`
+and `someparam=0.2`  for both `dwi` and `dwiharm`, we only wanted to use `0.1` for
+`dwi` and `0.2` for `dwiharm`, we could achieve that by writing two separate parameter
+dictionaries:
+
+    - caseid: [./caselist.txt]
+      inputDwiKey: [dwi]
+      someparam: [0.1]
+
+
+    - caseid: [./caselist.txt]
+      inputDwiKey: [dwi]
+      someparam: [0.2]
+
+(Make sure that all the parameter names line up with `caseid`!). Another example
+is when you have input paths that are in different directories, each having
+different case lists. To run the pipeline on both sets of data, you would make 2
+or more dictionaries:
+
+    - caseid: [./caselist1.txt]
+      inputDwiKey: [dwi2]
+      someparam: [0.1]
+
+
+    - caseid: [./caselist2.txt]
+      inputDwiKey: [dwi2]
+      someparam: [0.1]
+
+
+# Writing your own pipelines

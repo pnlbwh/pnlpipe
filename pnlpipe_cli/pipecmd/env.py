@@ -22,6 +22,7 @@ class Env(ParamApp):
             self.paramid = 1
 
         grouped_combos = read_grouped_combos(self.parent.pipeline_name)
+        self.validate(len(grouped_combos))
 
         for paramid, combo, caseids in grouped_combos:
             if paramid != self.paramid:

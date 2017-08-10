@@ -58,7 +58,10 @@ class Ls(ParamApp):
 
         pipeline_name = self.parent.pipeline_name
 
-        for paramid, combo, caseids in read_grouped_combos(pipeline_name):
+        grouped_combos = read_grouped_combos(pipeline_name)
+        self.validate(len(grouped_combos))
+
+        for paramid, combo, caseids in grouped_combos:
 
             if self.paramid and paramid != self.paramid:
                 continue

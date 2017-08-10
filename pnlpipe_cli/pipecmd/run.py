@@ -31,6 +31,7 @@ class Run(ParamApp):
         ['-q', '--question'], default=False, help="Update no target, just print if up to date or not")
 
     def main(self, *arg_caseids):
+
         pipeline_name = self.parent.pipeline_name
         log.info('Run {} pipeline'.format(pipeline_name))
         target = self.want
@@ -41,6 +42,8 @@ class Run(ParamApp):
         missing_modules = []
         missing_paths = []
         grouped_combos = read_grouped_combos(pipeline_name, assert_valid_combos=True)
+
+        self.validate(len(grouped_combos))
 
         # Check that prerequisite software is installed
         software = set(_concat([get_software(combo).items() for (_,combo,_) in grouped_combos]))

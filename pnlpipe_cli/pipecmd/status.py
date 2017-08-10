@@ -14,7 +14,7 @@ class Status(cli.Application):
 
     def main(self):
         make_pipelineFn = pnlpipe_pipelines.get_make_pipeline(self.parent.pipeline_name)
-        print(make_pipelineFn.__doc__)
+        print(make_pipelineFn.__doc__ or 'No description.')
 
         grouped_combos = read_grouped_combos(self.parent.pipeline_name)
         print("There are {} parameter combination(s) defined in '{}'.".format(len(grouped_combos), self.parent.params_file.relative_to(local.cwd)))
