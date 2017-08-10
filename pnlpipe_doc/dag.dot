@@ -1,0 +1,14 @@
+digraph {
+  dwi -> dwixc -> dwied;
+  dwied -> dwimask;
+  dwied -> ukf;
+  dwimask -> ukf;
+  ukf -> wmql;
+  t1 -> t1mask;
+  t1 -> freesurfer;
+  t1mask -> freesurfer;
+  freesurfer -> fsindwi;
+  dwied -> fsindwi;
+  fsindwi -> wmql;
+  wmql -> tractmeasures;
+}

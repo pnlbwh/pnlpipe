@@ -2,7 +2,7 @@ from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
 import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
 from plumbum import local, FG
-from pnlscripts import TemporaryDirectory, dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py
+from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py
 import pnlpipe_cli.caseidnode as caseidnode
 import logging
 from python_log_indenter import IndentedLoggerAdapter
@@ -94,8 +94,7 @@ class DwiXc(NrrdOutput):
     """ Axis align and center a DWI. Accepts nrrd or nifti. """
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash), TemporaryDirectory(
-        ) as tmpdir:
+        with BRAINSTools.env(self.BRAINSTools_hash), local.tempdir() as tmpdir:
             inputnrrd = tmpdir / 'inputdwi.nrrd'
             dwiconvert_py['-f', '-i', self.dwi, '-o', inputnrrd] & LOG
             alignAndCenter_py['-i', inputnrrd, '-o', self.output()] & LOG
@@ -114,7 +113,7 @@ class DwiEd(NrrdOutput):
 class DwiMaskBet(NrrdOutput):
     def static_build(self):
         with BRAINSTools.env(self.BRAINSTools_hash), \
-             TemporaryDirectory() as tmpdir:
+             local.tempdir() as tmpdir:
             bet_py('--force', '-f', self.bet_threshold, '-i', self.dwi, '-o',
                    self.output())
 
@@ -152,7 +151,7 @@ class StrctXc(NrrdOutput):
 
     def static_build(self):
         with BRAINSTools.env(self.BRAINSTools_hash), \
-             TemporaryDirectory() as tmpdir:
+             local.tempdir() as tmpdir:
             nrrd = tmpdir / 'strct.nrrd'
             convertImage(self.strct, nrrd, self.BRAINSTools_hash)
             alignAndCenter_py['-i', nrrd, '-o', self.output()] & FG
@@ -173,7 +172,7 @@ class T1wMaskMabs(NrrdOutput):
     """Generates a T1w mask using multi-atlas brain segmentation."""
 
     def static_build(self):
-        with TemporaryDirectory() as tmpdir, BRAINSTools.env(
+        with local.tempdir() as tmpdir, BRAINSTools.env(
                 self.BRAINSTools_hash):
             tmpdir = local.path(tmpdir)
             # antsRegistration can't handle a non-conventionally named file, so
@@ -227,7 +226,7 @@ class FsInDwiDirect(NiftiOutput):
 
     def static_build(self):
         fssubjdir = self.fs.dirname.dirname
-        with TemporaryDirectory() as tmpdir, BRAINSTools.env(
+        with local.tempdir() as tmpdir, BRAINSTools.env(
                 self.BRAINSTools_hash):
             tmpoutdir = tmpdir / 'fsindwi'
             tmpdwi = tmpdir / 'dwi.nrrd'
@@ -248,7 +247,7 @@ class FsInDwiUsingT2(NiftiOutput):
 
     def static_build(self):
         fssubjdir = self.fs.dirname.dirname
-        with TemporaryDirectory() as tmpdir, BRAINSTools.env(
+        with local.tempdir() as tmpdir, BRAINSTools.env(
                 self.BRAINSTools_hash):
             tmpoutdir = tmpdir / 'fsindwi'
             dwi = tmpdir / 'dwi.nrrd'
@@ -280,8 +279,7 @@ class Ukf(VtkOutput):
     """UKF Tractography"""
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash), TemporaryDirectory(
-        ) as tmpdir:
+        with BRAINSTools.env(self.BRAINSTools_hash), local.tempdir() as tmpdir:
             tmpdir = local.path(tmpdir)
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'

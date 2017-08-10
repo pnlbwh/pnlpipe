@@ -55,7 +55,7 @@ find the input paths it needs. You only need to define this dictionary once.
 
 ## 2. Run your pipelines
 
-### Choose and setup a pipeline
+### Setup
 
 Premade pipelines are in the `pnlpipe_pipelines` directory. For example, the
 standard PNL pipeline is defined in `pnlpipe_pipelines/std.py`, and the EPI
@@ -108,7 +108,7 @@ see the results in `$PNLPIPE_SOFT`, such as `BRAINSTools-bin-2d5eccb/` and
 `UKFTractography-421a7ad/`.
 
 
-### Run and monitor the pipeline
+### Run and monitor
 
 Now you're read to run the pipeline:
 
@@ -297,7 +297,7 @@ dictionaries:
 
 (Make sure that all the parameter names line up with `caseid`!). Another example
 is when you have input paths that are in different directories, each having
-different case lists. To run the pipeline on both sets of data, you would make 2
+different case lists. To run the pipeline on both data sets, you would make 2
 or more dictionaries:
 
     - caseid: [./caselist1.txt]
@@ -313,15 +313,15 @@ or more dictionaries:
 ## Running and listing specific parameter combinations
 
 `./pnlpipe <pipeline> run` will automatically run for every parameter combination.
-If you'd like to only run it for particular combination, you can use the `-p` switch.
+To only run it for particular combination, you can use the `-p` switch.
 
     ./pnlpipe <pipeline> run -p 2
 
 This runs the pipeline for the second parameter combination, as listed by `./pnlpipe <pipeline> status`.
-`ls` and `env` also have this flag:
+`ls` and `env` behave similarly:
 
     ./pnlpipe <pipeline> ls dwi -p 1
-    eval `./pnlpipe <pipeline> env -p 1`
+    eval $(./pnlpipe <pipeline> env -p 1)
 
 
 # Shell environment
@@ -340,3 +340,14 @@ run
     eval $(./pnlpipe <pipeline> env -p 2)
 
 # Writing your own pipelines
+
+Pipelines are a graph of dependencies.
+
+Each pipeline is defined in its python module in `pnlpipe_pipelines/`.
+At a minimum, this file must have a function called `make_pipeline`,
+which accepts the pipeline's arguments and returns the pipeline in the
+form of a python dictionary.
+
+![](pnlpipe_doc/dag.png)
+
+Except for files that begin with underscore,
