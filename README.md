@@ -10,6 +10,25 @@ will share outputs between pipelines.
 Included are some of the PNL's neuroimaging pipelines, written using a library
 and scripts that you can use to extend and write new pipelines.
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+**Table of Contents**
+
+- [Quick Walkthrough](#quick-walkthrough)
+    - [1. Configure your input data](#1-configure-your-input-data)
+    - [2. Run your pipelines](#2-run-your-pipelines)
+        - [Choose and setup a pipeline](#choose-and-setup-a-pipeline)
+        - [Run and monitor the pipeline](#run-and-monitor-the-pipeline)
+- [Listing output](#listing-output)
+- [PNL: Running on the cluster](#pnl-running-on-the-cluster)
+- [Multiple Parameter Combinations](#multiple-parameter-combinations)
+    - [Lists of parameter values](#lists-of-parameter-values)
+    - [Lists of parameter dictionaries](#lists-of-parameter-dictionaries)
+    - [Running and listing specific parameter combinations](#running-and-listing-specific-parameter-combinations)
+- [Shell environment](#shell-environment)
+- [Writing your own pipelines](#writing-your-own-pipelines)
+
+<!-- markdown-toc end -->
+
 
 # Quick Walkthrough
 
@@ -307,12 +326,17 @@ This runs the pipeline for the second parameter combination, as listed by `./pnl
 
 # Shell environment
 
-Sometimes you'd like to have access to the same software environment that your pipeline
+Sometimes you want access to the same software environment that your pipeline
 does when it runs with a particular parameter combination.  This is possible by using
 the `env` command.
 
-    ./pnlpipe <pipeline> env
+    ./pnlpipe <pipeline> env -p 2
 
-prints
+prints a Bash setup that exports the software paths and example data paths for
+`<pipeline>'s` second parameter combination. To add them to your environment,
+run
+
+    eval `./pnlpipe <pipeline> env -p 2`  # or
+    eval $(./pnlpipe <pipeline> env -p 2)
 
 # Writing your own pipelines
