@@ -136,9 +136,9 @@ def make_pipeline(pipeline_name, combo, caseid):
         raise TypeError(
             "make_pipeline: expects parameter combination dictionary")
     args = dict(combo, caseid=caseid)
-    module = pnlpipe_pipelines.import_module(pipeline_name)
+    make_pipelineFn = pnlpipe_pipelines.get_make_pipeline(pipeline_name)
     args = {k: v for k, v in args.items() if not k.startswith('_')}
-    pipeline = module.make_pipeline(**args)
+    pipeline = make_pipelineFn(**args)
     if not pipeline:
         raise Exception(
             "make_pipeline(..) returned None, did you forget to return dictionary in pnlpipe_pipelines/pipeline_{}?".format(
@@ -148,7 +148,7 @@ def make_pipeline(pipeline_name, combo, caseid):
 
 def readComboPaths(pipeline_name):
     result = []
-    pipeline_module = pnlpipe_pipelines.import_module(pipeline_name)
+    make_pipelineFn = pnlpipe_pipelines.get_make_pipeline(pipeline_name)
     # for each parameter values combo (a parameter point without caseid)
     for i, (combo, caseids) in enumerate(read_grouped_combos(pipeline_name)):
         iStr = str(i)
@@ -161,7 +161,7 @@ def readComboPaths(pipeline_name):
         for caseid in caseids:
             args = dict(paramCombo, caseid=caseid)
             args = {k: v for k, v in args.items() if not k.startswith('_')}
-            subjectPipeline = pipeline_module.make_pipeline(**args)
+            subjectPipeline = make_pipelineFn(**args)
             for pipelineKey, node in subjectPipeline.items():
                 if pipelineKey.startswith('_'):
                     continue

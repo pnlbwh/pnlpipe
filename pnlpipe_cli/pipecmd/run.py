@@ -72,11 +72,11 @@ Run './pnlpipe {} setup' to build all prequisite pnlpipe_software.
             """.format(pipeline_name)
             errmsgFS = """
 Some pnlpipe_software components are missing and so some parts of the pipeline won't run.
-Run './pnlpipe {} setup' to build all prequisite pnlpipe_software and make sure FREESURFER_HOME is set.
+Run './pnlpipe {} setup' to build all prequisite pnlpipe_software and make sure the environment variable FREESURFER_HOME is set.
             """.format(pipeline_name)
 
             # TODO remove ad hoc message for FreeSurfer?
-            for soft in missing_software:
+            for soft in missing_paths:
                 if 'FREESURFER_HOME' in soft:
                     print(errmsgFS)
                     sys.exit(1)

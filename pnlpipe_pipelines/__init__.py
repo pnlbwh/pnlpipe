@@ -24,6 +24,13 @@ def module_file(name):
     return 'pnlpipe_pipelines/{}.py'.format(name)
 
 
+def get_make_pipeline(name):
+    m = import_module(name)
+    if hasattr(m, 'make_pipeline'):
+        return m.make_pipeline
+    raise Exception("'{}' is missing its 'make_pipeline' function".format(module_file(name)))
+
+
 def default_target(name):
     m = import_module(name)
     result = getattr(m, 'DEFAULT_TARGET', None)

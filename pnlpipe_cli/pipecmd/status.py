@@ -2,6 +2,7 @@ from __future__ import print_function
 from plumbum import cli, local
 from pnlpipe_cli import printTable
 from ..readparams import read_grouped_combos, make_pipeline
+import pnlpipe_pipelines
 from ..display import printVertical
 import sys
 
@@ -12,8 +13,10 @@ class Status(cli.Application):
     """Prints information about a pipeline and its progress."""
 
     def main(self):
-        grouped_combos = read_grouped_combos(self.parent.pipeline_name)
+        make_pipelineFn = pnlpipe_pipelines.get_make_pipeline(self.parent.pipeline_name)
+        print(make_pipelineFn.__doc__)
 
+        grouped_combos = read_grouped_combos(self.parent.pipeline_name)
         print("There are {} parameter combination(s) defined in '{}'.".format(len(grouped_combos), self.parent.params_file.relative_to(local.cwd)))
 
         for paramid, combo, caseids in grouped_combos:

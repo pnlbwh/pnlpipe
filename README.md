@@ -133,22 +133,80 @@ You will then see the files
     _data/epi-tractmeasures-summary.csv
 
 
-# For PNL Users
-
-## Running a project
-
-    pnlpipe std run 001 002
-
-## Running on the cluster
-
-edit Makefile, change PIPE := std
-
-make 001-bsub8
-make caselist-bsub8
-make caselist-bsub4
 
 # Listing output
 
-pnlpipe std ls dwi [-xca]
+Every pipeline gives a short name for some, usually all, of its outputs. You can
+see these names when you run `./pnlpipe <pipeline> status` (or by inspecting the
+pipeline's `make_pipeline` function in `pnlpipe_pipelines/<pipline>.py`). For
+example, the `std` pipeline describes `dwied` as an eddy current corrected
+DWI, and shows its output template path as `_data/<caseid>/DwiEd-<caseid>-...nrrd`.
+To list the actual output paths of the eddy corrected DWI's for all your case ids, use the `ls` subcommand:
 
-pnlpipe std symlink
+    pnlpipe std ls dwied
+
+This lists all existing output.  If you'd like to get a list of missing
+output, use the `-x` flag:
+
+    ./pnlpipe std ls -x dwied
+
+For all output, existing and missing, use `-a`:
+
+    ./pnlpipe std ls -a dwied
+
+Sometimes you just want the list of case ids for which a particular
+output exists (or is missing), or perhaps you want the case ids alongside
+their output paths.  You can do that as follows:
+
+   pnlpipe std ls -s dwied # prints <caseid> for existing paths
+   pnlpipe std ls -c dwid  # prints <caseid>,<path> for existing paths
+
+You can combine flags together. To get the csv of all missing Freesurfer
+subject directories, you would run
+
+    ./pnlpipe std ls -cx fs
+
+The `ls` command helps you inspect your data by piping the results to other
+commands.  Say you want to get the space directions of all your eddy
+corrected DWI's:
+
+    ./pnlpipe std ls dwied | unu head | grep 'space directions'
+
+
+# PNL: Running on the cluster
+
+The PNL uses a high performance computing cluster for most of its data processing.
+The cluster uses [LSF](https://en.wikipedia.org/wiki/Platform_LSF) to manage batch
+processing, and *pnlpipe* provides a Makefile that allows you to easily submit jobs
+to this system to run your pipelines.
+
+First, edit `Makefile` and replace `std` in the line `PIPE := std` to the name
+of the pipeline you wish to run. Now you can submit pipeline jobs for individual
+case ids like so:
+
+    make 001-bsub8 002-bsub8 003-bsub8
+
+This submits an 8 core lsf job for each of the case ids `001`, `002`, and `003`.
+If resources are limited it might be better to ask for 4 core jobs:
+
+    make 001-bsub4 002-bsub4 003-bsub4
+
+For a large case list, this method is too tedious, and it's possible that you accidentally submit
+a job for a case id that's already in the queue or being processed.  A better way is to
+run
+
+    make caselist-bsub8  # or, make caselist-bsub4
+
+This will iterate over each case id in `caselist.txt` and submit an 8 core job
+to the LSF system, but only if that case id is not already running (it uses the
+LSF command `bjobs` to figure out what's currently running). If your caselist is
+named something other than `caselist.txt`, edit the `Makefile` and modify the
+line `CASELIST := caselist.txt` to point to your file.
+
+An alternative to modifying the Makefile is to set its variables on the command
+line:
+
+    make PIPE=std CASELIST=caselist2.txt caselist-bsub8
+
+
+# Multiple Parameter Combinations

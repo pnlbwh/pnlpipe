@@ -1,5 +1,5 @@
-ifeq ($(soft),)
-  $(error Export 'soft' first (This is where e.g. BRAINSTools and training data are/will be installed))
+ifeq ($(PNLPIPE_SOFT),)
+  $(error Export 'PNLPIPE_SOFT' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
 PIPE := stded
