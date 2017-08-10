@@ -1,10 +1,11 @@
 *pnlpipe* is a framework for the authoring and running of file based data
 processing pipelines, as well as for the automated installation of prerequisite
 software packages. Once you have written a pipeline, and the installation
-recipes for the software it relies on, you will be able to build all of its
-dependent software automatically, and run it with one or more combinations of
-parameters (including multiple software versions). It is efficient in that it
-will only regenerate outputs when their upstream dependencies have changed.
+recipes for the software it relies on, you will be able run it with one or more
+combinations of parameters (including multiple software versions), and be able
+to build all of its dependent software automatically. It is efficient in that it
+will only regenerate outputs when their upstream dependencies have changed, and
+will share outputs between pipelines.
 
 Included are some of the PNL's neuroimaging pipelines, written using a library
 and scripts that you can use to extend and write new pipelines.
@@ -28,9 +29,10 @@ look something like
         't2': '../001/001-t2w.nrrd'
     }
 
-Each path is a template that is parameterized by a case id. When a pipeline is
-run for a particular a case id, it will use this dictionary to find the input
-paths it needs. You only need to define this dictionary once.
+Each path is a template that is has a placeholder representing a case id (in
+this example its '001'). Every pipeline is expected to accept a case id
+parameter, and when run with a particular id, it will use this dictionary to
+find the input paths it needs. You only need to define this dictionary once.
 
 ## 2. Run your pipelines
 
@@ -52,13 +54,15 @@ default version of this file, run
 
     ./pnlpipe std init
 
-This has the pipeline's default parameters. For the `std` pipeline, the
-most important ones are the input keys, `inputDwiKey`, `inputT1Key`,
-etc. These are the keys the pipeline uses to find its input data, by looking up
-their paths in `pnlpipe_config.INPUT_KEYS`. For example, `inputDwiKey: [dwi]`
-means that the pipeline will find its DWI input by looking up 'dwi' in
-`INPUT_KEYS`. Likewise, `inputT1Key: [t1]` means that the pipeline will find its
-T1w input by looking up 't1' in `INPUT_KEYS`.
+This makes a parameter file with the pipeline's default parameters. For the
+`std` pipeline, the most important ones are the input keys, `inputDwiKey`,
+`inputT1Key`, etc. These are the keys the pipeline uses to find its input data,
+by looking up their paths in `pnlpipe_config.INPUT_KEYS`. For example,
+`inputDwiKey: [dwi]` means that the pipeline will find its DWI input by looking
+up 'dwi' in `INPUT_KEYS`. Likewise, `inputT1Key: [t1]` means that the pipeline
+will find its T1w input by looking up 't1' in `INPUT_KEYS`.  The reason it is
+done this way is that if you happen to reorganize your data, you just have to
+update your `pnlpipe_config.INPUT_KEYS`, and your parameters remain the same.
 
 Another important field is `caseid`; the default is `./caselist.txt`, which
 means the pipeline will look in that file to find the case ids you want to use
@@ -66,22 +70,23 @@ with this pipeline. Make it by putting each case id on its own line.
 
 You will notice that the parameter values are wrapped in square brackets. This
 is because you can specify more than one value for each parameter. For example,
-if you wanted to run the `std` pipeline using a bet threshold of 0.1 as well as
-a threshold of 0.15, you would write: `bet_threshold: [0.1, 0.15]`. For more
+if you wanted to run the `std` pipeline using a DWI masking bet threshold of 0.1
+as well as a 0.15, you would write: `bet_threshold: [0.1, 0.15]`. For more
 details on specifying multiple parameter combinations, see further down in this
 README.
 
 Now you're ready to build the software needed by the pipeline. The required
-software is determined by the parameters in `std.params` that end in '_version'
-and '_hash' (a Github commit hash). Before building the software packages, you
-need to specify the directory to install them to, and you do this by setting the
-environment variable `$soft` (e.g. `export soft=path/to/software/dir`). Now
-build the software by running
+software is determined by the parameters that end in '_version' and '_hash' (a
+Github commit hash). Before building the software packages, you need to specify
+the directory to install them to, and you do this by setting a global
+environment variable called `$PNLPIPE_SOFT` (e.g. `export PNLPIPE_SOFT=path/to/software/dir`).
+Now build the software by running
 
     ./pnlpipe std setup
 
-If they already exist, nothing will build. You should see the results in
-`$soft`, such as `$soft/BRAINSTools-bin-2d5eccb/` and `$soft/UKFTractography-421a7ad/`.
+(if any of the software packages already exist, they will not rebuild). You should now
+see the results in `$PNLPIPE_SOFT`, such as `BRAINSTools-bin-2d5eccb/` and
+`UKFTractography-421a7ad/`.
 
 
 ### Run and monitor the pipeline
@@ -91,24 +96,28 @@ Now you're read to run the pipeline:
     ./pnlpipe std run
 
 This runs the `std` pipeline for every combination of parameters in
-`std.params`. Since we're using the defaults, except for the case ids there is
-only one combination of parameters.
+`std.params`. Since we're using the defaults, there is only one combination of
+parameters per case id.
 
 You can get an overview of the pipeline and its progress by running
 
     ./pnlpipe std status
 
+This prints the pipeline's parameters, the input and output paths, and how many
+case ids are processed thus far.
+
 When the pipeline is done, you can generate a summary report:
 
     ./pnlpipe std summarize
 
-This generates a `_data/std-tractmeasures.csv`, which has the measures of all wmql tracts
-for every subject, and `_data/std-tractmeasures-summary.csv`, which is a summary of the wmql
-tract measures along with the same measures from the INTRuST dataset as a way of comparison.
+This makes `_data/std-tractmeasures.csv`, a csv of all wmql tract measures
+across all subjects, and `_data/std-tractmeasures-summary.csv`, a summary csv of
+wmql tract measures together with their counterparts from the INTRuST dataset as
+a way of comparison.
 
-You're not limited to running one pipeline -- you can run any number of the
+You're not limited to running one pipeline, you can run any number of the
 pipelines available. For example, you could now run the EPI distortion
-correction pipeline in order to compare it the standard one:
+correction pipeline in order to compare its results to that of the standard one:
 
     ./pnlpipe epi init
     # edit pnlpipe_params/epi.params

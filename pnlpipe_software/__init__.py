@@ -117,13 +117,11 @@ def downloadGithubRepo(ownerrepo, commit='master'):
 
 def getSoftDir():
     import os
-    environSoft = os.environ.get('soft', None)
-    if 'SOFTDIR' in globals():
-        return local.path(SOFTDIR)
+    environSoft = os.environ.get('PNLPIPE_SOFT', None)
     if environSoft:
         return local.path(environSoft)
     log.error(
-        "Environment variable '$soft' must be set. This is the directory where e.g. BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
+        "Environment variable '$PNLPIPE_SOFT' must be set. This is the directory where e.g. BRAINSTools, UKFTractography, tract_querier, and the training data are installed.")
     sys.exit(1)
 
 
