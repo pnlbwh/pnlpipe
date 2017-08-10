@@ -291,4 +291,28 @@ or more dictionaries:
       someparam: [0.1]
 
 
+## Running and listing specific parameter combinations
+
+`./pnlpipe <pipeline> run` will automatically run for every parameter combination.
+If you'd like to only run it for particular combination, you can use the `-p` switch.
+
+    ./pnlpipe <pipeline> run -p 2
+
+This runs the pipeline for the second parameter combination, as listed by `./pnlpipe <pipeline> status`.
+`ls` and `env` also have this flag:
+
+    ./pnlpipe <pipeline> ls dwi -p 1
+    eval `./pnlpipe <pipeline> env -p 1`
+
+
+# Shell environment
+
+Sometimes you'd like to have access to the same software environment that your pipeline
+does when it runs with a particular parameter combination.  This is possible by using
+the `env` command.
+
+    ./pnlpipe <pipeline> env
+
+prints
+
 # Writing your own pipelines

@@ -26,7 +26,7 @@ def _read_param_dicts(ymlfile):
             "'{}' doesn't exist, run './pnlpipe {} init' and edit first.".format(
                 ymlfile, pipeline))
     with open(ymlfile, 'r') as f:
-        yml = yaml.load(f)
+        yml = yaml.load(f, Loader=yaml.loader.BaseLoader)
 
     def mapTuple(xs):
         return [tuple(x) if isinstance(x, list) else x for x in xs]

@@ -38,9 +38,9 @@ class Env(ParamApp):
 
             for tag, node in pipeline.items():
                 nodepath = _escape_path(node.output())
-                print('export {}={}\n\n'.format(tag, nodepath))
+                print('export {}={}\n'.format(tag, nodepath))
 
-            print('export {}={}\n\n'.format('caseid', caseids[0]))
+            print('export {}={}\n'.format('caseid', caseids[0]))
 
             # Software environment
             env_dicts = []
@@ -50,6 +50,6 @@ class Env(ParamApp):
                     env_dicts.append(software_module.env_dict(version))
             softVars = pnlpipe_software.composeEnvDicts(env_dicts)
             for var, val in softVars.items():
-                print('export {}={}\n\n'.format(var, val))
+                print('export {}={}\n'.format(var, val))
 
             print("export PATH={}:$PATH\n".format(local.path('pnlscripts')))
