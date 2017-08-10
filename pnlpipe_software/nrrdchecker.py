@@ -24,13 +24,14 @@ def make(hash=DEFAULT_HASH):
             binary = stack('exec', 'which', 'nrrdchecker')[:-1]
             get_path(sha).mkdir()
             local.path(binary).move(get_path(sha) / 'nrrdchecker')
-        symlink = get_path(date)
-        print("Make symlink: {} -> {}".format(symlink, get_path(sha)))
+
+        symlink = get_path(date).dirname
+        print("Make symlink: {} -> {}".format(symlink, get_path(sha).dirname))
         get_path(date).unlink()
-        get_path(sha).symlink(get_path(date))
+        get_path(sha).dirname.symlink(symlink)
 
         logger.info("Made '{}'".format(get_path(sha)))
-        logger.info("Made '{}'".format(get_path(date)))
+        logger.info("Made '{}'".format(symlink))
 
 def get_path(hash=DEFAULT_HASH):
     return getSoftDir() / ('nrrdchecker-' + hash)

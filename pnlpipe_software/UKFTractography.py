@@ -7,24 +7,25 @@ DEFAULT_HASH = '421a7ad'
 
 def make(commit=DEFAULT_HASH):
 
-    dest = getSoftDir()
+    softdir = getSoftDir()
+
     if commit != 'master':
-        out = local.path(dest / 'UKFTractography-' + commit)
-        if checkExists(out):
+        if checkExists(get_path(commit)):
             return
 
-    blddir = dest / "UKFTractography-build"
-    with local.cwd(dest):
+    blddir = softdir / "UKFTractography-build"
+
+    with local.cwd(softdir):
         repo = downloadGithubRepo('pnlbwh/ukftractography', commit)
     sha, date = getCommitInfo(repo)
 
-    out = local.path(dest / 'UKFTractography-' + sha)
-    dateSymlink = dest / ('UKFTractography-'+date)
+    outbinary = get_path(sha)
 
-    if checkExists(out):
+    if checkExists(outbinary):
         return
 
     logging.info("Build code:")
+
     blddir.mkdir()
     with local.cwd(blddir):
         cmake(repo)
@@ -34,17 +35,26 @@ def make(commit=DEFAULT_HASH):
     binary1 = blddir / 'ukf/bin/UKFTractography'
     binary2 = blddir / 'UKFTractography-build/ukf/bin/UKFTractography' # later commits
     binary = binary1 if binary1.exists() else binary2
-    binary.move(out)
-    chmod('a-w', out)
-    out.symlink(dateSymlink)
+
+    outbinary.dirname.mkdir()
+
+    binary.move(outbinary)
+    chmod('a-w', outbinary)
+
+    symlink = get_path(date).dirname
+    print("Make symlink: {} -> {}".format(symlink, get_path(sha).dirname))
+    symlink.unlink()
+    get_path(sha).dirname.symlink(symlink)
+
     blddir.delete()
-    logging.info("Made '{}'".format(out))
-    logging.info("Made '{}'".format(dateSymlink))
+
+    logging.info("Made '{}'".format(outbinary))
+    logging.info("Made '{}'".format(get_path(date)))
 
 
-def get_path(ukfhash=DEFAULT_HASH):
-    binary = getSoftDir() / ('UKFTractography-' + ukfhash)
-    return binary
-    # if not binary.exists():
-    #     raise DoesNotExistException('{} doesn\'t exist')
-    # return binary
+def get_path(hash=DEFAULT_HASH):
+    return getSoftDir() / ('UKFTractography-' + hash) / 'UKFTractography'
+
+
+def env_dict(hash):
+    return { 'PATH': get_path(hash).dirname }

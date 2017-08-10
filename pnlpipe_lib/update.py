@@ -171,7 +171,7 @@ def update(node):
                                    bcolors.ENDC))
 
     # upToDate already has this check of a source path, but putting it here so
-    # we can emit a better log message
+    # we can print a better log message
     if not node.deps:  # is input path
         if not _exists(node):
             raise Exception("{}: input path doesn't exist".format(node.output()))
