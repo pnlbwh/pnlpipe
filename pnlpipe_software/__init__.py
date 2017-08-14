@@ -11,7 +11,7 @@ from tempfile import mkdtemp
 from plumbum import local, FG, cli
 from plumbum.cmd import git, cmake, make, chmod
 import logging
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def modules():

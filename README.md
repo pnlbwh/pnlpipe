@@ -341,13 +341,21 @@ run
 
 # Writing your own pipelines
 
-Pipelines are a graph of dependencies.
+Pipelines are a directed acyclic graph (DAG) of dependencies.  Here's the DAG for
+the standard PNL pipeline.
+
+![](pnlpipe_doc/dag.png)
+
+
 
 Each pipeline is defined in its python module in `pnlpipe_pipelines/`.
 At a minimum, this file must have a function called `make_pipeline`,
 which accepts the pipeline's arguments and returns the pipeline in the
 form of a python dictionary.
 
-![](pnlpipe_doc/dag.png)
 
 Except for files that begin with underscore,
+
+## Using PNL nodes
+
+## Writing your own nodes

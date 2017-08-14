@@ -9,6 +9,7 @@ digraph {
   t1mask -> freesurfer;
   freesurfer -> fsindwi;
   dwied -> fsindwi;
+  dwimask -> fsindwi;
   fsindwi -> wmql;
   wmql -> tractmeasures;
 }
