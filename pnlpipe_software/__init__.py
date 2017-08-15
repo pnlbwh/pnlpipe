@@ -102,7 +102,7 @@ def getCommitInfo(repo_path):
 
 
 def downloadGithubRepo(ownerrepo, commit='master'):
-    url = 'https://github.com/{ownerrepo}.git'.format(**locals())
+    url = 'http://github.com/{ownerrepo}.git'.format(**locals())
     repo = ownerrepo.split('/')[1]
 
     if not local.path(repo).exists():
