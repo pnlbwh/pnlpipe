@@ -348,17 +348,11 @@ of the standard PNL pipeline's DAG.
 
 Each node represents an output, and the arrows represent dependencies.
 To author a pipeline in *pnlpipe*, you construct a DAG using python code.
-An output is represented by a `Node` class
+This DAG must be returned by a function called `make_pipeline` in
+a python module under `pnlpipe_pipelines`.  The name of the module
+is used as the name of the pipline.  You will then be able to
+run any of the `./pnlpipe <pipeline>` subcommands.
 
-
-Each pipeline is defined in its python module in `pnlpipe_pipelines/`.
-At a minimum, this file must have a function called `make_pipeline`,
-which accepts the pipeline's arguments and returns the pipeline in the
-form of a python dictionary.
-
-
-Except for files that begin with underscore,
-
-## Using PNL nodes
-
-## Writing your own nodes
+This section will be expanded in the future, but for now, see
+`pnlpipe_pipelines/std.py` for an example on how to construct a pipeline, and
+see `pnlpipe_pipelines/_pnl.py` for examples on how to write your own nodes.
