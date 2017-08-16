@@ -97,4 +97,4 @@ class Export(cli.Application):
             yaml.dump(result, f, default_flow_style=False)
         print("Made '{}'".format(PROJECT_YML))
         if not local.path(PROJECT_INFO_YML).exists():
-            print("Now customize your {} and save.".format(PROJECT_YML))
+            print("Now customize your {} and save. At a minimum you must add a name for your project".format(PROJECT_YML))

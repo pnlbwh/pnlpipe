@@ -177,8 +177,8 @@ Sometimes you just want the list of case ids for which a particular
 output exists (or is missing), or perhaps you want the case ids alongside
 their output paths.  You can do that as follows:
 
-   pnlpipe std ls -s dwied # prints <caseid> for existing paths
-   pnlpipe std ls -c dwid  # prints <caseid>,<path> for existing paths
+   ./pnlpipe std ls -s dwied # prints <caseid> for existing paths
+   ./pnlpipe std ls -c dwid  # prints <caseid>,<path> for existing paths
 
 You can combine flags together. To get the csv of all missing Freesurfer
 subject directories, you would run
@@ -341,11 +341,14 @@ run
 
 # Writing your own pipelines
 
-Pipelines are a directed acyclic graph (DAG) of dependencies.  Here's the DAG for
-the standard PNL pipeline.
+A pipeline is a directed acyclic graph (DAG) of dependencies.  Here's a diagram
+of the standard PNL pipeline's DAG.
 
 ![](pnlpipe_doc/dag.png)
 
+Each node represents an output, and the arrows represent dependencies.
+To author a pipeline in *pnlpipe*, you construct a DAG using python code.
+An output is represented by a `Node` class
 
 
 Each pipeline is defined in its python module in `pnlpipe_pipelines/`.

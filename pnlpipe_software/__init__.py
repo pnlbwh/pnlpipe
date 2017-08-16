@@ -82,7 +82,7 @@ def checkExists(target):
 
 def downloadGithubArchive(ownerrepo, version='master'):
     """Makes 'repo-xxxx' directory."""
-    url = 'https://github.com/{ownerrepo}/archive/{version}.tar.gz'.format(
+    url = 'git://github.com/{ownerrepo}/archive/{version}.tar.gz'.format(
         **locals())
     repo = ownerrepo.split('/')[1]
     from plumbum.cmd import curl, tar
@@ -102,7 +102,7 @@ def getCommitInfo(repo_path):
 
 
 def downloadGithubRepo(ownerrepo, commit='master'):
-    url = 'http://github.com/{ownerrepo}.git'.format(**locals())
+    url = 'git://github.com/{ownerrepo}.git'.format(**locals())
     repo = ownerrepo.split('/')[1]
 
     if not local.path(repo).exists():
