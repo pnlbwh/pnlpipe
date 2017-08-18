@@ -1,6 +1,6 @@
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict
 from plumbum import local, FG
-from plumbum.cmd import cmake, chmod
+from plumbum.cmd import cmake
 import logging
 logger = logging.getLogger(__name__)
 import os
@@ -132,8 +132,8 @@ def make(commit=DEFAULT_HASH):
     with open(out / 'env.sh', 'w') as f:
         f.write("export PATH={}:$PATH\n".format(out))
         f.write("export ANTSPATH={}\n".format(out))
-    chmod('a-w', out.glob('*'))
-    chmod('a-w', out)
+    # chmod('a-w', out.glob('*'))
+    # chmod('a-w', out)
     out.symlink(symlink)
     blddir.delete()
     logger.info("Made '{}'".format(get_path(sha)))

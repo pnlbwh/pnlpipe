@@ -9,7 +9,7 @@ from tempfile import mkdtemp
 # __all__ = [basename(f)[:-3] for f in modules
 #            if isfile(f) and not f.startswith('_')]
 from plumbum import local, FG, cli
-from plumbum.cmd import git, cmake, make, chmod
+from plumbum.cmd import git, cmake, make
 import logging
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def checkExists(target):
 
 def downloadGithubArchive(ownerrepo, version='master'):
     """Makes 'repo-xxxx' directory."""
-    url = 'git://github.com/{ownerrepo}/archive/{version}.tar.gz'.format(
+    url = 'http://github.com/{ownerrepo}/archive/{version}.tar.gz'.format(
         **locals())
     repo = ownerrepo.split('/')[1]
     from plumbum.cmd import curl, tar

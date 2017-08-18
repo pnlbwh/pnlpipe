@@ -1,6 +1,6 @@
 from pnlpipe_software import downloadGithubRepo, downloadGithubArchive, getCommitInfo, getSoftDir, checkExists, TemporaryDirectory
 from plumbum import local
-from plumbum.cmd import cmake, make, chmod
+from plumbum.cmd import cmake, make
 import logging
 
 
@@ -30,4 +30,4 @@ def installTraining(repo, commit):
     with local.cwd(out):
         from plumbum.cmd import bash
         bash('./mktrainingcsv.sh', '.')
-        chmod('a-w', local.cwd.glob('*'))
+        # chmod('a-w', local.cwd.glob('*'))

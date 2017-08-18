@@ -1,7 +1,6 @@
 import os
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, TemporaryDirectory, envFromDict
 from plumbum import local
-from plumbum.cmd import chmod
 import logging
 
 DEFAULT_HASH = 'e045eab'
@@ -31,8 +30,8 @@ def make(commit=DEFAULT_HASH):
         logging.info("Make '{out}'".format(**locals()))
         repo.move(out)
 
-    chmod('-R', 'a-w', out)
-    chmod('a-w', out)
+    # chmod('-R', 'a-w', out)
+    # chmod('a-w', out)
     date_symlink = dest / '{}-{}'.format(NAME, date)
     out.symlink(date_symlink)
 

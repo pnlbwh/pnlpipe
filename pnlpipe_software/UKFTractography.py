@@ -1,6 +1,6 @@
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, envFromDict
 from plumbum import local, FG
-from plumbum.cmd import cmake, chmod
+from plumbum.cmd import cmake
 import logging
 
 DEFAULT_HASH = '421a7ad'
@@ -39,7 +39,7 @@ def make(commit=DEFAULT_HASH):
     outbinary.dirname.mkdir()
 
     binary.move(outbinary)
-    chmod('a-w', outbinary)
+    # chmod('a-w', outbinary)
 
     symlink = get_path(date).dirname
     print("Make symlink: {} -> {}".format(symlink, get_path(sha).dirname))
