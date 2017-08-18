@@ -356,3 +356,14 @@ run any of the `./pnlpipe <pipeline>` subcommands.
 This section will be expanded in the future, but for now, see
 `pnlpipe_pipelines/std.py` for an example on how to construct a pipeline, and
 see `pnlpipe_pipelines/_pnl.py` for examples on how to write your own nodes.
+
+# Issues
+
+### error: error setting certificate verify locations:
+
+During the setup phase you may encounter this error, in which case
+run
+
+    git config --global http.sslverify "false"
+
+and run setup again.

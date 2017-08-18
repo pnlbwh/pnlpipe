@@ -10,8 +10,8 @@ class ParamApp(cli.Application):
         help="parameter id, run pipeline only for this parameter combination")
 
     def validate(self, maxid):
-        if maxid == 1 and self.paramid != 1:
-            print("There is only one parameter combination, so parameter id can only be {}".format(1))
+        if maxid == 1 and self.paramid != 1 and self.paramid != 0:
+            print("There is only one parameter combination, so parameter id can only be {} (or {})".format(1,0))
             sys.exit(1)
         if self.paramid > maxid or self.paramid < 0:
             print("parameter id must be between {} and {} inclusive".format(1, maxid))
