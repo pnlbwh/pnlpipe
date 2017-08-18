@@ -41,7 +41,7 @@ def make_pipeline(caseid,
     tags['dwied'] = DwiEd(params, deps=[tags['dwixc']])
 
     if inputDwimaskKey:
-        tags['dwimask'] = InputKey(params=[inputDwimaskKey, caseid])
+        tags['dwimask'] = InputPathFromKey(params=[inputDwimaskKey, caseid])
     else:
         tags['dwimask'] = DwiMaskBet(params, deps=[tags['dwied']])
 

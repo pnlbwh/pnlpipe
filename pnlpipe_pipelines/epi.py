@@ -49,19 +49,19 @@ def make_pipeline(caseid,
     tags['dwied'] = DwiEd(params, deps=[tags['dwixc']])
 
     if inputDwiMaskKey:
-        tags['dwimask'] = InputKey(params=[inputDwimaskKey, caseid])
+        tags['dwimask'] = InputPathFromKey(params=[inputDwimaskKey, caseid])
     else:
         tags['dwimask'] = DwiMaskBet(params, deps=[tags['dwied']])
 
     tags['t1xc'] = T1Xc(params, deps=[tags['t1']])
 
     if inputT1MaskKey:
-        tags['t1mask'] = InputKey(params=[inputT1maskKey, caseid])
+        tags['t1mask'] = InputPathFromKey(params=[inputT1maskKey, caseid])
     else:
         tags['t1mask'] = T1wMaskMabs(params, deps=[tags['t1xc']])
 
     if inputT2MaskKey:
-        tags['t2mask'] = InputKey(params=[inputT2MaskKey, caseid])
+        tags['t2mask'] = InputPathFromKey(params=[inputT2MaskKey, caseid])
     else:
         tags['t2mask'] = MaskRigid(params, deps={'moving': tags['t1xc'],
                                                  'moving_mask': tags['t1mask'],
