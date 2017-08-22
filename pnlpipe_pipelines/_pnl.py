@@ -2,7 +2,7 @@ from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
 import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
 from plumbum import local, FG
-from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py
+from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py
 import pnlpipe_cli.caseidnode as caseidnode
 import logging
 from python_log_indenter import IndentedLoggerAdapter
@@ -124,7 +124,6 @@ class DwiEpi(NrrdOutput):
 
     def static_build(self):
         with BRAINSTools.env(self.BRAINSTools_hash):
-            from pnlscripts.util.scripts import epi_py
             epi_py('--force',
                    '--dwi', self.dwi,
                    '--dwimask', self.dwimask,
@@ -194,7 +193,6 @@ class MaskRigid(NrrdOutput):
 
     def static_build(self):
         with BRAINSTools.env(self.BRAINSTools_hash), local.tempdir() as tmpdir:
-            from pnlscripts.util.scripts import makeRigidMask_py
             moving = tmpdir / 'moving.nrrd'
             movingmask = tmpdir / 'movingmask.nrrd'
             fixed = tmpdir / 'fixed.nrrd'
@@ -264,7 +262,7 @@ class FsInDwiUsingT2(NiftiOutput):
             convertImage(self.t1, t1, self.BRAINSTools_hash)
             convertImage(self.t2mask, t2mask, self.BRAINSTools_hash)
             convertImage(self.t1mask, t1mask, self.BRAINSTools_hash)
-            script = local['pnlpipe_pipelines/pnlscripts/old/fs2dwi_T2.sh']
+            script = local['pnlscripts/old/fs2dwi_T2.sh']
             script['--fsdir', fs, '--dwi', dwi, '--dwimask', dwimask, '--t2',
                    t2, '--t2mask', t2mask, '--t1', t1, '--t1mask', t1mask,
                    '-o', tmpoutdir] & FG
@@ -315,7 +313,7 @@ class TractMeasures(CsvOutput):
 
     def static_build(self):
         measureTracts_py = local[
-            'pnlpipe_pipelines/pnlscripts/measuretracts/measureTracts.py']
+            'pnlscripts/measuretracts/measureTracts.py']
         vtks = self.wmql.up() // '*.vtk'
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
                          self.deps['wmql'].showCompressedDAG(
