@@ -339,6 +339,12 @@ run
     eval `./pnlpipe <pipeline> env -p 2`  # or
     eval $(./pnlpipe <pipeline> env -p 2)
 
+# `pnlscripts`
+
+`pnlscripts` is a directory of PNL specific scripts that implement various pipeline
+steps.  The PNL pipelines call these scripts at each step.
+
+
 # Writing your own pipelines
 
 A pipeline is a directed acyclic graph (DAG) of dependencies.  Here's a diagram
@@ -356,6 +362,13 @@ run any of the `./pnlpipe <pipeline>` subcommands.
 This section will be expanded in the future, but for now, see
 `pnlpipe_pipelines/std.py` for an example on how to construct a pipeline, and
 see `pnlpipe_pipelines/_pnl.py` for examples on how to write your own nodes.
+
+## Plumbum: Shell Scripting with Python
+
+`pnlscripts`
+from plumbum.cmd import script
+from pnlscripts.util.scripts import
+
 
 # Issues
 

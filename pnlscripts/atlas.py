@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from util import logfmt, TemporaryDirectory
+from util import logfmt
 import util
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
@@ -30,7 +30,7 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def computeWarp(image, target, out):
-    with TemporaryDirectory() as tmpdir:
+    with local.tempdir() as tmpdir:
         tmpdir = local.path(tmpdir)
         pre = tmpdir / 'ants'
         warp = pre + '1Warp.nii.gz'
@@ -77,7 +77,7 @@ def fuseAntsJointFusion(target, images, labels, out):
 
 def fuseAvg(labels, out):
     from plumbum.cmd import AverageImages
-    with TemporaryDirectory() as tmpdir:
+    with local.tempdir() as tmpdir:
         nii = local.path(tmpdir) / 'avg.nii.gz'
         AverageImages('3', nii, '0', *labels)
         ConvertBetweenFileFormats(nii, out)

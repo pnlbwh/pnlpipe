@@ -2,7 +2,7 @@ from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
 import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
 from plumbum import local, FG
-from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py
+from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py, fs_py
 import pnlpipe_cli.caseidnode as caseidnode
 import logging
 from python_log_indenter import IndentedLoggerAdapter
