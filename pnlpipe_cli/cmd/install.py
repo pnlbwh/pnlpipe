@@ -17,11 +17,10 @@ where softwareModule is one of:
         if not softwareModule:
             logger.info("Missing pnlpipe_software module argument, e.g. BRAINSTools")
             return 1
-        pnlpipe_softwareModule = pnlpipe_software.import_module(softwareModule)
+        softwareModule = pnlpipe_software.import_module(softwareModule)
         if self.ver:
-            #logger.info("Make '{}'".format(pnlpipe_softwareModule.get_path(self.ver)))
-            logger.info("Make '{}', version: {}".format(softwareModule, self.ver))
-            pnlpipe_softwareModule.make(self.ver)
+            logger.info("Make '{}', version: {}".format(softwareModule.__name__, self.ver))
+            softwareModule.make(self.ver)
         else:
-            logger.info("Make '{}'".format(pnlpipe_softwareModule.get_path()))
-            pnlpipe_softwareModule.make()
+            logger.info("Make '{}'".format(softwareModule.get_path()))
+            softwareModule.make()

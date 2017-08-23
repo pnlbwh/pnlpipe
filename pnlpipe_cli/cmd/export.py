@@ -84,7 +84,7 @@ class Export(cli.Application):
                 projdict['paths']['caselist'] = caseids
 
                 pipeline = make_pipeline(pipeline_name, combo, caseids[0])
-                projdict['paths']['caseid'] = caseids[0]
+                projdict['paths']['caseid_placeholder'] = caseids[0]
                 for tag, node in pipeline.items():
                     nodepath = local.path(node.output())
                     projdict['paths'][tag] = nodepath.relative_to(local.cwd).__str__()

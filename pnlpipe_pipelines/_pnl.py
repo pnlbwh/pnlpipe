@@ -1,6 +1,7 @@
 from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
 import pnlpipe_lib.dag as dag
-from pnlpipe_software import BRAINSTools, trainingDataT1AHCC, FreeSurfer
+from pnlpipe_software import BRAINSTools
+import pnlpipe_software as soft
 from plumbum import local, FG
 from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py, fs_py
 import pnlpipe_cli.caseidnode as caseidnode
@@ -144,6 +145,42 @@ class DwiEpiMask(NrrdOutput):
             (slicecmd | binarizecmd | gzipcmd) & FG
 
 
+@node(params=['echo_spacing', 'pe_dir'],
+      deps=['pos_dwis', 'neg_dwis'])
+class DwiHcp(DirOutput):
+    """ Washington University HCP DWI preprocessing. """
+
+    def static_build(self):
+        with HCPPipelines.env(self.HCPPipelines_version), local.tempdir() as tmpdir:
+            preproc = local[HCPPipelines.get_path(self.version_HCPPipelines) /
+                            'DiffusionPreprocessing/DiffPreprocPipeline.sh']
+            posPaths = [n.output() for n in self.posDwis]
+            negPaths = [n.output() for n in self.negDwis]
+            hcpdir = tmpdir / self.caseid / 'hcp'
+            datadir = hcpdir / 'data'
+            from os import getpid
+            try:
+                preproc['--path={}'.format(tmpdir), '--subject={}'.format(
+                    self.caseid), '--PEdir={}'.format(self.peDir), '--posData='
+                        + '@'.join(posPaths), '--negData=' + '@'.join(
+                            negPaths), '--echospacing={}'.format(
+                                self.echoSpacing), '--gdcoeffs=NONE',
+                        '--dwiname=hcp-{}'.format(getpid())] & FG
+            except ProcessExecutionError as e:
+                if not (datadir / 'data.nii.gz').exists():
+                    print(e)
+                    log.error("HCP failed to make '{}'".format(datadir /
+                                                               'data.nii.gz'))
+                    # (OUTDIR / self.caseid / 'T1w').delete()
+                    sys.exit(1)
+            # (OUTDIR / self.caseid / 'T1w').delete()
+            (datadir / 'data.nii.gz').move(self.output())
+            (datadir / 'bvals').move(self.output().with_suffix(
+                '.bval', depth=2))
+            (datadir / 'bvecs').move(self.output().with_suffix(
+                '.bvec', depth=2))
+
+
 @node(params=['BRAINSTools_hash'], deps=['strct'])
 class StrctXc(NrrdOutput):
     """Axis aligns and centers structural (nifti or nrrd)"""
@@ -180,7 +217,7 @@ class T1wMaskMabs(NrrdOutput):
             tmpt1 = tmpdir / ('t1' + ''.join(self.t1.suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1, tmpt1] & FG
-            trainingCsv = trainingDataT1AHCC.get_path(
+            trainingCsv = soft.trainingDataT1AHCC.get_path(
                 self.trainingDataT1AHCC_hash) / 'trainingDataT1AHCC-hdr.csv'
             atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir,
                      trainingCsv] & FG
@@ -213,7 +250,7 @@ class FreeSurferUsingMask(DirOutput):
         return dirhash(self.output(), included_extensions=['.mgz'])
 
     def static_build(self):
-        FreeSurfer.validate(self.FreeSurfer_version)
+        soft.FreeSurfer.validate(self.FreeSurfer_version)
         fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output(
         ).dirname.dirname] & FG
 
@@ -286,7 +323,7 @@ class Ukf(VtkOutput):
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
                       self.output()] + list(self.ukfparams)
-            ukfpath = UKFTractography.get_path(self.UKFTractography_hash)
+            ukfpath = soft.UKFTractography.get_path(self.UKFTractography_hash)
             log.info(' Found UKF at {}'.format(ukfpath))
             ukfbin = local[ukfpath]
             # ukfbin(*params)

@@ -9,17 +9,16 @@ REPO = 'demianw/tract_querier'
 
 def make(commit=DEFAULT_HASH):
     """Downloads a lean version of tract_querier. Output is '$soft/tract_querier-<commit>'."""
-    dest = getSoftDir()
 
     if commit != 'master':
-        out = local.path(dest / '{}-{}'.format(NAME, commit))
+        out = get_path(commit)
         if checkExists(out):
             return
 
-    with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
+    with local.tempdir() as tmpdir, local.cwd(tmpdir):
         repo = downloadGithubRepo(REPO, commit)
         sha, date = getCommitInfo(repo)
-        out = local.path(dest / '{}-{}'.format(NAME, sha))
+        out = get_path(sha)
         if checkExists(out):
             return
 
@@ -32,7 +31,11 @@ def make(commit=DEFAULT_HASH):
 
     # chmod('-R', 'a-w', out)
     # chmod('a-w', out)
-    date_symlink = dest / '{}-{}'.format(NAME, date)
+    with open(out / 'env.sh', 'w') as f:
+        f.write("export PATH={}:$PATH\n".format(out / 'scripts'))
+        f.write("export PYTHONPATH={}:$PYTHONPATH\n".format(out))
+    date_symlink = get_path(date)
+    date_symlink.unlink()
     out.symlink(date_symlink)
 
 

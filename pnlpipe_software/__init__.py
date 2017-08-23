@@ -75,7 +75,7 @@ def prefixPYTHONPATH(paths):
 
 def checkExists(target):
     if target.exists():
-        logging.info('{} already exists, skipping.'.format(target))
+        log.info('{} already exists, skipping.'.format(target))
         return True
     return False
 

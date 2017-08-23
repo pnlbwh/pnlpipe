@@ -134,6 +134,7 @@ def make(commit=DEFAULT_HASH):
         f.write("export ANTSPATH={}\n".format(out))
     # chmod('a-w', out.glob('*'))
     # chmod('a-w', out)
+    symlink.unlink()
     out.symlink(symlink)
     blddir.delete()
     logger.info("Made '{}'".format(get_path(sha)))
