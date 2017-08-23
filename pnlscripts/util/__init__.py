@@ -174,11 +174,8 @@ class LocalModule(ModuleType):
         if not antspath:
             raise Exception("ANTSPATH not set, make sure it's exported, e.g export ANTSPATH[=/path/to/software]")
         path = os.environ.get('PATH',None)
-        print(antspath)
         scriptname = name.replace('_', '.')
-        print(scriptname)
         filename = join(antspath, scriptname)
-        print(filename)
         if not antspath or not exists(filename):
             raise AttributeError(name)
         return local[filename]
