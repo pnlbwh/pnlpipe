@@ -2,6 +2,7 @@ import os
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, TemporaryDirectory, envFromDict
 from plumbum import local
 import logging
+log = logging.getLogger(__name__)
 
 DEFAULT_HASH = 'e045eab'
 NAME = 'tract_querier'
@@ -26,7 +27,7 @@ def make(commit=DEFAULT_HASH):
         (repo / 'doc').delete()
         (repo / '.git').delete()
 
-        logging.info("Make '{out}'".format(**locals()))
+        log.info("Make '{out}'".format(**locals()))
         repo.move(out)
 
     # chmod('-R', 'a-w', out)
