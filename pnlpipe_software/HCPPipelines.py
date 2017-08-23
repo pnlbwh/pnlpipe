@@ -1,6 +1,7 @@
 import sys
 from pnlpipe_software import downloadGithubArchive, getSoftDir, checkExists, TemporaryDirectory, envFromDict
 import logging
+log = logging.getLogger(__name__)
 from plumbum import local, FG
 
 GITHUB_REPO = 'Washington-University/Pipelines'
@@ -13,7 +14,7 @@ def make(version=DEFAULT_VERSION):
     with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
         d = downloadGithubArchive(GITHUB_REPO, 'v' + version)
         d.move(get_path(version))
-        logging.info("Made '{}'".format(get_path(version)))
+        log.info("Made '{}'".format(get_path(version)))
 
 
 def get_path(version=DEFAULT_VERSION):
@@ -31,5 +32,5 @@ def env_dict(version):
     }
 
 
-def env(bthash):
-    return envFromDict(env_dict(bthash))
+def env(hash):
+    return envFromDict(env_dict(hash))
