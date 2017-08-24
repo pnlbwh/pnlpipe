@@ -41,6 +41,9 @@ def make(commit=DEFAULT_HASH):
     binary.move(outbinary)
     # chmod('a-w', outbinary)
 
+    with open(outbinary.dirname / 'env.sh', 'w') as f:
+        f.write("export PATH={}:$PATH".format(outbinary.dirname))
+
     symlink = get_path(date).dirname
     print("Make symlink: {} -> {}".format(symlink, get_path(sha).dirname))
     symlink.unlink()
