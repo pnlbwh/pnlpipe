@@ -1,10 +1,10 @@
 import os
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, TemporaryDirectory, envFromDict
-from plumbum import local
+from plumbum import local, FG
 # from plumbum.cmd import chmod
 import logging
 
-DEFAULT_HASH = '7a93312'
+DEFAULT_HASH = '664bb45'
 
 NAME = 'whitematteranalysis'
 REPO = 'SlicerDMRI/' + NAME
@@ -14,14 +14,14 @@ def make(commit=DEFAULT_HASH):
     dest = getSoftDir()
 
     if commit != 'master':
-        out = local.path(dest / '{}-{}'.format(NAME, commit))
+        out = get_path(commit)
         if checkExists(out):
             return
 
-    with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
+    with local.tempdir() as tmpdir, local.cwd(tmpdir):
         repo = downloadGithubRepo(REPO, commit)
         sha, date = getCommitInfo(repo)
-        out = local.path(dest / '{}-{}'.format(NAME, sha))
+        out = get_path(sha)
         if checkExists(out):
             return
 
@@ -34,7 +34,17 @@ def make(commit=DEFAULT_HASH):
 
     # chmod('-R', 'a-w', out)
     # chmod('a-w', out)
-    date_symlink = dest / '{}-{}'.format(NAME, date)
+    with open(out / 'env.sh', 'w') as f:
+        f.write("export PATH={}:$PATH\n".format(out / 'bin'))
+        f.write("export PYTHONPATH={}:$PYTHONPATH\n".format(out))
+
+    # compile cython files
+    with local.cwd(out):
+        from plumbum.cmd import python
+        python['setup.py', 'build_ext', '--inplace'] & FG
+
+    date_symlink = get_path(date)
+    date_symlink.unlink()
     out.symlink(date_symlink)
 
 
@@ -47,5 +57,5 @@ def env_dict(hash):
            ,'PYTHONPATH': get_path(hash)
     }
 
-def env(bthash):
-    return envFromDict(env_dict(bthash))
+def env(hash):
+    return envFromDict(env_dict(hash))
