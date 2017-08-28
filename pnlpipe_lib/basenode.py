@@ -3,7 +3,6 @@ import six, abc
 import inspect
 from plumbum import local
 from hashing import dirhash, filehash
-import pnlpipe_config
 
 
 @six.add_metaclass(abc.ABCMeta)
