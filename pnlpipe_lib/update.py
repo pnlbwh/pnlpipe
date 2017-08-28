@@ -5,9 +5,9 @@ import logging
 logger = logging.getLogger(__name__)
 from python_log_indenter import IndentedLoggerAdapter
 log = IndentedLoggerAdapter(logger, indent_char='.')
-import basenode
-import dag
-import pnlpipe_config as config
+from . import basenode
+from . import dag
+from . import config
 
 
 class bcolors:
@@ -21,7 +21,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-DBDIR = local.path(config.OUTDIR) / 'db'
+DBDIR = config.OUTDIR / 'db'
 
 
 def staticdeps(static_build):
@@ -49,7 +49,7 @@ def _exists(node):
 def _dbfile(node):
     nodepath = local.path(node.output())
     if nodepath.startswith(local.cwd):
-        relative = nodepath - local.path(config.OUTDIR)
+        relative = nodepath - config.OUTDIR
     else:
         relative = nodepath
     return local.path(DBDIR + '/' + relative.__str__() + '.db')

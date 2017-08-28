@@ -1,4 +1,4 @@
-import basenode
+from . import basenode
 
 @basenode.node(params=['filepath'])
 class InputFile(basenode.Node):
