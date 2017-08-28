@@ -3,10 +3,12 @@ from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
 
-def make(commit):
+DEFAULT_HASH = '8dd9239'
+
+def make(commit=DEFAULT_HASH):
     """Downloads t2 training set (has masks only). Makes '<dest>/trainingDataT2Masks"""
     from pnlpipe_software.trainingDataT1AHCC import installTraining
     installTraining('trainingDataT2Masks', commit)
 
-def get_path(hash):
-    return local.path(getSoftDir() / repo + '-' + hash)
+def get_path(hash=DEFAULT_HASH):
+    return local.path(getSoftDir() / 'trainingDataT2Masks-' + hash)

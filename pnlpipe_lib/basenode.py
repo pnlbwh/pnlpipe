@@ -1,8 +1,8 @@
-import dag
+from . import dag
 import six, abc
 import inspect
 from plumbum import local
-from hashing import dirhash, filehash
+from . import hashing
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -33,9 +33,9 @@ class Node(dag.Node):
         if not outpath.exists():
             return None
         if outpath.is_file():
-            return filehash(outpath, hashfunc='md5')
+            return hashing.filehash(outpath, hashfunc='md5')
         if outpath.is_dir():
-            return dirhash(str(outpath), hashfunc='md5', ignore_hidden=True)
+            return hashing.dirhash(str(outpath), hashfunc='md5', ignore_hidden=True)
         raise Exception(
             '{}: output path is neither a file nor directory.'.format(
                 self.tag))
