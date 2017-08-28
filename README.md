@@ -32,11 +32,19 @@ and scripts that you can use to extend and write new pipelines.
 
 # Quick Walkthrough
 
-## 1. Configure your input data
+## 1. Install pnlpipe to Your Project Directory
 
     cd /project/dir
     git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
-    export soft=/path/to/software/dir  # where software modules will be installed
+
+## 2. Configure Environment (this is for non-PNL users)
+
+    cd python_env
+    make conda  # makes pnlpipe environment for conda
+    source activate pnlpipe
+    export PNLPIPE_SOFT=/path/to/software/dir  # where software modules will be installed
+
+## 3. Configure your input data
 
 Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. It will
 look something like
@@ -53,7 +61,7 @@ this example its '001'). Every pipeline is expected to accept a case id
 parameter, and when run with a particular id, it will use this dictionary to
 find the input paths it needs. You only need to define this dictionary once.
 
-## 2. Run your pipelines
+## 4. Run your pipelines
 
 ### Setup
 
@@ -153,7 +161,7 @@ You will then see the files
 
 
 
-# Listing output
+# Listing Your Pipeline's Output
 
 Every pipeline gives a short name for some, usually all, of its outputs. You can
 see these names when you run `./pnlpipe <pipeline> status` (or by inspecting the
@@ -194,10 +202,11 @@ space directions of all your eddy corrected DWI's, you could do the following:
 
 # PNL: Running on the cluster
 
-The PNL uses a high performance computing cluster for most of its data processing,
-and this cluster uses [LSF](https://en.wikipedia.org/wiki/Platform_LSF) to manage batch
-processing. *pnlpipe* provides a Makefile that allows you to easily submit your pipeline jobs
-to this system.
+The PNL uses a high performance computing cluster for most of its data
+processing, and this cluster
+uses [LSF](https://en.wikipedia.org/wiki/Platform_LSF) to manage batch
+processing. *pnlpipe* provides a Makefile that allows you to easily submit your
+pipeline jobs to this system.
 
 Edit `Makefile` and replace `std` in the line `PIPE := std` to the name
 of the pipeline you wish to run. Now you can submit pipeline jobs for individual
@@ -326,6 +335,8 @@ This runs the pipeline for the second parameter combination, as listed by `./pnl
 
 # Shell environment
 
+## Pipeline shell environment
+
 Sometimes you want access to the same software environment that your pipeline
 does when it runs with a particular parameter combination.  This is possible by using
 the `env` command.
@@ -339,10 +350,82 @@ run
     eval `./pnlpipe <pipeline> env -p 2`  # or
     eval $(./pnlpipe <pipeline> env -p 2)
 
+
+## Ad-hoc shell environment
+
+Some of the pre-made software modules make a file called `env.sh` as part of their output,
+and sourcing that file will add their software path to the `PATH` environment variable,
+as well as set any other necessary environment variables.  Currently, the following
+modules make an `env.sh` file:
+
+* UKFTractography
+* BRAINSTools
+* tract_querier
+* whitematteranalysis
+
+E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
+
+    source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
+
+
+# Installing Software Without Using a Pipeline
+
+You can install software without configuring a pipeline and running `./pnlpipe <pipeline> setup`.
+To do this, use the `install` subcommand:
+
+    ./pnlpipe install <software> [--version <version>]
+
+E.g. to install the `DiffusionPropagator` branch of `UKFTractography`, run
+
+    ./pnlpipe install UKFTractography --version DiffusionPropagator
+
+To install the Github revision `41353e8` of [BRAINSTools](https://github.com/BRAINSia/BRAINSTools/),
+run
+
+    ./pnlpipe install BRAINSTools --version 41353e8
+
+
+Each software module interprets version in its own way. Most of the time,
+`--version` expects a Github revision, as for these examples. However
+the switch is optional; running `install` without specifying a version will
+install the software's default version.
+
+Here's an example on how to install the Washington
+University's
+[HCP Pipeline scripts](https://github.com/Washington-University/Pipelines):
+
+    ./pnlpipe install HCPPipelines --version 3.22.0
+
+
 # `pnlscripts`
 
-`pnlscripts` is a directory of PNL specific scripts that implement various pipeline
-steps.  The PNL pipelines call these scripts at each step.
+`pnlscripts` is a directory of PNL specific scripts that implement various
+pipeline steps. The PNL pipelines (via the nodes defined in
+`pnlpipe_pipelines/_pnl.py`) call these scripts at each step. These scripts are
+the successors to the ones in [pnlutil](https://github.com/pnlbwh/pnlutil).
+Besides being more robust and up to date with respect to software such
+as [ANTS](http://stnava.github.io/ANTs/), they are implemented in python using
+the shell scripting library [plumbum](https://plumbum.readthedocs.io/en/latest/).
+Being written in python means they are easier to understand and modify,
+and [plumbum](https://plumbum.readthedocs.io/en/latest/) allows them to be
+almost as concise as a regular shell script.
+
+You can call any these scripts directly, e.g.
+
+    ./pnlscripts/bse.py -h
+
+To add them to the path, run `source env.sh`, and you'll be able to call
+them from any directory.
+
+It's important to note that usually the scripts are calling other binaries, such
+as those in [BRAINSTools](https://github.com/BRAINSia/BRAINSTools/). All the
+software they rely on, with the exception of FreeSurfer and FSL, can be
+installed by setting up a pipeline and running `./pnlpipe <pipeline> setup`, or
+by running `./pnlpipe install <software> `. The software is installed to the
+`$PNLPIPE_SOFT` directory. Some of the software modules also write an `env.sh`
+file to their output directories, which you can source to add them to your
+environment (see the section above). This makes it easy to add them to your
+environment before calling any of the scripts in `pnlscripts`.
 
 
 # Writing your own pipelines
