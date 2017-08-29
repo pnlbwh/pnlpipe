@@ -1,6 +1,6 @@
-*pnlpipe* is a framework for the authoring and running of file based data
-processing pipelines, as well as for the automated installation of prerequisite
-software packages. Once you have written a pipeline, and the installation
+*pnlpipe* is a framework for authoring and running file based data
+processing pipelines, and for automatically installing prerequisite
+software packages. Once you have constructed a pipeline, and the installation
 recipes for the software it relies on, you will be able run it with one or more
 combinations of parameters (including multiple software versions), and be able
 to build all of its dependent software automatically. It is efficient in that it
@@ -13,31 +13,52 @@ and scripts that you can use to extend and write new pipelines.
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
 
-- [Quick Walkthrough](#quick-walkthrough)
-    - [1. Configure your input data](#1-configure-your-input-data)
-    - [2. Run your pipelines](#2-run-your-pipelines)
-        - [Choose and setup a pipeline](#choose-and-setup-a-pipeline)
-        - [Run and monitor the pipeline](#run-and-monitor-the-pipeline)
-- [Listing output](#listing-output)
+- [Teaser](#teaser)
+- [Walkthrough](#walkthrough)
+    - [1. Install pnlpipe to Your Project Directory](#1-install-pnlpipe-to-your-project-directory)
+    - [2. Configure Environment (this is for non-PNL users)](#2-configure-environment-this-is-for-non-pnl-users)
+    - [3. Configure your input data](#3-configure-your-input-data)
+    - [4. Run your pipelines](#4-run-your-pipelines)
+        - [Setup](#setup)
+        - [Run and monitor](#run-and-monitor)
+- [Listing Your Pipeline's Output](#listing-your-pipelines-output)
 - [PNL: Running on the cluster](#pnl-running-on-the-cluster)
 - [Multiple Parameter Combinations](#multiple-parameter-combinations)
     - [Lists of parameter values](#lists-of-parameter-values)
     - [Lists of parameter dictionaries](#lists-of-parameter-dictionaries)
     - [Running and listing specific parameter combinations](#running-and-listing-specific-parameter-combinations)
 - [Shell environment](#shell-environment)
+    - [Pipeline shell environment](#pipeline-shell-environment)
+    - [Ad-hoc shell environment](#ad-hoc-shell-environment)
+- [Installing Software Without Using a Pipeline](#installing-software-without-using-a-pipeline)
+- [`pnlscripts`](#pnlscripts)
 - [Writing your own pipelines](#writing-your-own-pipelines)
+- [Issues](#issues)
+    - [-](#-)
 
 <!-- markdown-toc end -->
 
+# Teaser
 
-# Quick Walkthrough
+    git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
+    cp pnlpipe_config.py.example pnlpipe_config.py  # add your input paths to pnlpipe_config.py
+    ./pnlpipe std init      # make default parameter file: pnlpipe_params/std.params
+    ./pnlpipe std setup     # builds prerequisite software specified in std.params
+    ./pnlpipe std run       # runs 'std' pipeline
+    ./pnlpipe std status    # reports progress
+    ./pnlpipe std summarize # generates _data/tractmeasures.csv - tract measures for all process cases
+
+
+# Walkthrough
 
 ## 1. Install pnlpipe to Your Project Directory
+
+First clone this repo to your project directory:
 
     cd /project/dir
     git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
 
-## 2. Configure Environment (this is for non-PNL users)
+## 2. (For non-PNL Users: Configure Environment)
 
     cd python_env
     make conda  # makes pnlpipe environment for conda
@@ -446,13 +467,6 @@ This section will be expanded in the future, but for now, see
 `pnlpipe_pipelines/std.py` for an example on how to construct a pipeline, and
 see `pnlpipe_pipelines/_pnl.py` for examples on how to write your own nodes.
 
-## Plumbum: Shell Scripting with Python
-
-`pnlscripts`
-from plumbum.cmd import script
-from pnlscripts.util.scripts import
-
-
 # Issues
 
 ### error: error setting certificate verify locations:
@@ -463,3 +477,7 @@ run
     git config --global http.sslverify "false"
 
 and run setup again.
+
+
+TODO
+provenance files
