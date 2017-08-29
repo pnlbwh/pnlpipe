@@ -1,9 +1,14 @@
 from plumbum import local, cli
 import yaml
 import inspect
-from itertools import izip_longest
 from collections import OrderedDict
 from ..readparams import params_file
+try:
+    # Python 3
+    from itertools import zip_longest
+except ImportError:
+    # Python 2
+    from itertools import izip_longest as zip_longest
 
 
 PARAMS_HELP = \
@@ -48,10 +53,10 @@ class Init(cli.Application):
         args, _, _, defaults = inspect.getargspec(
             self.parent.make_pipeline_orig)
         if defaults:
-            x = izip_longest(
+            x = zip_longest(
                 reversed(args), reversed(defaults), fillvalue='*mandatory*')
         else:
-            x = izip_longest(reversed(args), [], fillvalue='*mandatory*')
+            x = zip_longest(reversed(args), [], fillvalue='*mandatory*')
         paramDict = OrderedDict(reversed(map(lambda y: (y[0], [y[1]]), x)))
         paramDict['caseid'] = ['./caselist.txt']
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())

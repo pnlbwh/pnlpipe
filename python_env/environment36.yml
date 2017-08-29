@@ -1,7 +1,7 @@
-name: pnlpipe
+name: pnlpipe3
 
 dependencies:
-  - python=2.7
+  - python=3.6
   - plumbum
   - future
   - numpy

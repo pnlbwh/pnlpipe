@@ -8,6 +8,12 @@ from plumbum.cmd import wget, tar
 
 DEFAULT_HASH = 'ffc358f'
 
+def on_partners_cluster():
+    import socket
+    if 'research.partners' in socket.gethostname():
+        return True
+    return False
+
 def make(hash=DEFAULT_HASH):
     if hash != 'master':
         if checkExists(get_path(hash)):
@@ -18,6 +24,9 @@ def make(hash=DEFAULT_HASH):
         repo = downloadGithubRepo('reckbo/nrrdchecker', hash)
         sha, date = getCommitInfo(repo)
         with local.cwd(repo):
+            if on_partners_cluster():
+                from plumbum.cmd import module
+                module('load', 'stack')
             from plumbum.cmd import stack
             stack['setup'] & FG
             stack['build'] & FG
