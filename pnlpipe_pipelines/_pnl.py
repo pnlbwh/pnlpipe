@@ -1,3 +1,4 @@
+import sys
 from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
 import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools
