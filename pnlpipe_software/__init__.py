@@ -51,8 +51,7 @@ def composeEnvDicts(env_dicts):
     if result.get('PATH'):
         result['PATH'] = ':'.join(result['PATH'] + local.env.path)
     if result.get('PYTHONPATH'):
-        result['PYTHONPATH'] = ':'.join(result['PYTHONPATH']) + os.environ.get(
-            'PYTHONPATH', '')
+        result['PYTHONPATH'] = ':'.join(result['PYTHONPATH']) +  ':' + os.environ.get( 'PYTHONPATH', '')
     else:
         del(result['PYTHONPATH'])
 
