@@ -42,7 +42,6 @@ class NrrdCompareCsv(NrrdOutput):
         BRAINSTools_hash = find_tag(self, 'BRAINSTools_hash')
         caseid = find_tag(self, 'caseid')
         DWIConvert_flags = find_tag(self.deps['nrrd1'], 'DWIConvert_flags')
-
         binarypath = soft.nrrdchecker.get_path(self.nrrdchecker_hash)
         nrrdchecker = local[binarypath]
         stdout = nrrdchecker('-i', self.nrrd1, '-i', self.nrrd2)

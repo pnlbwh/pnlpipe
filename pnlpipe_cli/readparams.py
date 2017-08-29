@@ -49,7 +49,7 @@ def interpret_caseids(paramval):
             sys.exit(1)
         with open(paramval[0], 'r') as f:
             return [line.split()[0] for line in f.read().splitlines()
-                    if not line.startswith('#')]
+                    if line.strip() and not line.startswith('#')]
     return paramval
 
 

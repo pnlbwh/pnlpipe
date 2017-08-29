@@ -29,7 +29,7 @@ class Status(cli.Application):
             _print()
             _print('Parameters:')
             printVertical(dict(combo, caseids=caseids),
-                          keys=combo.keys() + ['caseids'])
+                          keys=list(combo.keys()) + ['caseids'])
 
             pipeline = make_pipeline(self.parent.pipeline_name, combo, caseids[0])
             pathsmap = {'caseid_placeholder': caseids[0]}
@@ -38,7 +38,7 @@ class Status(cli.Application):
             _print()
             _print('Paths:')
             printVertical(pathsmap, keys=['caseid_placeholder'] + \
-                          [k for k in pathsmap.keys() if k not in ['caseid_placeholder']])
+                          [k for k in list(pathsmap.keys()) if k not in ['caseid_placeholder']])
 
             for caseid in caseids:
                 pipeline = make_pipeline(self.parent.pipeline_name, combo, caseid)
@@ -50,7 +50,7 @@ class Status(cli.Application):
 
             counts['#cases'] = len(caseids)
             print('', file=sys.stderr)
-            header = counts.keys()
+            header = list(counts.keys())
             header.remove('#cases')
             printTable(counts, header + ['#cases'])
 

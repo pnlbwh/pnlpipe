@@ -19,31 +19,30 @@ def make(hash=DEFAULT_HASH):
         if checkExists(get_path(hash)):
             return
 
-    with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
-        tmpdir = local.path(tmpdir)
+    with local.tempdir() as tmpdir, local.cwd(tmpdir):
         repo = downloadGithubRepo('reckbo/nrrdchecker', hash)
         sha, date = getCommitInfo(repo)
         with local.cwd(repo):
             if on_partners_cluster():
-                from plumbum.cmd import module
-                module('load', 'stack')
+                import os
+                os.system('module load stack')
             from plumbum.cmd import stack
             stack['setup'] & FG
             stack['build'] & FG
             binary = stack('exec', 'which', 'nrrdchecker')[:-1]
-            get_path(sha).mkdir()
-            local.path(binary).move(get_path(sha) / 'nrrdchecker')
+            get_path(sha).dirname.mkdir()
+            local.path(binary).move(get_path(sha))
 
         symlink = get_path(date).dirname
         print("Make symlink: {} -> {}".format(symlink, get_path(sha).dirname))
-        get_path(date).unlink()
+        symlink.unlink()
         get_path(sha).dirname.symlink(symlink)
 
         logger.info("Made '{}'".format(get_path(sha)))
         logger.info("Made '{}'".format(symlink))
 
 def get_path(hash=DEFAULT_HASH):
-    return getSoftDir() / ('nrrdchecker-' + hash)
+    return getSoftDir() / ('nrrdchecker-' + hash) / 'nrrdchecker'
 
 
 def env_dict(hash):
