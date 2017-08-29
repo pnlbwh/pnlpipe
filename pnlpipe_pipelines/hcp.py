@@ -25,10 +25,10 @@ def make_pipeline(caseid,
 
     tags['t1'] = InputPathFromKey([inputT1Key, caseid])
 
-    pos_dwis = [InputPathFromKey([k,caseid]) for k in dwiPosPathKeys]
-    neg_dwis = [InputPathFromKey([k,caseid]) for k in dwiNegPathKeys]
+    pos_dwis = [InputPathFromKey([k,caseid]) for k in inputDwiPosKeys]
+    neg_dwis = [InputPathFromKey([k,caseid]) for k in inputDwiNegKeys]
 
-    tags['dwi'] = DwiHcp(params, deps=[pos_dwis, neg_dwis])
+    tags['dwi'] = DwiHcp(HCPPipelines_version, echo_spacing, pe_dir, pos_dwis, neg_dwis)
 
     tags['t1xc'] = StrctXc(params, deps=[tags['t1']])
 

@@ -4,7 +4,9 @@ from pnlpipe_software import BRAINSTools
 import pnlpipe_software as soft
 from plumbum import local, FG
 from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py, fs_py
+import pnlpipe_cli
 import pnlpipe_cli.caseidnode as caseidnode
+import itertools
 import logging
 from python_log_indenter import IndentedLoggerAdapter
 logger = logging.getLogger(__name__)
@@ -145,40 +147,64 @@ class DwiEpiMask(NrrdOutput):
             (slicecmd | binarizecmd | gzipcmd) & FG
 
 
-@node(params=['echo_spacing', 'pe_dir'],
-      deps=['pos_dwis', 'neg_dwis'])
-class DwiHcp(DirOutput):
+#@node(params=['echo_spacing', 'pe_dir'],
+#      deps=['pos_dwis', 'neg_dwis'])
+class DwiHcp(NiftiOutput):
     """ Washington University HCP DWI preprocessing. """
 
+    def __init__(self, HCPPipelines_version, echo_spacing, pe_dir, pos_dwis, neg_dwis):
+        self._params = dict(zip(['echo_spacing', 'pe_dir'], [echo_spacing, pe_dir]))
+        self.echo_spacing = echo_spacing
+        self.pe_dir = pe_dir
+        self.HCPPipelines_version = HCPPipelines_version
+
+        for dwi in pos_dwis + neg_dwis:
+            if not isinstance(dwi, Node):
+                raise Exception("DwiHcp expects its dependencies to be of type basenode.Node, instead found type '{}'".format(type(dwi)))
+        pos_keys = ['{}{}'.format(s,n) for (s,n) in list(itertools.izip_longest([], range(10), fillvalue='posdwi'))]
+        neg_keys = ['{}{}'.format(s,n) for (s,n) in list(itertools.izip_longest([], range(10), fillvalue='negdwi'))]
+        self._deps = dict(zip(pos_keys + neg_keys, pos_dwis + neg_dwis))
+        self.pos_dwis = [d.output() for d in pos_dwis]
+        self.neg_dwis = [d.output() for d in neg_dwis]
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def deps(self):
+        return self._deps
+
+
     def static_build(self):
-        with HCPPipelines.env(self.HCPPipelines_version), local.tempdir() as tmpdir:
-            preproc = local[HCPPipelines.get_path(self.version_HCPPipelines) /
+        with soft.HCPPipelines.env(self.HCPPipelines_version), local.tempdir() as tmpdir:
+            preproc = local[soft.HCPPipelines.get_path(self.HCPPipelines_version) /
                             'DiffusionPreprocessing/DiffPreprocPipeline.sh']
-            posPaths = [n.output() for n in self.posDwis]
-            negPaths = [n.output() for n in self.negDwis]
-            hcpdir = tmpdir / self.caseid / 'hcp'
-            datadir = hcpdir / 'data'
+            caseid = pnlpipe_cli.find_caseid(self)
+            hcpdir = tmpdir / caseid / 'hcp'
+            hcpdatadir = hcpdir / 'data'
             from os import getpid
             try:
-                preproc['--path={}'.format(tmpdir), '--subject={}'.format(
-                    self.caseid), '--PEdir={}'.format(self.peDir), '--posData='
-                        + '@'.join(posPaths), '--negData=' + '@'.join(
-                            negPaths), '--echospacing={}'.format(
-                                self.echoSpacing), '--gdcoeffs=NONE',
+                preproc['--path={}'.format(tmpdir), '--subject={}'.format(caseid), '--PEdir={}'.format(self.pe_dir), '--posData='
+                        + '@'.join(self.pos_dwis), '--negData=' + '@'.join(
+                            self.neg_dwis), '--echospacing={}'.format(
+                                self.echo_spacing), '--gdcoeffs=NONE',
                         '--dwiname=hcp-{}'.format(getpid())] & FG
-            except ProcessExecutionError as e:
-                if not (datadir / 'data.nii.gz').exists():
+            except Exception as e:
+                if not (hcpdatadir / 'data.nii.gz').exists():
                     print(e)
-                    log.error("HCP failed to make '{}'".format(datadir /
+                    log.error("HCP failed to make '{}'".format(hcpdatadir /
                                                                'data.nii.gz'))
-                    # (OUTDIR / self.caseid / 'T1w').delete()
                     sys.exit(1)
-            # (OUTDIR / self.caseid / 'T1w').delete()
-            (datadir / 'data.nii.gz').move(self.output())
-            (datadir / 'bvals').move(self.output().with_suffix(
+            (hcpdatadir / 'data.nii.gz').move(self.output())
+            (hcpdatadir / 'bvals').move(self.output().with_suffix(
                 '.bval', depth=2))
-            (datadir / 'bvecs').move(self.output().with_suffix(
+            (hcpdatadir / 'bvecs').move(self.output().with_suffix(
                 '.bvec', depth=2))
+            tarfile = self.output()[:-7] + '-hcpfiles.tar.gz'
+            from plumbum.cmd import tar
+            with local.cwd(hcpdir):
+                tar['czf', tarfile, '.'] & FG
 
 
 @node(params=['BRAINSTools_hash'], deps=['strct'])

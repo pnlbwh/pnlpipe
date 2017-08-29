@@ -2,7 +2,7 @@ ifeq ($(PNLPIPE_SOFT),)
   $(error Export 'PNLPIPE_SOFT' first (This is where e.g. BRAINSTools and training data are/will be installed))
 endif
 
-PIPE := stded
+PIPE := hcp
 CASELIST := caselist.txt
 PARAMS := params.$(PIPE)
 
