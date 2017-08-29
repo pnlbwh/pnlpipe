@@ -1,10 +1,11 @@
 OUTDIR = '_data'
 
-INPUT_KEYS = {
+intrust = {
     'caseid_placeholder': '003_GNX_007',
-    'dwi': '../testdata/INTRuST/003_GNX_007-dwi-Ed.nhdr',
-    'dwiraw': '../testdata/INTRuST/003_GNX_007-dwi-Ed.nhdr',
-    'dwiharm': '../testdata/INTRuST/003_GNX_007_hmz_iter1.nhdr',
-    't1': '../testdata/INTRuST/001-t1w.nrrd',
-    't2': '../testdata/INTRuST/002-t2w.nrrd'
+    'dwied': '/data/pnl/INTRuST/003_GNX_007/diff/003_GNX_007-dwi-Ed.nhdr',
+    'dwi': '/data/pnl/INTRuST/003_GNX_007/diff/003_GNX_007-dwi.nhdr',
+    'dwiharm': '/data/pnl/INTRUST/Harmonization-20160728/003_GNX_007_hmz_iter1.nhdr',
+    't1': '/data/pnl/INTRuST/003_GNX_007/raw/001-t1w.nhdr',
+    't2': '/data/pnl/INTRuST/003_GNX_007/raw/002-t2w.nhdr'
 }
+INPUT_KEYS = intrust
