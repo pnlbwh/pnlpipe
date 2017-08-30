@@ -1,4 +1,5 @@
 import sys
+import os
 from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
 import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools
@@ -178,19 +179,22 @@ class DwiHcp(NiftiOutput):
 
 
     def static_build(self):
-        with soft.HCPPipelines.env(self.HCPPipelines_version), local.tempdir() as tmpdir:
+        #with soft.HCPPipelines.env(self.HCPPipelines_version), local.tempdir() as tmpdir:
+        with soft.HCPPipelines.env(self.HCPPipelines_version):
+            tmpdir = local.path('hcp_tmp')
+            tmpdir.mkdir()
             preproc = local[soft.HCPPipelines.get_path(self.HCPPipelines_version) /
                             'DiffusionPreprocessing/DiffPreprocPipeline.sh']
             caseid = pnlpipe_cli.find_caseid(self)
-            hcpdir = tmpdir / caseid / 'hcp'
+            dwiname = 'hcp-{}'.format(os.getpid())
+            hcpdir = tmpdir / caseid / dwiname
             hcpdatadir = hcpdir / 'data'
-            from os import getpid
             try:
                 preproc['--path={}'.format(tmpdir), '--subject={}'.format(caseid), '--PEdir={}'.format(self.pe_dir), '--posData='
                         + '@'.join(self.pos_dwis), '--negData=' + '@'.join(
                             self.neg_dwis), '--echospacing={}'.format(
                                 self.echo_spacing), '--gdcoeffs=NONE',
-                        '--dwiname=hcp-{}'.format(getpid())] & FG
+                        '--dwiname={}'.format(dwiname)] & FG
             except Exception as e:
                 if not (hcpdatadir / 'data.nii.gz').exists():
                     print(e)
@@ -278,8 +282,7 @@ class FreeSurferUsingMask(DirOutput):
 
     def static_build(self):
         soft.FreeSurfer.validate(self.FreeSurfer_version)
-        fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output(
-        ).dirname.dirname] & FG
+        fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
 
 
 @node(params=['BRAINSTools_hash'], deps=['fs', 'dwi', 'dwimask'])
@@ -346,7 +349,7 @@ class Ukf(VtkOutput):
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
             dwiconvert_py('-i', self.dwi, '-o', tmpdwi)
-            convertImage(self.dwimask, tmpdwimask, self.bthash)
+            convertImage(self.dwimask, tmpdwimask, self.BRAINSTools_hash)
             params = ['--dwiFile', tmpdwi, '--maskFile', tmpdwimask,
                       '--seedsFile', tmpdwimask, '--recordTensors', '--tracts',
                       self.output()] + list(self.ukfparams)
