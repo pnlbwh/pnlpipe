@@ -2,7 +2,7 @@ from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, chec
 from plumbum import local, FG
 from plumbum.cmd import cmake
 import logging
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 import os
 import stat
 
@@ -25,6 +25,10 @@ def make(commit=DEFAULT_HASH):
 
     out = dest / ('BRAINSTools-bin-'+sha)
     symlink = dest / ('BRAINSTools-bin-'+date)
+    symlink.unlink()
+
+    log.info("Make '{}'".format(out))
+    log.info("Make '{}'".format(symlink))
 
     if checkExists(out):
         return
@@ -137,8 +141,8 @@ def make(commit=DEFAULT_HASH):
     symlink.unlink()
     out.symlink(symlink)
     blddir.delete()
-    logger.info("Made '{}'".format(get_path(sha)))
-    logger.info("Made '{}'".format(symlink))
+    log.info("Made '{}'".format(get_path(sha)))
+    log.info("Made '{}'".format(symlink))
 
 
 def get_path(bthash=DEFAULT_HASH):

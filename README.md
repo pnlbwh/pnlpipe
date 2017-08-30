@@ -1,14 +1,15 @@
-*pnlpipe* is a framework for authoring and running file based data
-processing pipelines, and for automatically installing prerequisite
-software packages. Once you have constructed a pipeline, and the installation
-recipes for the software it relies on, you will be able run it with one or more
-combinations of parameters (including multiple software versions), and be able
-to build all of its dependent software automatically. It is efficient in that it
-will only regenerate outputs when their upstream dependencies have changed, and
-will share outputs between pipelines.
+*pnlpipe* is a simple framework for authoring and running file based data
+processing pipelines and for automatically installing prerequisite software
+packages. Unlike many other data processing software, it allows you to:
 
-Included are some of the PNL's neuroimaging pipelines, written using a library
-and scripts that you can use to extend and write new pipelines.
+* build your pipelines from parameterized nodes that generate their own file paths
+* run your pipelines with many parameter combinations without extra work
+* write new nodes and pipelines with little boilerplate
+    
+It is primarily designed for scientific workflows that have long running
+processes and that operate on a set of observations.  It comes prepackaged with
+some of the [PNL](http://pnl.bwh.harvard.edu)'s neuroimaging pipelines that are
+based on a library and scripts that you can use to write new pipelines.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
@@ -405,6 +406,9 @@ run
 
     ./pnlpipe install BRAINSTools --version 41353e8
 
+Or, to install the master branch:
+
+    ./pnlpipe install BRAINSTools --version master
 
 Each software module interprets version in its own way. Most of the time,
 `--version` expects a Github revision, as for these examples. However
