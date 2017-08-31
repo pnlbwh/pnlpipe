@@ -1,6 +1,6 @@
 import sys
 import os
-from pnlpipe_lib import node, Node, reduce_hash, filehash, LOG, find_tag
+from pnlpipe_lib import node, Node, reduce_hash, filehash, dirhash, LOG, find_tag
 import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools
 import pnlpipe_software as soft
@@ -290,7 +290,7 @@ class FsInDwiDirect(NiftiOutput):
     """Direct registration from FreeSurfer wmparc to DWI."""
 
     def static_build(self):
-        fssubjdir = self.fs.dirname.dirname
+        fssubjdir = self.fs
         with local.tempdir() as tmpdir, BRAINSTools.env(
                 self.BRAINSTools_hash):
             tmpoutdir = tmpdir / 'fsindwi'
@@ -311,7 +311,7 @@ class FsInDwiUsingT2(NiftiOutput):
     t1 and t2 registrations."""
 
     def static_build(self):
-        fssubjdir = self.fs.dirname.dirname
+        fssubjdir = self.fs
         with local.tempdir() as tmpdir, BRAINSTools.env(
                 self.BRAINSTools_hash):
             tmpoutdir = tmpdir / 'fsindwi'

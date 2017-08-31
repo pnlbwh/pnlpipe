@@ -52,7 +52,7 @@ class App(cli.Application):
                 'Output directory exists, use -f/--force to force an overwrite.')
             sys.exit(1)
 
-        with TemporaryDirectory() as tmpdir, local.env(SUBJECTS_DIR=tmpdir):
+        with TemporaryDirectory() as tmpdir, local.env(SUBJECTS_DIR=tmpdir, FSFAST_HOME='', MNI_DIR=''):
 
             if self.t1mask:
                 logging.info('Mask the t1')
