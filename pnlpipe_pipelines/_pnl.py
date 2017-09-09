@@ -5,7 +5,7 @@ import pnlpipe_lib.dag as dag
 from pnlpipe_software import BRAINSTools
 import pnlpipe_software as soft
 from plumbum import local, FG
-from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py, fs_py
+from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py, fs_py, fs2dwi_py
 import pnlpipe_cli
 import pnlpipe_cli.caseidnode as caseidnode
 import itertools
@@ -369,7 +369,7 @@ class Wmql(DirOutput):
 
     def static_build(self):
         self.output().delete()
-        with tract_querier.env(self.tract_querier_hash):
+        with soft.tract_querier.env(self.tract_querier_hash):
             wmql_py['-i', self.ukf, '--fsindwi', self.fsindwi, '-o',
                     self.output()] & FG
 
@@ -383,8 +383,7 @@ class TractMeasures(CsvOutput):
             'pnlscripts/measuretracts/measureTracts.py']
         vtks = self.wmql.up() // '*.vtk'
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
-                         self.deps['wmql'].showCompressedDAG(
-                         ), '-o', self.output(), '-i', vtks] & FG
+                         dag.showCompressedDAG(self.deps['wmql']), '-o', self.output(), '-i', vtks] & FG
 
 
 def summarize_tractmeasures(pipename, extra_flags=None):

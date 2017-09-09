@@ -56,7 +56,7 @@ def showDAG(node):
         if node.value:
             return '{}:{}'.format(node.tag, node.value)
         return '{}:None'.format(node.tag)
-    childDAGStrings = [showDAG(n) for n in node.children]
+    childDAGStrings = sorted([showDAG(n) for n in node.children])
     return '{}({})'.format(node.tag, ','.join(childDAGStrings))
 
 
