@@ -5,4 +5,5 @@ pandas
 nibabel
 python_log_indenter
 pyyaml
+psutil
 checksumdir
