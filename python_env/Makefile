@@ -3,8 +3,10 @@
 virtualenv: _venv
 nix: _pip_packages.nix
 conda: environment.yml
+	@echo "Adding conda-forge to default conda channels"
+	conda config --add channels conda-forge	
 	conda env create -f $<
-	@echo "Now run 'source activate pnlpnlpipe'"
+	@echo "Now run 'source activate pnlpipe'"
 
 _venv: requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<
