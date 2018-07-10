@@ -1,4 +1,5 @@
-from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict, numCores
+from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict
+import psutil
 from plumbum import local, FG
 from plumbum.cmd import cmake
 import logging
@@ -121,7 +122,7 @@ def make(commit=DEFAULT_HASH):
         ,"-DVTK_GIT_REPOSITORY=git://vtk.org/VTK.git"
         )
         import plumbum.cmd
-        plumbum.cmd.make['-j', numCores()] & FG
+        plumbum.cmd.make['-j', psutil.cpu_count(logical=False)] & FG
     (blddir / 'bin').move(out)
     with open(blddir / 'ANTs/Scripts/antsRegistrationSyN.sh', 'r') as src:
         with open(out / 'antsRegistrationSyN.sh', 'w') as dest:
