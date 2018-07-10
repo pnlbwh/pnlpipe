@@ -1,4 +1,4 @@
-from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict
+from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict, numCores
 from plumbum import local, FG
 from plumbum.cmd import cmake
 import logging
@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 import os
 import stat
 
-DEFAULT_HASH = '41353e8'
+DEFAULT_HASH = '95ac1e287c67ece1'
 
 def make(commit=DEFAULT_HASH):
     """Downloads and compiles BRAINSTools binaries. Output is '$soft/BRAINSTools-bin-<hash>'."""
@@ -121,7 +121,7 @@ def make(commit=DEFAULT_HASH):
         ,"-DVTK_GIT_REPOSITORY=git://vtk.org/VTK.git"
         )
         import plumbum.cmd
-        plumbum.cmd.make['-j', '16'] & FG
+        plumbum.cmd.make['-j', numCores()] & FG
     (blddir / 'bin').move(out)
     with open(blddir / 'ANTs/Scripts/antsRegistrationSyN.sh', 'r') as src:
         with open(out / 'antsRegistrationSyN.sh', 'w') as dest:
