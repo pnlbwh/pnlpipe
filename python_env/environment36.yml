@@ -7,8 +7,10 @@ dependencies:
   - numpy
   - pandas
   - vtk
+  - cmake
   - nibabel
   - pyyaml
+  - psutil
   - csvkit
   - cython
   - joblib

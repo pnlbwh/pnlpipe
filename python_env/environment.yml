@@ -6,6 +6,8 @@ dependencies:
   - future
   - numpy
   - pandas
+  - cmake
+  - psutil
   - vtk
   - nibabel
   - pyyaml
