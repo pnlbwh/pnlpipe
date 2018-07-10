@@ -57,7 +57,7 @@ class Init(cli.Application):
                 reversed(args), reversed(defaults), fillvalue='*mandatory*')
         else:
             x = zip_longest(reversed(args), [], fillvalue='*mandatory*')
-        paramDict = OrderedDict(reversed(map(lambda y: (y[0], [y[1]]), x)))
+        paramDict = OrderedDict(reversed(list(map(lambda y: (y[0], [y[1]]), x))))
         paramDict['caseid'] = ['./caselist.txt']
         represent_dict_order = lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items())
         yaml.add_representer(OrderedDict, represent_dict_order)
