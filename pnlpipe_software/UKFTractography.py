@@ -1,4 +1,5 @@
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, envFromDict
+import psutil
 from plumbum import local, FG
 from plumbum.cmd import cmake
 import logging
@@ -30,7 +31,7 @@ def make(commit=DEFAULT_HASH):
     with local.cwd(blddir):
         cmake(repo)
         import plumbum.cmd
-        plumbum.cmd.make['-j', 16] & FG
+        plumbum.cmd.make['-j', psutil.cpu_count(logical=False)] & FG
 
     binary1 = blddir / 'ukf/bin/UKFTractography'
     binary2 = blddir / 'UKFTractography-build/ukf/bin/UKFTractography' # later commits
