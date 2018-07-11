@@ -34,7 +34,7 @@ def make(commit=DEFAULT_HASH):
         plumbum.cmd.make['-j', psutil.cpu_count(logical=False)] & FG
 
     binary1 = blddir / 'ukf/bin/UKFTractography'
-    binary2 = blddir / 'UKFTractography-build/ukf/bin/UKFTractography' # later commits
+    binary2 = blddir / 'UKFTractography-build/UKFTractography/bin/UKFTractography' # later commits
     binary = binary1 if binary1.exists() else binary2
 
     outbinary.dirname.mkdir()
