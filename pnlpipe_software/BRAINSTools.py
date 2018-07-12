@@ -9,7 +9,7 @@ import stat
 
 DEFAULT_HASH = '95ac1e287c67ece1'
 
-def make(commit=DEFAULT_HASH):
+def make(commit=DEFAULT_HASH, delete=False):
     """Downloads and compiles BRAINSTools binaries. Output is '$soft/BRAINSTools-bin-<hash>'."""
 
     dest = getSoftDir()
@@ -141,7 +141,8 @@ def make(commit=DEFAULT_HASH):
     # chmod('a-w', out)
     symlink.unlink()
     out.symlink(symlink)
-    blddir.delete()
+    if delete:
+        blddir.delete()
     log.info("Made '{}'".format(get_path(sha)))
     log.info("Made '{}'".format(symlink))
 
