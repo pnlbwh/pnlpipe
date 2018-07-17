@@ -153,8 +153,9 @@ def make(commit=DEFAULT_HASH, delete=False):
     # chmod('a-w', out)
     symlink.unlink()
     out.symlink(symlink)
-    if delete:
-        blddir.delete()
+    if sys.flags.interactive:
+        if input("Delete build directory? [y/N]") == "y":
+            blddir.delete()
     log.info("Made '{}'".format(get_path(sha)))
     log.info("Made '{}'".format(symlink))
 
