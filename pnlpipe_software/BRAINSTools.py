@@ -1,5 +1,5 @@
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict
-import psutil
+import psutil, sys
 from plumbum import local, FG
 from plumbum.cmd import cmake
 import logging
@@ -11,6 +11,18 @@ DEFAULT_HASH = '95ac1e287c67ece1'
 
 def make(commit=DEFAULT_HASH, delete=False):
     """Downloads and compiles BRAINSTools binaries. Output is '$soft/BRAINSTools-bin-<hash>'."""
+
+    if os.getenv("CONDA_PREFIX"):
+        # add CONDA_PREFIX paths to the compiler flags so we prefer conda's includes and libs
+        conda_prefix = os.getenv("CONDA_PREFIX")
+        build_flags = " -I{conda_prefix}/include -L{conda_prefix}/lib".format(conda_prefix=conda_prefix)
+
+        cflags = os.getenv("CFLAGS") + " " + build_flags
+        cxxflags = os.getenv("CXXFLAGS") + " " + build_flags
+        local.env["CFLAGS"] = cflags
+        local.env["CXXFLAGS"] = cxxflags
+        local.env["ICU_ROOT_DIR"] = conda_prefix
+        local.env["ICU_ROOT"] = conda_prefix
 
     dest = getSoftDir()
 
