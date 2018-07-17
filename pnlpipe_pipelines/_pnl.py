@@ -16,10 +16,10 @@ log = IndentedLoggerAdapter(logger, indent_char='.')
 
 # defaults that pipelines can use
 bet_threshold = 0.1
-BRAINSTools_hash = '2d5eccb'
+BRAINSTools_hash = '95ac1e287c'
 trainingDataT1AHCC_hash = 'd6e5990'
 FreeSurfer_version = '5.3.0'
-UKFTractography_hash = '421a7ad'
+UKFTractography_hash = '35ca38d'
 # tract_querier_hash = 'e045eab'
 tract_querier_hash = 'c57d670'
 ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
