@@ -43,6 +43,7 @@ based on a library and scripts that you can use to write new pipelines.
 
     git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
     cp pnlpipe_config.py.example pnlpipe_config.py  # add your input paths to pnlpipe_config.py
+    # create a caselist.txt file where each line is a case ID
     ./pnlpipe std init      # make default parameter file: pnlpipe_params/std.params
     ./pnlpipe std setup     # builds prerequisite software specified in std.params
     ./pnlpipe std run       # runs 'std' pipeline
