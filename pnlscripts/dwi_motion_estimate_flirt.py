@@ -5,6 +5,12 @@ import tarfile
 import numpy, numpy as np
 import scipy.io
 
+# This code reads a series of transforms written by FLIRT, representing the
+# motion-correction of each gradient in a diffusion-weighted MRI image.
+# The code then calculates the displacement represented by each transform,
+# and saves the result, the mean for each subject, and the case-list to a .mat file.
+
+
 def load_transforms(path: str):
     """
     Load array of transforms from a directory, or tar/tgz/bz2/zip file containing
@@ -89,6 +95,21 @@ def directory_motion_estimate(input_path, output_path=None):
     return mat_data
 
 def _test(testdata_dir):
+    """
+    - Load datasets from `testdata_dir`, assumed to contain the following files:
+        - {test1,test2,test3}-dwi-B3000-Ed-xfms.tgz
+            
+            Each archive holds a set of txt files with the naming convention
+            `Diffusion-G##.txt`, and containing 4x4 transforms.
+        - {test1,test2,test3}-motionEstimate_general_2.mat
+
+            Reference results from running the original matlab code.
+
+    - Runs the motion calculation directly on the tgz files, and on temp
+      temp directory where the files have been extracted.
+    - Compares results to the reference .mat files.
+    """
+
     # test individual subjects
     subjects = ['test1', 'test2', 'test3']
     for s in subjects:
@@ -117,14 +138,23 @@ def main(args=sys.argv):
     # handle arguments
     parser = argparse.ArgumentParser('Process args')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--single_subject', '-s', action='store_true', required=False,
-                       help="Calculate motion for a single subject (directory or tgz file), save \
-                            result to specified .mat file.")
-    group.add_argument('--test', action='store_true', required=False, help="Run tests. 'datapath'\
-                                                                            should be test data dir.")
 
-    parser.add_argument('datapath', help="Input data: directory or archive", type=str)
-    parser.add_argument('output', help="Output (.mat) file", type=str)
+    group.add_argument('--single_subject', '-s',
+                        help="Calculate motion for a single subject (directory or tgz file), save \
+                        result to specified .mat file.",
+                        action='store_true', required=False)
+
+    group.add_argument('--test',
+                        help="Run tests. 'datapath' should be test data directory."
+                        action='store_true', required=False)
+
+    parser.add_argument('datapath',
+                        help="Input data: directory or archive",
+                        type=str)
+    parser.add_argument('output',
+                        help="Output (.mat) file",
+                        type=str)
+
     args = parser.parse_args(sys.argv[1:])
 
     if args.test:
