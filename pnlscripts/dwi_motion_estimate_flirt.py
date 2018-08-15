@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys, io, os, glob, argparse, tempfile
 import tarfile
 import numpy, numpy as np
