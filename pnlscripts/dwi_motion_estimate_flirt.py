@@ -9,6 +9,9 @@ import scipy.io
 # motion-correction of each gradient in a diffusion-weighted MRI image.
 # The code then calculates the displacement represented by each transform,
 # and saves the result, the mean for each subject, and the case-list to a .mat file.
+# Note: this script compares each subsequent gradient against the last, rather
+#       than against b0. The reasoning is that we are most concerned about
+#       signal drops which occur due to motion.
 
 
 def load_transforms(path: str):
@@ -91,6 +94,7 @@ def directory_motion_estimate(input_path, output_path=None):
 
     if output_path is not None:
         scipy.io.savemat(output_path, mat_data)
+        print("Saved 'cases', 'res', and 'motion_estimation' variables in '{}'".format(output_path))
 
     return mat_data
 
