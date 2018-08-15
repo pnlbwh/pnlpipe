@@ -169,7 +169,7 @@ def main(args=sys.argv):
 
         res = subject_motion(load_transforms(args.datapath))
         scipy.io.savemat(args.single_subject, {'res': res})
-        print("Saved variable 'mat' in file: {}".format(args.single_subject))
+        print("Saved variable 'res' in file: {}".format(args.single_subject))
         sys.exit(0)
 
     else:
