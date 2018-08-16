@@ -105,12 +105,13 @@ def _test(testdata_dir):
             
             Each archive holds a set of txt files with the naming convention
             `Diffusion-G##.txt`, and containing 4x4 transforms.
+
         - {test1,test2,test3}-motionEstimate_general_2.mat
 
             Reference results from running the original matlab code.
 
-    - Runs the motion calculation directly on the tgz files, and on temp
-      temp directory where the files have been extracted.
+    - Runs the motion calculation directly on the tgz files, and on files in
+      a temp directory where the files have been extracted.
     - Compares results to the reference .mat files.
     """
 
