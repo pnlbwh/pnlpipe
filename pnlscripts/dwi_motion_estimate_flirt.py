@@ -31,7 +31,7 @@ def load_transforms(path: str):
         filenames = glob.glob(path + "/Diffusion-*")
         filenames.sort()
         filedata = [open(f, 'rb').read() for f in filenames]
-        
+
     num_grads = len(filenames)
 
     transforms = np.zeros((num_grads, 4, 4), dtype=np.float64)
@@ -102,7 +102,7 @@ def _test(testdata_dir):
     """
     - Load datasets from `testdata_dir`, assumed to contain the following files:
         - {test1,test2,test3}-dwi-B3000-Ed-xfms.tgz
-            
+
             Each archive holds a set of txt files with the naming convention
             `Diffusion-G##.txt`, and containing 4x4 transforms.
 
@@ -137,7 +137,7 @@ def _test(testdata_dir):
         np.testing.assert_allclose(mtn_dir, mtn_mat, rtol=1e-15)
     print("All tests passed.")
 
-    
+
 
 def main(args=sys.argv):
     # handle arguments
@@ -168,7 +168,7 @@ def main(args=sys.argv):
 
     elif args.single_subject:
         if (not os.path.exists(os.path.dirname(args.single_subject)) or
-            os.path.isdir(args.single_subject_)):
+            os.path.isdir(args.single_subject)):
             print("Error: --single_subject argument must be filename, in an existing directory")
             sys.exit(1)
 
