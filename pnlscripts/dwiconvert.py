@@ -27,9 +27,11 @@ class App(cli.Application):
 
     Examples:
         dwiconvert.py -i dwi.nii.gz -o dwi.nrrd
+	dwiconvert.py -i dwi.nii.gz -o dwi.nhdr
         dwiconvert.py -i dicomdir -o dwi.nii.gz --flags "useIdentityMeaseurementFrame useBMatrixGradientDirections"
         dwiconvert.py -i dwi.nrrd -o dwi.nhdr
-        dwiconvert.py -i dwi.nrrd -o dwi.nhdr
+        dwiconvert.py -i dwi.nrrd -o dwi.nii
+	
     """
 
     force = cli.Flag(['-f','--force'], help='Force overwrite if output already exists',mandatory=False,default=False)
