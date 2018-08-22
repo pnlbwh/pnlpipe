@@ -118,7 +118,7 @@ def makeAtlases(target, trainingTable, outdir, fusion):
 	# then that warp is applied to images in other columns
 	# assuming first column of the dictionary contains moving images        
 	computeWarp(r[0], target, warp) # first column of each row is used here
-        applyWarp(r[0], warp, target, atlas) # first column of each row is used here
+	applyWarp(r[0], warp, target, atlas) # first column of each row is used here
 
 	# labelname is the column header and label is the image in the csv file
         for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
@@ -126,7 +126,7 @@ def makeAtlases(target, trainingTable, outdir, fusion):
             logging.info('Make {atlaslabel}'.format(**locals()))
             
 	    # creates {labelname}{idx}.nii.gz in the output directory
-            # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file	
+	    # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file	
 	    applyWarp(
                 label,
                 warp,
@@ -225,7 +225,11 @@ class AtlasArgs(cli.Application):
 
 @Atlas.subcommand("csv")
 class AtlasCsv(cli.Application):
-    """Specify training images and labelmaps via a csv file. Put the images with any header in the first column, and labelmaps with proper headers in the consecutive columns. The headers in the labelmap columns will be used to name the generated atlas labelmaps."""
+    """Specify training images and labelmaps via a csv file.
+Put the images with any header in the first column, 
+and labelmaps with proper headers in the consecutive columns. 
+The headers in the labelmap columns will be used to name the generated atlas labelmaps.
+"""
 
     target = cli.SwitchAttr(
         ['-t', '--target'],
