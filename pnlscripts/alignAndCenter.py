@@ -13,7 +13,7 @@ class App(cli.Application):
         mandatory=True)
     out = cli.SwitchAttr(
         ['-o', '--out'],
-        help='output directory',
+        help='Output volume Nrrd',
         mandatory=True)
 
     def main(self):
