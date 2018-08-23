@@ -69,12 +69,9 @@ the diffusion volumes are indexed by the last axis."""
     dwimask = cli.SwitchAttr(
         ['-m', '--mask'], ExistingNrrdOrNifti, help='DWI mask', mandatory=False)
     dwi = cli.SwitchAttr(
-        ['-i', '--infile'],
-        ExistingNrrdOrNifti,
-        help='DWI',
-        mandatory=True)
+        ['-i', '--infile'], ExistingNrrdOrNifti, help='DWI', mandatory=True)
     out = cli.SwitchAttr(
-        ['-o', '--out'], cli.NonexistentPath, help='Extracted B0 image', mandatory=True)
+        ['-o', '--out'], Nrrd, help='Extracted B0 image', mandatory=True)
 
     def main(self):
         if isNifti(self.dwi):

@@ -123,7 +123,7 @@ class App(cli.Application):
                 ,'-o', self.out)
 
             if self.debug:
-                tmpdir.move("eddy-debug-"+getpid())
+                tmpdir.move("eddy-debug-"+str(getpid()))
 
 if __name__ == '__main__':
     App.run()

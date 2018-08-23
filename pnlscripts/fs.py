@@ -47,7 +47,7 @@ class App(cli.Application):
             logging.error('Set FREESURFER_HOME first.')
             sys.exit(1)
 
-        if not self.force and self.out.exists():
+        if not self.force and os.path.exists(self.out):
             logging.error(
                 'Output directory exists, use -f/--force to force an overwrite.')
             sys.exit(1)
