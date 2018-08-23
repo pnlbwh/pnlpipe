@@ -244,8 +244,8 @@ The headers in the labelmap columns will be used to name the generated atlas lab
         ['-o', '--out'], help='output directory', mandatory=True)
 
     @cli.positional(cli.ExistingFile)
-    def main(self, csv):
-        trainingTable = pd.read_csv(csv)
+    def main(self, csvFile):
+        trainingTable = pd.read_csv(csvFile)
         makeAtlases(self.target, trainingTable, self.out, self.fusions)
         logging.info('Made ' + self.out)
 
