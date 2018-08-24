@@ -60,7 +60,7 @@ First clone this repo to your project directory:
     cd /project/dir
     git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
 
-## 2. Install softwares:
+## 2. Install software:
     
     uname -a # check if 32 or 64 bit
     

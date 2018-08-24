@@ -26,6 +26,7 @@ class App(cli.Application):
     DWIConvert is called with '--allowLossyConversion'.
 
     Examples:
+
         dwiconvert.py -i dwi.nii.gz -o dwi.nrrd
 	dwiconvert.py -i dwi.nii.gz -o dwi.nhdr
         dwiconvert.py -i dicomdir -o dwi.nii.gz --flags "useIdentityMeaseurementFrame useBMatrixGradientDirections"

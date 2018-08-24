@@ -127,12 +127,11 @@ def makeAtlases(target, trainingTable, outdir, fusion):
             
 	    # creates {labelname}{idx}.nii.gz in the output directory
 	    # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file	
-	    applyWarp(
-                label,
-                warp,
-                target,
-                atlaslabel,
-                interpolation='NearestNeighbor')
+	    applyWarp(label,
+	                warp,
+        	        target,
+        	        atlaslabel,
+        	        interpolation='NearestNeighbor')
 	
     
     
@@ -226,10 +225,10 @@ class AtlasArgs(cli.Application):
 @Atlas.subcommand("csv")
 class AtlasCsv(cli.Application):
     """Specify training images and labelmaps via a csv file.
-Put the images with any header in the first column, 
-and labelmaps with proper headers in the consecutive columns. 
-The headers in the labelmap columns will be used to name the generated atlas labelmaps.
-"""
+    Put the images with any header in the first column, 
+    and labelmaps with proper headers in the consecutive columns. 
+    The headers in the labelmap columns will be used to name the generated atlas labelmaps.
+    """
 
     target = cli.SwitchAttr(
         ['-t', '--target'],
