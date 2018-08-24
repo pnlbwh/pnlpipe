@@ -75,7 +75,7 @@ Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation)
    
 ## 3. (For non-PNL Users: Configure Environment)
     
-    source path/to/miniconda3/bin/activate # should intoduce '(base)' in front of each line
+    source path/to/miniconda3/bin/activate # should introduce '(base)' in front of each line
         
     cd /path/to/pnlpipe/python_env
     make conda  # makes pnlpipe environment for conda
