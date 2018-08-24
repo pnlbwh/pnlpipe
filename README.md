@@ -117,7 +117,7 @@ To specify the parameters, we put them a [yaml](http://www.yaml.org/start.html)
 configuration file, in this case called `pnlpipe_params/std.params`. To make a
 default version of this file, run
 
-    ./pnlpipe std init # ignore any warnings related to dtype or size
+    ./pnlpipe std init
 
 This makes a parameter file with the pipeline's default parameters. For the
 `std` pipeline, the most important ones are the input keys, `inputDwiKey`,
