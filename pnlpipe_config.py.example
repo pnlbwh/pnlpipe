@@ -3,8 +3,8 @@ OUTDIR = '_data'
 intrust = {
     'caseid_placeholder': '003_GNX_007',
     'dwied': '/data/pnl/INTRuST/003_GNX_007/diff/003_GNX_007-dwi-Ed.nhdr',
-    'dwi': '/data/pnl/INTRuST/003_GNX_007/diff/003_GNX_007-dwi.nhdr',
-    'dwiharm': '/data/pnl/INTRUST/Harmonization-20160728/003_GNX_007_hmz_iter1.nhdr',
+    'dwi': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-dwi.nhdr',
+    'dwiharm': '/data/pnl/INTRUST/003_GNX_007/diff/003_GNX_007_hmz_iter1.nhdr',
     't1': '/data/pnl/INTRuST/003_GNX_007/raw/001-t1w.nhdr',
     't2': '/data/pnl/INTRuST/003_GNX_007/raw/002-t2w.nhdr'
 }

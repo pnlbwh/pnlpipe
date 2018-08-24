@@ -16,6 +16,9 @@ def make(commit=DEFAULT_HASH, delete=False):
         # add CONDA_PREFIX paths to the compiler flags so we prefer conda's includes and libs
         conda_prefix = os.getenv("CONDA_PREFIX")
         build_flags = " -I{conda_prefix}/include -L{conda_prefix}/lib".format(conda_prefix=conda_prefix)
+        
+        if os.getenv("CFLAGS") is None or os.getenv("CXXFLAGS") is None:
+            raise Exception("Missing CFLAGS or CXXFLAGS in environment")
 
         cflags = os.getenv("CFLAGS") + " " + build_flags
         cxxflags = os.getenv("CXXFLAGS") + " " + build_flags

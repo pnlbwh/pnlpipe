@@ -8,6 +8,7 @@ from util.antspath import antsRegistrationSyN_sh
 from itertools import izip_longest
 import pandas as pd
 import sys
+import numpy as np
 
 import logging
 logger = logging.getLogger()
@@ -35,9 +36,14 @@ def computeWarp(image, target, out):
         pre = tmpdir / 'ants'
         warp = pre + '1Warp.nii.gz'
         affine = pre + '0GenericAffine.mat'
+
+	# pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
         antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
                                32] & FG
-        ComposeMultiTransform('3', out, '-R', target, warp, affine)
+
+	# out is Warp{idx}.nii.gz, saved in the specified output direcotry
+	# ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
+        ComposeMultiTransform('3', out, '-R', target, warp, affine) 
 
 
 def applyWarp(moving, warp, reference, out, interpolation='Linear'):
@@ -53,18 +59,19 @@ def applyWarp(moving, warp, reference, out, interpolation='Linear'):
     LanczosWindowedSinc
     GenericLabel[<interpolator=Linear>]
     '''
+
+    # antsApplyTransforms reads Warp{idx}.nii.gz and 
+    # creates atlas{idx}.nii.gz and {labelname}{idx}.nii.gz in the specified ouput directory
     antsApplyTransforms['-d', '3', '-i', moving, '-t', warp, '-r', reference,
                         '-o', out, '--interpolation', interpolation] & FG
 
 
-def intersperse(seq, value):
-    res = [value] * (2 * len(seq) - 1)
-    res[::2] = seq
-    return res
-
-
 def fuseAntsJointFusion(target, images, labels, out):
     from plumbum.cmd import antsJointFusion
+
+    # images are the warped images atlas{idx}.nii.gz
+    # labelmaps are the warped labels {labelname}{idx}.nii.gz
+    # out is {labelname}.nrrd
     antsJointFusionArgs = \
         ['-d', 3 ,'-t', target ,'-g'] + \
         images + \
@@ -72,6 +79,7 @@ def fuseAntsJointFusion(target, images, labels, out):
         labels + \
         ['-o', out] + \
         ANTSJOINTFUSION_PARAMS
+
     antsJointFusion(*antsJointFusionArgs)
 
 
@@ -80,48 +88,72 @@ def fuseAvg(labels, out):
     with local.tempdir() as tmpdir:
         nii = local.path(tmpdir) / 'avg.nii.gz'
         AverageImages('3', nii, '0', *labels)
+
+	# out is {labelname}.nrrd
         ConvertBetweenFileFormats(nii, out)
+
+    # Binary operation, if out>0.5, pipe the output and save as {labelname}.nrrd
     (unu['2op', 'gt', out, '0.5'] | \
-     unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', out]) & FG
+     	unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', out]) & FG
 
 
-def makeAtlases(target, trainingTable, outdir, fusions=[]):
+def makeAtlases(target, trainingTable, outdir, fusion):
     outdir = local.path(outdir)
     outdir.mkdir()
 
     logging.info(
         'Create {} atlases: compute transforms from images to target and apply'.format(
             len(trainingTable)))
-    for idx, r in trainingTable.iterrows():
+    
+ 
+          
+    for idx, r in trainingTable.iterrows(): # reads each row except the headers
+        
+        print('Registering image {idx} to target'.format(**locals()))
         warp = outdir / 'warp{idx}.nii.gz'.format(**locals())
         atlas = outdir / 'atlas{idx}.nii.gz'.format(**locals())
         logging.info('Make {atlas}'.format(**locals()))
-        computeWarp(r['image'], target, warp)
-        applyWarp(r['image'], warp, target, atlas)
-        for labelname, label in r.iloc[1:].iteritems():
+	
+	# warp is computed among the first column images and the target image
+	# then that warp is applied to images in other columns
+	# assuming first column of the dictionary contains moving images        
+	computeWarp(r[0], target, warp) # first column of each row is used here
+	applyWarp(r[0], warp, target, atlas) # first column of each row is used here
+
+	# labelname is the column header and label is the image in the csv file
+        for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
             atlaslabel = outdir / '{labelname}{idx}.nii.gz'.format(**locals())
             logging.info('Make {atlaslabel}'.format(**locals()))
-            applyWarp(
-                label,
-                warp,
-                target,
-                atlaslabel,
-                interpolation='NearestNeighbor')
+            
+	    # creates {labelname}{idx}.nii.gz in the output directory
+	    # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file	
+	    applyWarp(label,
+	                warp,
+        	        target,
+        	        atlaslabel,
+        	        interpolation='NearestNeighbor')
+	
+    
+    
+    for labelname in list(trainingTable)[1:]:  #list(d) gets column names
 
-    for labelname in list(trainingTable)[
-            1:]:  #list(d) gets column names
-        out = outdir / labelname + '.nrrd'
-        labelmaps = outdir // (labelname + '*')
-        for fusion in fusions:
-            if fusion.lower() == 'avg':
-                fuseAvg(labelmaps, out)
-            elif fusion.lower() == 'antsjointfusion':
-                atlasimages = outdir // 'atlas*.nii.gz'
-                fuseAntsJointFusion(target, atlasimages, labelmaps, out)
-            else:
-                print(
-                    'Unrecognized fusion option: {}. Skipping.'.format(
-                        fusion))
+	out = outdir / labelname + '.nrrd'
+	labelmaps = outdir // (labelname + '*')
+
+	if fusion.lower() == 'avg':
+		print(' ')                
+		fuseAvg(labelmaps, out)
+
+	elif fusion.lower() == 'antsjointfusion':
+		print(' ')
+
+		# atlasimages are the warped images
+		# labelmaps are the warped labels
+		atlasimages = outdir // 'atlas*.nii.gz'
+		fuseAntsJointFusion(target, atlasimages, labelmaps, out)
+
+	else:
+		print('Unrecognized fusion option: {}. Skipping.'.format(fusion))
 
 
 class Atlas(cli.Application):
@@ -192,7 +224,11 @@ class AtlasArgs(cli.Application):
 
 @Atlas.subcommand("csv")
 class AtlasCsv(cli.Application):
-    """Specify training images and labelmaps via a csv file.  The names in the header row will be used to name the generated atlas labelmaps."""
+    """Specify training images and labelmaps via a csv file.
+    Put the images with any header in the first column, 
+    and labelmaps with proper headers in the consecutive columns. 
+    The headers in the labelmap columns will be used to name the generated atlas labelmaps.
+    """
 
     target = cli.SwitchAttr(
         ['-t', '--target'],
@@ -200,16 +236,15 @@ class AtlasCsv(cli.Application):
         help='target image',
         mandatory=True)
     fusions = cli.SwitchAttr(
-        '--fusion',
+        ['-f', '--fusion'],
         cli.Set("avg", "antsJointFusion", case_sensitive=False),
-        list=True,
-        help='Also create predicted labelmap(s) by averaging the atlas labelmaps')
+        help='Also create predicted labelmap(s) by combining the atlas labelmaps')
     out = cli.SwitchAttr(
         ['-o', '--out'], help='output directory', mandatory=True)
 
     @cli.positional(cli.ExistingFile)
-    def main(self, csv):
-        trainingTable = pd.read_csv(csv)
+    def main(self, csvFile):
+        trainingTable = pd.read_csv(csvFile)
         makeAtlases(self.target, trainingTable, self.out, self.fusions)
         logging.info('Made ' + self.out)
 

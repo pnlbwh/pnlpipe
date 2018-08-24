@@ -12,12 +12,12 @@ logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
 
 class App(cli.Application):
-    """Rigidly align a labelmap (usually a mask)."""
+    """Rigidly align a labelmap (usually a mask) to make another labelmap from a given one"""
 
-    infile = cli.SwitchAttr(['-i','--infile'], cli.ExistingFile, help='structural',mandatory=True)
-    labelmap = cli.SwitchAttr(['-l','--labelmap'], cli.ExistingFile, help='structural labelmap, usually a mask',mandatory=True)
-    target = cli.SwitchAttr(['-t','--target'], cli.ExistingFile, help='target image',mandatory=True)
-    out    = cli.SwitchAttr(['-o', '--out'], help='output labelmap', mandatory=True)
+    infile = cli.SwitchAttr(['-i','--infile'], cli.ExistingFile, help='structural (nrrd/nii)',mandatory=True)
+    labelmap = cli.SwitchAttr(['-l','--labelmap'], cli.ExistingFile, help='structural labelmap, usually a mask (nrrd/nii)',mandatory=True)
+    target = cli.SwitchAttr(['-t','--target'], cli.ExistingFile, help='target image (nrrd/nii)',mandatory=True)
+    out    = cli.SwitchAttr(['-o', '--out'], help='output labelmap (nrrd/nii)', mandatory=True)
 
     def main(self):
         with TemporaryDirectory() as tmpdir:

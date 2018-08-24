@@ -43,6 +43,7 @@ based on a library and scripts that you can use to write new pipelines.
 
     git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
     cp pnlpipe_config.py.example pnlpipe_config.py  # add your input paths to pnlpipe_config.py
+    # create a caselist.txt file where each line is a case ID
     ./pnlpipe std init      # make default parameter file: pnlpipe_params/std.params
     ./pnlpipe std setup     # builds prerequisite software specified in std.params
     ./pnlpipe std run       # runs 'std' pipeline
@@ -59,11 +60,26 @@ First clone this repo to your project directory:
     cd /project/dir
     git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
 
-## 2. (For non-PNL Users: Configure Environment)
+## 2. Install software:
+    
+    uname -a # check if 32 or 64 bit
+    
+Download [Miniconda Python 3.6 bash installer](https://conda.io/miniconda.html) (64/36-bit based on your environment)
+    
+    sh /path/to/installation/script.sh
+    
+Follow the [instruction](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to download and install FreeSurfer
 
-    cd python_env
+Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL
+
+   
+## 3. (For non-PNL Users: Configure Environment)
+    
+    source path/to/miniconda3/bin/activate # should introduce '(base)' in front of each line
+        
+    cd /path/to/pnlpipe/python_env
     make conda  # makes pnlpipe environment for conda
-    source activate pnlpipe
+    source activate pnlpipe # should introduce '(pnlpipe)' in front of each line
     export PNLPIPE_SOFT=/path/to/software/dir  # where software modules will be installed
 
 ## 3. Configure your input data
@@ -78,7 +94,7 @@ look something like
         't2': '../001/001-t2w.nrrd'
     }
 
-Each path is a template that is has a placeholder representing a case id (in
+Each path is a template that is a placeholder representing a case id (in
 this example its '001'). Every pipeline is expected to accept a case id
 parameter, and when run with a particular id, it will use this dictionary to
 find the input paths it needs. You only need to define this dictionary once.
@@ -129,8 +145,16 @@ software is determined by the parameters that end in '_version' and '_hash' (a
 Github commit hash). Before building the software packages, you need to specify
 the directory to install them to, and you do this by setting a global
 environment variable called `$PNLPIPE_SOFT` (e.g. `export PNLPIPE_SOFT=path/to/software/dir`).
-Now build the software by running
-
+Now build the software by running-
+    
+(We assume the following sourcing has already been done)   
+ 
+    source path/to/miniconda3/bin/activate # should intoduce '(base)' in front of each line
+    source activate pnlpipe # should introduce '(pnlpipe)' in front of each line
+    export FREESURFER_HOME=<freesurfer_installation_directory>/freesurfer
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh 
+    
+    
     ./pnlpipe std setup
 
 (if any of the software packages already exist, they will not rebuild). You should now
@@ -140,7 +164,7 @@ see the results in `$PNLPIPE_SOFT`, such as `BRAINSTools-bin-2d5eccb/` and
 
 ### Run and monitor
 
-Now you're read to run the pipeline:
+Now you're ready to run the pipeline:
 
     ./pnlpipe std run
 

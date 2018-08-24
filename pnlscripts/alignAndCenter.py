@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from util import TemporaryDirectory, ExistingNrrd
+from util import TemporaryDirectory, ExistingNrrd, Nrrd
 from plumbum import cli, local, FG
 
 class App(cli.Application):
@@ -12,8 +12,8 @@ class App(cli.Application):
         help='Input volume ',
         mandatory=True)
     out = cli.SwitchAttr(
-        ['-o', '--out'],
-        help='output directory',
+        ['-o', '--out'], Nrrd,
+        help='Output volume',
         mandatory=True)
 
     def main(self):

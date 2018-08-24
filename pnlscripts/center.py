@@ -66,7 +66,7 @@ def replace_line_in_file(afile, match_string, replace_with):
         print(line,end='')
 
 class App(cli.Application):
-    """Centers a nrrd."""
+    """Centers an nrrd."""
 
     nrrd = cli.SwitchAttr(['-i', '--infile'], ExistingNrrd, help='a 3d or 4d nrrd image', mandatory=True)
     out = cli.SwitchAttr(['-o', '--outfile'], help='a 3d or 4d nrrd image', mandatory=True)
