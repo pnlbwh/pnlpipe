@@ -1,7 +1,6 @@
 name: pnlpipe
 
 dependencies:
-  - python=2.7
   - plumbum
   - future
   - numpy
@@ -18,6 +17,7 @@ dependencies:
   - conda-build
   - gcc_linux-64
   - gxx_linux-64
+  - gfortran_linux-64
   - git
   - pip:
      - git+https://github.com/dstrohl/Python_log_indenter.git
