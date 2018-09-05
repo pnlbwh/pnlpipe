@@ -37,12 +37,12 @@ def computeWarp(image, target, out):
         warp = pre + '1Warp.nii.gz'
         affine = pre + '0GenericAffine.mat'
 
-	# pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
+    # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
         antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
                                32] & FG
 
-	# out is Warp{idx}.nii.gz, saved in the specified output direcotry
-	# ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
+    # out is Warp{idx}.nii.gz, saved in the specified output direcotry
+    # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
         ComposeMultiTransform('3', out, '-R', target, warp, affine) 
 
 
@@ -89,12 +89,12 @@ def fuseAvg(labels, out):
         nii = local.path(tmpdir) / 'avg.nii.gz'
         AverageImages('3', nii, '0', *labels)
 
-	# out is {labelname}.nrrd
+    # out is {labelname}.nrrd
         ConvertBetweenFileFormats(nii, out)
 
     # Binary operation, if out>0.5, pipe the output and save as {labelname}.nrrd
     (unu['2op', 'gt', out, '0.5'] | \
-     	unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', out]) & FG
+        unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', out]) & FG
 
 
 def makeAtlases(target, trainingTable, outdir, fusion):
@@ -113,47 +113,47 @@ def makeAtlases(target, trainingTable, outdir, fusion):
         warp = outdir / 'warp{idx}.nii.gz'.format(**locals())
         atlas = outdir / 'atlas{idx}.nii.gz'.format(**locals())
         logging.info('Make {atlas}'.format(**locals()))
-	
-	# warp is computed among the first column images and the target image
-	# then that warp is applied to images in other columns
-	# assuming first column of the dictionary contains moving images        
-	computeWarp(r[0], target, warp) # first column of each row is used here
-	applyWarp(r[0], warp, target, atlas) # first column of each row is used here
 
-	# labelname is the column header and label is the image in the csv file
-        for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
-            atlaslabel = outdir / '{labelname}{idx}.nii.gz'.format(**locals())
-            logging.info('Make {atlaslabel}'.format(**locals()))
+    # warp is computed among the first column images and the target image
+    # then that warp is applied to images in other columns
+    # assuming first column of the dictionary contains moving images
+    computeWarp(r[0], target, warp) # first column of each row is used here
+    applyWarp(r[0], warp, target, atlas) # first column of each row is used here
+
+    # labelname is the column header and label is the image in the csv file
+    for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
+        atlaslabel = outdir / '{labelname}{idx}.nii.gz'.format(**locals())
+        logging.info('Make {atlaslabel}'.format(**locals()))
             
-	    # creates {labelname}{idx}.nii.gz in the output directory
-	    # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file	
-	    applyWarp(label,
-	                warp,
-        	        target,
-        	        atlaslabel,
-        	        interpolation='NearestNeighbor')
-	
+        # creates {labelname}{idx}.nii.gz in the output directory
+        # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file
+        applyWarp(label,
+                    warp,
+                    target,
+                    atlaslabel,
+                    interpolation='NearestNeighbor')
+
     
     
     for labelname in list(trainingTable)[1:]:  #list(d) gets column names
 
-	out = outdir / labelname + '.nrrd'
-	labelmaps = outdir // (labelname + '*')
+        out = outdir / labelname + '.nrrd'
+        labelmaps = outdir // (labelname + '*')
 
-	if fusion.lower() == 'avg':
-		print(' ')                
-		fuseAvg(labelmaps, out)
+        if fusion.lower() == 'avg':
+            print(' ')
+            fuseAvg(labelmaps, out)
 
-	elif fusion.lower() == 'antsjointfusion':
-		print(' ')
+        elif fusion.lower() == 'antsjointfusion':
+            print(' ')
 
-		# atlasimages are the warped images
-		# labelmaps are the warped labels
-		atlasimages = outdir // 'atlas*.nii.gz'
-		fuseAntsJointFusion(target, atlasimages, labelmaps, out)
+            # atlasimages are the warped images
+            # labelmaps are the warped labels
+            atlasimages = outdir // 'atlas*.nii.gz'
+            fuseAntsJointFusion(target, atlasimages, labelmaps, out)
 
-	else:
-		print('Unrecognized fusion option: {}. Skipping.'.format(fusion))
+    else:
+        print('Unrecognized fusion option: {}. Skipping.'.format(fusion))
 
 
 class Atlas(cli.Application):
