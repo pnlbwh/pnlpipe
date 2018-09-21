@@ -2,7 +2,7 @@
 
 virtualenv: _venv
 nix: _pip_packages.nix
-conda: environment.yml
+conda: environment36.yml
 	@echo "Adding conda-forge to default conda channels"
 	conda config --add channels conda-forge	
 	conda env create -f $<
