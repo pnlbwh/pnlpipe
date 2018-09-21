@@ -128,7 +128,7 @@ def make(commit=DEFAULT_HASH, delete=False):
         ,"-DUSE_DebugImageViewer=OFF"
         ,"-DUSE_GTRACT=OFF"
         ,"-DUSE_ICCDEF=OFF"
-        ,"-DUSE_ImageCalculator=OFF"
+        ,"-DUSE_ImageCalculator=ON"
         ,"-DUSE_ReferenceAtlas=OFF"
         ,"-DUSE_SYSTEM_DCMTK=OFF"
         ,"-DUSE_SYSTEM_ITK=OFF"
