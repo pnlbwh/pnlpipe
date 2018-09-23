@@ -17,18 +17,18 @@ def get_num_fibers(filename):
 
 def get_tensor_array(filename):
     """Returns vtk tensor array object which can have 'GetTuple9(i)' called on it."""
-    print "Reading " + filename
+    print("Reading " + filename)
     reader = vtk.vtkDataSetReader()
     reader.SetFileName(filename)
     reader.Update()
 
     output = reader.GetOutput()
-    print 'npoints:', output.GetNumberOfPoints()
-    print 'ncells:', output.GetNumberOfCells()
-    print 'nscalars:', reader.GetNumberOfScalarsInFile()
-    print 'ntensors:', reader.GetNumberOfTensorsInFile()
-    print 'ScalarName:', reader.GetScalarsNameInFile(0)
-    print 'TensorName:', reader.GetTensorsNameInFile(0)
+    print('npoints:', output.GetNumberOfPoints())
+    print('ncells:', output.GetNumberOfCells())
+    print('nscalars:', reader.GetNumberOfScalarsInFile())
+    print('ntensors:', reader.GetNumberOfTensorsInFile())
+    print('ScalarName:', reader.GetScalarsNameInFile(0))
+    print('TensorName:', reader.GetTensorsNameInFile(0))
 
     output = reader.GetOutput()
     pointdata = output.GetPointData()
@@ -43,7 +43,7 @@ def get_tensor_array(filename):
     if not tensor_array:
         tensor_array = pointdata.GetArray('tensor1')
     if not tensor_array:
-        print "Cannot find tensors in %s" % filename
+        print("Cannot find tensors in %s" % filename)
         sys.exit(1)
     return tensor_array
 
@@ -65,6 +65,6 @@ if __name__ == '__main__':
         test_vtk_file= '/projects/schiz/pnlpipe_software/scripts/measureTracts/0403-uncinate-left-curv.vtk'
         test_vtk_file= '/projects/schiz/ra/tomb/sylvainFibers/fibers-1000_1001_-1_not_-1_something.vtk'
         test_vtk_file= '/projects/schiz/ra/tomb/nrrd/caseD0704_fornix_tracts_left_0.vtk'
-        print get_all_tensors(test_vtk_file)
-        print len(get_all_tensors(test_vtk_file))
+        print(get_all_tensors(test_vtk_file))
+        print(len(get_all_tensors(test_vtk_file)))
         get_all_tensors(test_vtk_file)

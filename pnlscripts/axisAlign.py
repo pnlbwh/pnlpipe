@@ -26,7 +26,7 @@ def pushd(tmpdir):
     def wrap(f):
         def new_function(*args, **kw):
             orig_dir = os.getcwd()
-            print '* Changing to working dir %s' % tmpdir
+            print('* Changing to working dir %s' % tmpdir)
             os.chdir(tmpdir)
             output = f(*args, **kw)
             os.chdir(orig_dir)
@@ -44,16 +44,15 @@ def t(cmd):
 
     if isinstance(cmd, list):
         cmd = ' '.join(cmd)
-    #print cmd
-    print
-    print "* " + cmd
+
+    print("* " + cmd)
     check_call(cmd, shell=True)
 
 def replace_line_in_file(afile, match_string, replace_with):
     for line in fileinput.FileInput(afile, inplace=1):
         if match_string in line:
             line = replace_with
-        print line,
+        print(line)
 
 def find_spc_dir(s):
     match = re.search(
@@ -90,7 +89,7 @@ def get_numpy_rotation(spcdir_orig):
     spcNN = numpy.zeros([3,3])
     for i in range(0,3):
         mi = numpy.argmax(abs(spcON[i,:]))
-        spcNN[i,mi] = numpy.sign(spcON[i,mi]);
+        spcNN[i,mi] = numpy.sign(spcON[i,mi])
     R = spcNN * spcON.I
     return R
 
@@ -160,15 +159,12 @@ def main():
     image_in = abspath(args.infile)
 
     if not exists(image_in):
-        print image_in + ' doesn\'t exist'
+        print(image_in + ' doesn\'t exist')
         return
-    #if not nrrdlib.nrrd_is_valid(image_in):
-        #print image_in + ' is not a valid nrrd'
-        #return
 
     if exists(args.outfile) and not args.force:
-        print args.outfile + ' already exists.'
-        print 'Delete it first.'
+        print(args.outfile + ' already exists.')
+        print('Delete it first.')
         sys.exit(1)
 
     match = re.search('dimension: (?P<dimension>\d)', get_hdr(image_in))
@@ -180,7 +176,7 @@ def main():
     elif dim == '3':
         axis_align_3d(image_in, outfile=args.outfile)
     else:
-        print image_in + ' has dimension %s, needs to be 3 or 4' % dim
+        print(image_in + ' has dimension %s, needs to be 3 or 4' % dim)
 
 
 if __name__ == '__main__':

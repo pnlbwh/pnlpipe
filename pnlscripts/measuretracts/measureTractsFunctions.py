@@ -8,9 +8,9 @@ def tracer(currentTensor):
 def computeLPSFromTensorEigenvalues(ev):
     if ev[0]==0:
         #all eigenvalues are zero; so this is a perfect trivial sphere
-        retLi=0;
-        retPl=0;
-        retSp=1;
+        retLi=0
+        retPl=0
+        retSp=1
     else:
         retLi=(ev[0]-ev[1])/ev[0]
         retPl=(ev[1]-ev[2])/ev[0]
@@ -155,9 +155,9 @@ def printToCSV(nodes,fileName,extra_header=[],extra_values=[]):
     #printTags=re.sub('\[', '',str(measureTags),count=0)
     #printTags=re.sub('\]', '',str(printTags),count=0)
     #printTags = ','.join(measureTags)
-    print "Computing the following measures"
-    print ','.join(measureTags)
-    print
+    print("Computing the following measures")
+    print(','.join(measureTags))
+
     header = extra_header + ['tract'] + measureTags
     fileOut.writerow(header)
 
@@ -186,6 +186,6 @@ def printToCSV(nodes,fileName,extra_header=[],extra_values=[]):
         row = extra_values + [basename] + measureNums
         fileOut.writerow(row)
         lineNum=lineNum+1
-        print "Finished computing measures for '%s'\n" % node
-    print
-    print "Made " + fileName
+        print("Finished computing measures for '%s'\n" % node)
+
+    print("Made " + fileName)
