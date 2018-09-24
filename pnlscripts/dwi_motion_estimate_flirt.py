@@ -150,7 +150,7 @@ def main(args=sys.argv):
                         action='store_true', required=False)
 
     group.add_argument('--test',
-                        help="Run tests. 'datapath' should be test data directory."
+                        help="Run tests. 'datapath' should be test data directory.",
                         action='store_true', required=False)
 
     parser.add_argument('datapath',

@@ -1,3 +1,4 @@
+# The file is obsolete
 
 { pkgs ? import <nixpkgs> {} }:
 (pkgs.python27.buildEnv.override {
