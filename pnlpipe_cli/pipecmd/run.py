@@ -96,7 +96,11 @@ Run './pnlpipe {} setup' to build all prequisite pnlpipe_software and make sure 
             caseids = list(arg_caseids) if arg_caseids else caseids
             print('')
             print('Parameters:')
-            printVertical(dict(combo, caseids=caseids), keys=combo.keys() + ['caseids'])
+            
+            
+            # printVertical(dict(combo, caseids=caseids), keys=combo.keys() + ['caseids'])
+            # Python 3
+            printVertical(dict(combo, caseids=caseids), keys=list(combo.keys()) + ['caseids'])
             for caseid in caseids:
                 # print(['caseid']+combo.keys())
                 # print(dict(combo,caseid=caseid))

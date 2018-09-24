@@ -16,7 +16,7 @@ log = IndentedLoggerAdapter(logger, indent_char='.')
 
 # defaults that pipelines can use
 bet_threshold = 0.1
-BRAINSTools_hash = '95ac1e287c'
+BRAINSTools_hash = '95ac1e28'
 trainingDataT1AHCC_hash = 'd6e5990'
 FreeSurfer_version = '5.3.0'
 UKFTractography_hash = 'ce12942bd'

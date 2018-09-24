@@ -10,7 +10,7 @@ def printVertical(d, prepend='', keys=None, fd=sys.stderr):
         keys = d.keys()
     for k in keys:
         val = d[k] or 'None'
-        fd.write("{}{:<25} {:<15}".format(prepend, k, val) + '\n')
+        fd.write("{}{:<25} {:<15}".format(prepend, k, str(val)) + '\n')
 
 
 def printTable(d, colList=None):

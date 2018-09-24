@@ -41,7 +41,7 @@ def dag_filepath(node, ext, caseid_dir=True):
 def hash_filepath(node, ext, caseid_dir=True, extra_words=None):
     def _hashstring(s):
         hasher = hashlib.md5()
-        hasher.update(s)
+        hasher.update(s.encode('utf-8'))
         return hasher.hexdigest()[:10]
 
     caseid = find_caseid(node)

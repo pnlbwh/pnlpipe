@@ -100,7 +100,7 @@ def _group_by(combos, exclude_key):
             exclude_key))
 
     result = []
-    keyfn = lambda d: sorted([v for k, v in d.items() if k != exclude_key])
+    keyfn = lambda d: sorted([str(v) for k, v in d.items() if k != exclude_key])
     combos = sorted(combos, key=keyfn)
     for _, combos in itertools.groupby(combos, key=keyfn):
         combos = list(combos)

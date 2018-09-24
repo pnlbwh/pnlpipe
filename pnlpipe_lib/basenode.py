@@ -9,8 +9,9 @@ from . import hashing
 class Node(dag.Node):
     @property
     def children(self):
-        return self.deps.values() + [dag.Leaf(p, v)
-                                     for (p, v) in self.params.items()]
+        # return self.deps.values() + [dag.Leaf(p, v) for (p, v) in self.params.items()]
+        # Python 3
+        return list(self.deps.values()) + [dag.Leaf(p, v) for (p, v) in self.params.items()]
 
     @property
     def tag(self):
