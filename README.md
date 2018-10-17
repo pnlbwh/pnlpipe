@@ -82,7 +82,7 @@ Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation)
     source activate pnlpipe # should introduce '(pnlpipe)' in front of each line
     export PNLPIPE_SOFT=/path/to/software/dir  # where software modules will be installed
 
-## 3. Configure your input data
+## 4. Configure your input data
 
 Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. It will
 look something like
@@ -99,7 +99,7 @@ this example its '001'). Every pipeline is expected to accept a case id
 parameter, and when run with a particular id, it will use this dictionary to
 find the input paths it needs. You only need to define this dictionary once.
 
-## 4. Run your pipelines
+## 5. Run your pipelines
 
 ### Setup
 
@@ -147,7 +147,7 @@ the directory to install them to, and you do this by setting a global
 environment variable called `$PNLPIPE_SOFT` (e.g. `export PNLPIPE_SOFT=path/to/software/dir`).
 Now build the software by running-
     
-(We assume the following sourcing has already been done)   
+(We assume the following sourcing has already been done) 
  
     source path/to/miniconda3/bin/activate # should intoduce '(base)' in front of each line
     source activate pnlpipe # should introduce '(pnlpipe)' in front of each line
@@ -414,7 +414,7 @@ E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
     source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
 
 
-# Installing Software Without Using a Pipeline
+# Installing Software without Using Pipeline
 
 You can install software without configuring a pipeline and running `./pnlpipe <pipeline> setup`.
 To do this, use the `install` subcommand:
