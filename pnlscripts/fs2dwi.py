@@ -53,7 +53,7 @@ class Direct(cli.Application):
             sys.exit(1)
 
         with TemporaryDirectory() as tmpdir:
-	    tmpdir = local.path(tmpdir)
+            tmpdir = local.path(tmpdir)
             b0masked = tmpdir / "b0masked.nrrd"
             b0masked1mm = tmpdir / "b0masked1mm.nrrd"
             brain = tmpdir / "brain.nii.gz"

@@ -54,8 +54,7 @@ class App(cli.Application):
             if not ukfpruned.exists():
                 raise Exception("tract_math failed to make '{}'".format(ukfpruned))
             self.out.mkdir()
-            tract_querier['-t', ukfpruned, '-a', fsindwi, '-q', self.query, '-o'
-                          ,self.out / '_'] & FG
+            tract_querier['-t', ukfpruned, '-a', fsindwi, '-q', self.query, '-o', self.out / '_'] & FG
 
             logging.info('Convert vtk field data to tensor data')
             for vtk in self.out.glob('*.vtk'):

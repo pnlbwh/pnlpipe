@@ -4,10 +4,11 @@ from util import logfmt, TemporaryDirectory
 import util
 from plumbum import local, cli, FG
 from plumbum.cmd import ConvertBetweenFileFormats, ImageMath
-from itertools import izip_longest
+from itertools import zip_longest
 import pandas as pd
 import sys
 import os
+
 
 import logging
 logger = logging.getLogger()

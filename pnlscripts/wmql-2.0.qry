@@ -12,25 +12,25 @@ cerebellum |= 'Cerebellum_*'
 ventricles |= choroid_plexus.left or choroid_plexus.right or '*Ventricle*' or '*ventricle*'
 
 middlefrontalgyrus.side |= (
-			rostralmiddlefrontal.side or
-			caudalmiddlefrontal.side
+            rostralmiddlefrontal.side or
+            caudalmiddlefrontal.side
                       ) 
 inferiorfrontalgyrus.side |= (
-			parsopercularis.side or
-			parstriangularis.side or
-			parsorbitalis.side
+            parsopercularis.side or
+            parstriangularis.side or
+            parsorbitalis.side
                     )
 orbitofrontalgyrus.side |= (
-			lateralorbitofrontal.side or
-			medialorbitofrontal.side
+            lateralorbitofrontal.side or
+            medialorbitofrontal.side
                     )
 frontal.side |= 	(
-			superiorfrontal.side or
-			middlefrontalgyrus.side or
-			inferiorfrontalgyrus.side or
-			orbitofrontalgyrus.side or
-			frontalpole.side or
-			precentral.side or
+            superiorfrontal.side or
+            middlefrontalgyrus.side or
+            inferiorfrontalgyrus.side or
+            orbitofrontalgyrus.side or
+            frontalpole.side or
+            precentral.side or
                           paracentral.side
         )
 
@@ -68,11 +68,11 @@ subcortical.side |= VentralDC.side or Thalamus_Proper.side or Pallidum.side or B
 
 frontal_frontal_section.side |= medialorbitofrontal.side or parsorbitalis.side
 
-precentral_postcentral.side |= only(precentral.side and postcentral.side and UnsegmentedWhiteMatter.side)
+# precentral_postcentral.side |= only(precentral.side and postcentral.side and UnsegmentedWhiteMatter.side)
 
 inferior_frontal_gyrus.side |= parsopercularis.side or parstriangularis.side or parsorbitalis.side
 
-middle_frontal_gyrus.side |= caudalmiddlefrontal.side or rostralmiddlefrontal.side 
+middle_frontal_gyrus.side |= caudalmiddlefrontal.side or rostralmiddlefrontal.side
 
 
 #Commisural tracts
@@ -85,7 +85,6 @@ cc_inferiorparietal = endpoints_in(inferiorparietal.left) and endpoints_in(infer
 cc_inferiortemporal = endpoints_in(inferiortemporal.left) and endpoints_in(inferiortemporal.right) not in subcortical.left not in subcortical.right not in cerebellum
 cc_isthmuscingulate = endpoints_in(isthmuscingulate.left) and endpoints_in(isthmuscingulate.right) not in subcortical.left not in subcortical.right not in cerebellum
 cc_lateraloccipital = endpoints_in(lateraloccipital.left) and endpoints_in(lateraloccipital.right) not in subcortical.left not in subcortical.right not in cerebellum
-
 cc_lingual = endpoints_in(lingual.left) and endpoints_in(lingual.right) not in subcortical.left not in subcortical.right not in cerebellum
 cc_parahippocampal = endpoints_in(parahippocampal.left) and endpoints_in(parahippocampal.right) not in subcortical.left not in subcortical.right not in cerebellum
 cc_paracentral = endpoints_in(paracentral.left) and endpoints_in(paracentral.right) not in subcortical.left not in subcortical.right not in cerebellum
@@ -164,11 +163,11 @@ cc_frontalpole = frontalpole.left and frontalpole.right not in subcortical.left 
 
 
 internal_capsule_new.side = ((frontal.side and thalamus_proper.side and (parietal.side or occipital.side))
-	not in cingular.side
-	not in precentral.side not in postcentral.side
-	not in hemisphere.opposite
-	not in brain_stem
-	)
+    not in cingular.side
+    not in precentral.side not in postcentral.side
+    not in hemisphere.opposite
+    not in brain_stem
+    )
 
 #ioff_dorsal_claustrum.side = ((frontal.side and superiorparietal.side and putamen.side)
 #	not in cingular.side
@@ -179,20 +178,20 @@ internal_capsule_new.side = ((frontal.side and thalamus_proper.side and (parieta
 
 #cst_pre_dirty.side = (precentral.side and brain_stem)
 cst_pre.side |= ((precentral.side and brain_stem)
-	not in superiorfrontal.side 
-	not in cerebellum_white_matter.side not in thalamus_proper.side
-	not in hemisphere.opposite) 
+    not in superiorfrontal.side
+    not in cerebellum_white_matter.side not in thalamus_proper.side
+    not in hemisphere.opposite)
 
 cst_post.side |= ((postcentral.side and brain_stem)
-	not in superiorfrontal.side 
-	not in cerebellum_white_matter.side not in thalamus_proper.side
-	not in hemisphere.opposite) 
+    not in superiorfrontal.side
+    not in cerebellum_white_matter.side not in thalamus_proper.side
+    not in hemisphere.opposite)
 
 cst.side = cst_pre.side or cst_post.side
 
 # cb updated per nikos' suggestion - done
 cb.side = only(
-              (cingular.side or cingular_cortex.side) and 
+              (cingular.side or cingular_cortex.side) and
               (middle_frontal_gyrus.side or cuneus.side or entorhinal.side or superiorfrontal.side or inferiorparietal.side or fusiform.side or medialorbitofrontal.side or lateralorbitofrontal.side or unsegmentedwhitematter.side or parahippocampal.side or precuneus.side or lingual.side)
     )
 
@@ -200,30 +199,30 @@ ioff.side = (
             (lateralorbitofrontal.side and occipital.side)
             and temporal.side
         not in subcortical.side
-	not in cingular.side
-	not in superior_parietal_lobule.side
-	not in hemisphere.opposite
+    not in cingular.side
+    not in superior_parietal_lobule.side
+    not in hemisphere.opposite
 )
 
 soff.side = (
             (lateralorbitofrontal.side and occipital.side)
-	not in temporal.side
+    not in temporal.side
         not in subcortical.side
-	not in cingular.side
-	not in hemisphere.opposite
+    not in cingular.side
+    not in hemisphere.opposite
 )
 
 # updated uf per nikos' suggestions by adding a general definition for the middle_frontal_gyrus.side  and inferior_frontal_gyrus.side and adding them to UF definition, also added IOFF as exclusion
 #UF.side = (
-	#(
-	#(orbitofrontalgyrus.side or middle_frontal_gyrus.side  or inferior_frontal_gyrus.side)
-	#and endpoints_in(temporalpole.side)
-	#and insula.side
-	#)
-	#not in occipital.side not in parietal.side not in cingular.side
+    #(
+    #(orbitofrontalgyrus.side or middle_frontal_gyrus.side  or inferior_frontal_gyrus.side)
+    #and endpoints_in(temporalpole.side)
+    #and insula.side
+    #)
+    #not in occipital.side not in parietal.side not in cingular.side
         #not in posterior_of(putamen.side)
-	#not in HEMISPHERE.opposite)
-	
+    #not in HEMISPHERE.opposite)
+
 # peter/Nikos suggestion -remove middle_frontal_gyrus
 UF.side = (
     (
@@ -233,36 +232,36 @@ UF.side = (
     )
     not in occipital.side not in parietal.side not in cingular.side
         not in posterior_of(putamen.side)
-	not in HEMISPHERE.opposite)
-	
+    not in HEMISPHERE.opposite)
 
-#IOFF_section.side = ((medialorbitofrontal.side or lateralorbitofrontal.side or middle_frontal_gyrus.side  or inferior_frontal_gyrus.side) and temporalpole.side and inferiortemporal.side) not in ioff.side not in ec.side not in subcortical.side not in hemisphere.opposite not in cingular.side not in occipital.side not in parietal.side not in superiorfrontal.side not in precentral.side 
+
+#IOFF_section.side = ((medialorbitofrontal.side or lateralorbitofrontal.side or middle_frontal_gyrus.side  or inferior_frontal_gyrus.side) and temporalpole.side and inferiortemporal.side) not in ioff.side not in ec.side not in subcortical.side not in hemisphere.opposite not in cingular.side not in occipital.side not in parietal.side not in superiorfrontal.side not in precentral.side
 
 # need to make it continuous but otherwise OK
 MDLF.side = only(
-		(
-			temporalpole.side or superiortemporal.side 
-		)  and 
-		(
-			inferiorparietal.side or 
-			superiorparietal.side or
-			supramarginal.side or 
-			precuneus.side or
-			(UnsegmentedWhiteMatter.side and superiorparietal.side) or
-			(UnsegmentedWhiteMatter.side and inferiorparietal.side)
-		)
-	)
+        (
+            temporalpole.side or superiortemporal.side
+        )  and
+        (
+            inferiorparietal.side or
+            superiorparietal.side or
+            supramarginal.side or
+            precuneus.side or
+            (UnsegmentedWhiteMatter.side and superiorparietal.side) or
+            (UnsegmentedWhiteMatter.side and inferiorparietal.side)
+        )
+    )
 
 
 
-ILF.side = only(temporal.side and occipital.side) and anterior_of(hippocampus.side) not in parahippocampal.side 
+ILF.side = only(temporal.side and occipital.side) and anterior_of(hippocampus.side) not in parahippocampal.side
 
 ec.side = (
-  (superiortemporal.side and frontal.side) and (parietal.side or occipital.side) 
+  (superiortemporal.side and frontal.side) and (parietal.side or occipital.side)
   not in ioff.side not in ilf.side
-  not in hemisphere.opposite not in subcortical.side not in uf.side 
+  not in hemisphere.opposite not in subcortical.side not in uf.side
   not in inferiortemporal.side  not in fusiform.side not in middletemporal.side not in temporalpole.side
-  not in corpuscallosum.side 
+  not in corpuscallosum.side
   not in precentral.side not in parsopercularis.side
   not in cingular.side
 )
@@ -273,8 +272,8 @@ ec.side = (
 #SLF_I and SLF_II_III should be extended further back if possible
 SLF_I.side = (
         ((superiorparietal.side and precuneus.side and superiorfrontal.side)
-	or (superiorparietal.side and precuneus.side and superiorfrontal.side 
-	and lateraloccipital.side))
+    or (superiorparietal.side and precuneus.side and superiorfrontal.side
+    and lateraloccipital.side))
         not in cingular.side
         not in temporal.side
         not in subcortical.side
@@ -282,21 +281,21 @@ SLF_I.side = (
       )
 
 slf_ii.side = ((
-	(lateraloccipital.side or supramarginal.side or inferiorparietal.side) and 
-	endpoints_in(middle_frontal_gyrus.side))  
-	not in hemisphere.opposite not in temporal.side not in cingular.side not in subcortical.side)
+    (lateraloccipital.side or supramarginal.side or inferiorparietal.side) and
+    endpoints_in(middle_frontal_gyrus.side))
+    not in hemisphere.opposite not in temporal.side not in cingular.side not in subcortical.side)
 
 slf_iii.side = ((
-	(lateraloccipital.side or supramarginal.side or inferiorparietal.side) and 
-	endpoints_in(inferior_frontal_gyrus.side))  
-	not in hemisphere.opposite not in temporal.side not in cingular.side not in subcortical.side)
+    (lateraloccipital.side or supramarginal.side or inferiorparietal.side) and
+    endpoints_in(inferior_frontal_gyrus.side))
+    not in hemisphere.opposite not in temporal.side not in cingular.side not in subcortical.side)
 
-extreme_capsule.side = (((superiortemporal.side or temporalpole.side) 
-	and (inferior_frontal_gyrus.side or middle_frontal_gyrus.side) and inferiorparietal.side)
-	not in MDLF.side
-	not in SLF_I.side 
+extreme_capsule.side = (((superiortemporal.side or temporalpole.side)
+    and (inferior_frontal_gyrus.side or middle_frontal_gyrus.side) and inferiorparietal.side)
+    not in MDLF.side
+    not in SLF_I.side
         not in SLF_II.side
-	not in SLF_III.side
+    not in SLF_III.side
         not in IOFF.side
         not in HEMISPHERE.opposite
 )
@@ -312,7 +311,7 @@ CC = (
     (frontal.left and frontal.right) or
     (parietal.left and parietal.right) or
     (occipital.left and occipital.right) or
-    (cingular.left and cingular.right) 
+    (cingular.left and cingular.right)
   ) and
   (corpuscallosum.left or corpuscallosum.right)
 )
@@ -332,8 +331,8 @@ CC = (
 #  )
 
 internal_capsule.side |= ((rostralmiddlefrontal.side and temporal.side and Putamen.side and UnsegmentedWhiteMatter.side)
-        not in occipital.side not in corpus_callosum not in cerebellum 
-	
+        not in occipital.side not in corpus_callosum not in cerebellum
+
 not in HEMISPHERE.opposite
         not in subcortical.side not in cingular.side)
 
@@ -341,19 +340,19 @@ not in HEMISPHERE.opposite
 mdlf_probable_sections.side |= only( (precentral.side or paracentral.side or postcentral.side or superiorparietal.side) and unsegmentedwhitematter.side and temporal.side)
 
 af.side = (
-  (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side) and (superiortemporal.side or middletemporal.side) 
-  not in hemisphere.opposite 
+  (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side) and (superiortemporal.side or middletemporal.side)
+  not in hemisphere.opposite
   not in medial_of(supramarginal.side)
   not in ilf.side not in ioff.side not in ec.side not in mdlf.side not in mdlf_probable_sections.side
-  not in temporalpole.side not in frontalpole.side not in subcortical.side 
-  not in rostralmiddlefrontal.side not in lateralorbitofrontal.side 
+  not in temporalpole.side not in frontalpole.side not in subcortical.side
+  not in rostralmiddlefrontal.side not in lateralorbitofrontal.side
   not in parstriangularis.side not in superiorfrontal.side not in parsopercularis.side
 )
 
-#AF.side = ((   (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side) 
-#	and (superiortemporal.side or middletemporal.side)) 
+#AF.side = ((   (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side)
+#	and (superiortemporal.side or middletemporal.side))
 #	not in SLF_II_III.side not in MDLF.side not in IOFF.side not in ILF.side
-#	not in extreme_capsule.side 
+#	not in extreme_capsule.side
 #        not in wm_unknown.side not in UnsegmentedWhiteMatter.side
 #	not in occipital.side not in temporalpole.side not in medialorbitofrontal.side
 #	not in lateralorbitofrontal.side
@@ -366,10 +365,10 @@ af.side = (
 #)
 
 #EC.side = (
-#  (caudalanteriorcingulate.side or rostralanteriorcingulate.side) and (superiortemporal.side) 
-#  not in HEMISPHERE.opposite not in temporalpole.side 
-#  not in ventricles 
-#  not in posteriorcingulate.side 
+#  (caudalanteriorcingulate.side or rostralanteriorcingulate.side) and (superiortemporal.side)
+#  not in HEMISPHERE.opposite not in temporalpole.side
+#  not in ventricles
+#  not in posteriorcingulate.side
 #)
 
 thalamo_frontal.side = endpoints_in(thalamus_proper.side) and endpoints_in(frontal.side)
@@ -395,8 +394,8 @@ hemisphere.right |= '*.right'
 CCommisural = cc_caudalmiddlefrontal or cc_lateralorbitofrontal or cc_medialorbitofrontal or cc_rostralmiddlefrontal or cc_superiorfrontal or cc_frontalpole or cc_lingual or cc_parahippocampal or cc_paracentral or cc_parsopercularis or cc_parsorbitalis or cc_parstriangularis or cc_pericalcarine or cc_postcentral or cc_superiorparietal or cc_posteriorcingulate or cc_precentral or cc_precuneus or cc_rostralanteriorcingulate or cc_superiorparietal or cc_supramarginal or cc_insula or cc_caudalanteriorcingulate or cc_cuneus or cc_entorhinal or cc_fusiform or cc_inferiorparietal or cc_inferiortemporal or cc_isthmuscingulate or cc_lateraloccipital or cc_middletemporal or cc_superiortemporal or cc_temporalpole or cc_transversetemporal
 
 orbitofrontalgyrus.side |= (
-			lateralorbitofrontal.side or
-			medialorbitofrontal.side
+            lateralorbitofrontal.side or
+            medialorbitofrontal.side
                     )
 occipital.side |= lingual.side or pericalcarine.side or cuneus.side or lateraloccipital.side or lingual.side or pericalcarine.side or cuneus.side or lateraloccipital.side
 
@@ -404,27 +403,27 @@ cc_1 = endpoints_in(orbitofrontalgyrus.left) and endpoints_in(orbitofrontalgyrus
 cc_2 = endpoints_in(parstriangularis.left or parsorbitalis.left or superiorfrontal.left or rostralmiddlefrontal.left or frontalpole.left) and  endpoints_in(parstriangularis.right or parsorbitalis.right or superiorfrontal.right or rostralmiddlefrontal.right or frontalpole.right)
 cc_3 = endpoints_in(rostralanteriorcingulate.left or caudalanteriorcingulate.left or caudalmiddlefrontal.left or parsopercularis.left) and  endpoints_in(rostralanteriorcingulate.right or caudalanteriorcingulate.right or caudalmiddlefrontal.right or parsopercularis.right)
 cc_4 = endpoints_in(precentral.left) and endpoints_in(precentral.right)
-cc_5 = endpoints_in(postcentral.left or posteriorcingulate.left or paracentral.left) and endpoints_in(postcentral.right or posteriorcingulate.right or paracentral.right) 
-cc_6 = endpoints_in(precuneus.left or supramarginal.left or superiorparietal.left or inferiorparietal.left or superiortemporal.left or middletemporal.left or bankssts.left or transversetemporal.left or isthmuscingulate.left) and endpoints_in(precuneus.right or supramarginal.right or superiorparietal.right or inferiorparietal.right or superiortemporal.right or middletemporal.right or bankssts.right or transversetemporal.right or isthmuscingulate.right) 
+cc_5 = endpoints_in(postcentral.left or posteriorcingulate.left or paracentral.left) and endpoints_in(postcentral.right or posteriorcingulate.right or paracentral.right)
+cc_6 = endpoints_in(precuneus.left or supramarginal.left or superiorparietal.left or inferiorparietal.left or superiortemporal.left or middletemporal.left or bankssts.left or transversetemporal.left or isthmuscingulate.left) and endpoints_in(precuneus.right or supramarginal.right or superiorparietal.right or inferiorparietal.right or superiortemporal.right or middletemporal.right or bankssts.right or transversetemporal.right or isthmuscingulate.right)
 cc_7 = endpoints_in(occipital.left or fusiform.left or lingual.left or inferiortemporal.left) and endpoints_in(occipital.right or fusiform.right or lingual.right or inferiortemporal.right)
 
 cc = cc_1 or cc_2 or cc_3 or cc_4 or cc_5 or cc_6 or cc_7
 
 
 af.side = (
-  (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side) and (superiortemporal.side or middletemporal.side) 
-  not in hemisphere.opposite 
+  (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side) and (superiortemporal.side or middletemporal.side)
+  not in hemisphere.opposite
   not in medial_of(supramarginal.side)
   not in ilf.side not in ioff.side not in ec.side not in mdlf.side not in mdlf_probable_sections.side
-  not in temporalpole.side not in frontalpole.side not in subcortical.side 
-  not in rostralmiddlefrontal.side not in lateralorbitofrontal.side 
+  not in temporalpole.side not in frontalpole.side not in subcortical.side
+  not in rostralmiddlefrontal.side not in lateralorbitofrontal.side
   not in parstriangularis.side not in superiorfrontal.side not in parsopercularis.side
 )
 
-#AF.side = ((   (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side) 
-#	and (superiortemporal.side or middletemporal.side)) 
+#AF.side = ((   (inferior_frontal_gyrus.side or middle_frontal_gyrus.side or precentral.side)
+#	and (superiortemporal.side or middletemporal.side))
 #	not in SLF_II_III.side not in MDLF.side not in IOFF.side not in ILF.side
-#	not in extreme_capsule.side 
+#	not in extreme_capsule.side
 #        not in wm_unknown.side not in UnsegmentedWhiteMatter.side
 #	not in occipital.side not in temporalpole.side not in medialorbitofrontal.side
 #	not in lateralorbitofrontal.side
@@ -432,50 +431,50 @@ af.side = (
 
 # cb updated per nikos' suggestion - done
 cb.side = only(
-              (cingular.side or cingular_cortex.side) and 
+              (cingular.side or cingular_cortex.side) and
               (middle_frontal_gyrus.side or cuneus.side or entorhinal.side or superiorfrontal.side or inferiorparietal.side or fusiform.side or medialorbitofrontal.side or lateralorbitofrontal.side or unsegmentedwhitematter.side or parahippocampal.side or precuneus.side or lingual.side)
     )
 
-ILF.side = only(temporal.side and occipital.side) and anterior_of(hippocampus.side) not in parahippocampal.side 
+ILF.side = only(temporal.side and occipital.side) and anterior_of(hippocampus.side) not in parahippocampal.side
 
 slf_ii.side = ((
-	(lateraloccipital.side or supramarginal.side or inferiorparietal.side) and 
-	endpoints_in(middle_frontal_gyrus.side))  
-	not in hemisphere.opposite not in temporal.side not in cingular.side not in subcortical.side)
+    (lateraloccipital.side or supramarginal.side or inferiorparietal.side) and
+    endpoints_in(middle_frontal_gyrus.side))
+    not in hemisphere.opposite not in temporal.side not in cingular.side not in subcortical.side)
 
 
 # updated uf per nikos' suggestions by adding a general definition for the middle_frontal_gyrus.side  and inferior_frontal_gyrus.side and adding them to UF definition, also added IOFF as exclusion
 #UF.side = (
-	#(
-	#(orbitofrontalgyrus.side or middle_frontal_gyrus.side  or inferior_frontal_gyrus.side)
-	#and endpoints_in(temporalpole.side)
-	#and insula.side
-	#)
-	#not in occipital.side not in parietal.side not in cingular.side
+    #(
+    #(orbitofrontalgyrus.side or middle_frontal_gyrus.side  or inferior_frontal_gyrus.side)
+    #and endpoints_in(temporalpole.side)
+    #and insula.side
+    #)
+    #not in occipital.side not in parietal.side not in cingular.side
         #not in posterior_of(putamen.side)
-	#not in HEMISPHERE.opposite)
+    #not in HEMISPHERE.opposite)
 # peter/Nikos suggestion -remove middle_frontal_gyrus -Ryan
 UF.side = (
-	(
-	(orbitofrontalgyrus.side or inferior_frontal_gyrus.side)
-	and endpoints_in(temporalpole.side)
-	and insula.side
-	)
-	not in occipital.side not in parietal.side not in cingular.side
+    (
+    (orbitofrontalgyrus.side or inferior_frontal_gyrus.side)
+    and endpoints_in(temporalpole.side)
+    and insula.side
+    )
+    not in occipital.side not in parietal.side not in cingular.side
         not in posterior_of(putamen.side)
-	not in HEMISPHERE.opposite)
+    not in HEMISPHERE.opposite)
 
 # need to make it continuous but otherwise OK
 MDLF.side = only(
-		(
-			temporalpole.side or superiortemporal.side 
-		)  and 
-		(
-			inferiorparietal.side or 
-			superiorparietal.side or
-			supramarginal.side or 
-			precuneus.side or
-			(UnsegmentedWhiteMatter.side and superiorparietal.side) or
-			(UnsegmentedWhiteMatter.side and inferiorparietal.side)
-		)
-	)
+        (
+            temporalpole.side or superiortemporal.side
+        )  and
+        (
+            inferiorparietal.side or
+            superiorparietal.side or
+            supramarginal.side or
+            precuneus.side or
+            (UnsegmentedWhiteMatter.side and superiorparietal.side) or
+            (UnsegmentedWhiteMatter.side and inferiorparietal.side)
+        )
+    )

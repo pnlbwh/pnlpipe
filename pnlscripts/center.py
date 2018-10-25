@@ -7,10 +7,15 @@ from plumbum import local, cli, FG
 from plumbum.cmd import unu
 import re
 import fileinput
+import sys
+import nrrd
+from numpy import array
 
+'''
 import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+'''
 
 def get_spc_dirs(s):
     match = re.search(
@@ -42,12 +47,31 @@ def get_origin(s):
 def dot_product(v1, v2):
     return [a*b for (a,b) in zip(v1, v2)]
 
+
+def get_attr(filename):
+    img= nrrd.read(filename)
+
+    mri= img[0]
+    hdr= img[1]
+
+    # hdr, stderr = Popen(['unu', 'head', nrrd], stdout=PIPE,
+    #                        stderr=PIPE).communicate()
+
+    return (mri, hdr)
+
+
 def centered_origin(hdr):
-    spc_dirs = get_spc_dirs(hdr)
-    sizes = get_sizes(hdr)
+
+    # spc_dirs = get_spc_dirs(hdr)
+    spc_dirs= hdr['space directions']
+
+    # sizes = get_sizes(hdr)
+    sizes= hdr['sizes']
+
     print("space directions: " + str(spc_dirs))
     print("sizes: " + str(sizes))
-    print(get_origin(hdr))
+    print(hdr['space origin'])
+
     new_origin = []
     for dir in spc_dirs:
         sizes2 = [(x-1)/2  for x in sizes]
@@ -56,26 +80,53 @@ def centered_origin(hdr):
         dp_abs = [abs(x) for x in dp]
         maxmin_elem = dp_abs.index(max(dp_abs))
         new_origin.append(-dp[maxmin_elem])
+
     print("new origin: " + str(new_origin))
+
     return new_origin
 
 def replace_line_in_file(afile, match_string, replace_with):
-    for line in fileinput.FileInput(afile, inplace=1):
+    
+    # for line in fileinput.input(afile, inplace=1, mode= 'rb'):
+    #     if match_string in line.decode('cp437'):
+    #         line = replace_with.encode('cp437')
+    #     sys.stdout.write(line.decode('cp437'))
+
+
+    for line in fileinput.input(afile, inplace=1, mode= 'rb'):
+        if match_string in line.decode('cp437'):
+            line = replace_with.encode('utf-8')
+        sys.stdout.write(line)
+
+
+    '''
+    for line in fileinput.input(afile, inplace=1):
         if match_string in line:
             line = replace_with
         print(line,end='')
-
+    '''
+    
+    
 class App(cli.Application):
     """Centers an nrrd."""
 
-    nrrd = cli.SwitchAttr(['-i', '--infile'], ExistingNrrd, help='a 3d or 4d nrrd image', mandatory=True)
-    out = cli.SwitchAttr(['-o', '--outfile'], help='a 3d or 4d nrrd image', mandatory=True)
+    image_in = cli.SwitchAttr(['-i', '--infile'], ExistingNrrd, help='a 3d or 4d nrrd image', mandatory=True)
+    outfile = cli.SwitchAttr(['-o', '--outfile'], help='a 3d or 4d nrrd image', mandatory=True)
 
     def main(self):
-        hdr = unu('head', self.nrrd)[:-1]
+
+        mri, hdr= get_attr(str(self.image_in))
+        hdr_out= hdr.copy()
+
+        # hdr = unu('head', self.nrrd)[:-1]
         new_origin = centered_origin(hdr)
-        unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', self.nrrd, '-o', self.out)
-        replace_line_in_file(self.out, "space origin: ", "space origin: (%s, %s, %s)\n" % tuple(new_origin))
+
+        hdr_out['space origin'] = array(new_origin)
+
+        nrrd.write(str(self.outfile), mri, header=hdr_out, compression_level=1)
+
+        # unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', self.nrrd, '-o', self.out)
+        # replace_line_in_file(self.out, "space origin: ", "space origin: (%s, %s, %s)\n" % tuple(new_origin))
 
 if __name__ == '__main__':
     App.run()

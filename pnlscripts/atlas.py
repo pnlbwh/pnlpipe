@@ -5,7 +5,7 @@ import util
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
 from util.antspath import antsRegistrationSyN_sh
-from itertools import izip_longest
+from itertools import zip_longest
 import pandas as pd
 import sys
 import numpy as np
@@ -27,7 +27,7 @@ def grouper(iterable, n, fillvalue=None):
     if n == 1:
         return [iterable]
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue=fillvalue, *args)
+    return zip_longest(fillvalue=fillvalue, *args)
 
 
 def computeWarp(image, target, out):
