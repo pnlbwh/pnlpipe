@@ -21,7 +21,7 @@ BRAINSTools_hash = '95ac1e28'
 trainingDataT1AHCC_hash = 'd6e5990'
 FreeSurfer_version = '5.3.0'
 UKFTractography_hash = 'ce12942'
-tract_querier_hash = 'c57d670'
+tract_querier_hash = '8f8fb95'
 ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              "--recordLength", 1.7, "--seedFALimit", 0.18, "--seedsPerVoxel",
              10, "--stepLength", 0.3]
