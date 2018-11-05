@@ -4,7 +4,7 @@ from __future__ import print_function
 import operator
 from util import logfmt, ExistingNrrdOrNifti, Nrrd
 from plumbum import local, cli, FG
-from plumbum.cmd import unu
+from plumbum.cmd import unu, ImageMath
 
 import logging
 logger = logging.getLogger()

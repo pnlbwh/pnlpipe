@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import util
-from util import TemporaryDirectory
 from plumbum import local, cli, FG
-import sys
 import itertools
 
 def concat(l):

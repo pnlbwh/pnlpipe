@@ -11,6 +11,7 @@ import pnlpipe_cli.caseidnode as caseidnode
 import itertools
 import logging
 from python_log_indenter import IndentedLoggerAdapter
+import pandas as pd
 logger = logging.getLogger(__name__)
 log = IndentedLoggerAdapter(logger, indent_char='.')
 

@@ -3,6 +3,7 @@ future
 numpy
 pandas
 nibabel
+pynrrd
 python_log_indenter
 pyyaml
 psutil

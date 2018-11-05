@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from util import logfmt, TemporaryDirectory
-import util
 from plumbum import local, cli, FG
 from util.antspath import antsRegistrationSyN_sh, antsApplyTransforms
-import sys
 
 import logging
 logger = logging.getLogger()

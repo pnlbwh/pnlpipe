@@ -68,7 +68,10 @@ Download [Miniconda Python 3.6 bash installer](https://conda.io/miniconda.html) 
     
     sh /path/to/installation/script.sh
     
-Follow the [instruction](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to download and install FreeSurfer
+Follow the [instruction](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to download and install FreeSurfer.
+Obtain the FreeSurfer version by typing `freesurfer` on the terminal. Replace the key following `FreeSurfer_version` in `./pnlpipe_pipelines/_pnl.py`
+with everything after `v` that shows up on the terminal.
+
 
 Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from os.path import basename, splitext, abspath, exists, dirname, join
 from os import getpid
 from util import logfmt, TemporaryDirectory
 from util.scripts import bse_py
@@ -17,7 +16,8 @@ logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
 class App(cli.Application):
-    DESCRIPTION='Eddy current correction.'
+    DESCRIPTION='''Eddy current correction. The NRRD DWI must have volumes stacked along 
+the last axis. If not, use `unu permute` to shuffle the axes.'''
     debug = cli.Flag('-d', help='Debug, saves registrations to eddy-debug-<pid>')
     dwi = cli.SwitchAttr('-i', cli.ExistingFile, help='DWI (nrrd)')
     out = cli.SwitchAttr('-o', help='Eddy corrected DWI')
@@ -52,6 +52,10 @@ class App(cli.Application):
 
 
             logging.info('Dice the DWI')
+
+            # Since fslmerge works along the 3rd axis only, dicing also has to be along that axis
+            # So, use `unu permute` to reorient the volumes to be stacked along 3rd axis only
+            # Include this issue in the tutorial
             (unu['convert', '-t', 'int16', '-i', 'dwijoined.nhdr'] |
             unu['dice', '-a', '3', '-o', 'Diffusion-G'])()
             vols = tmpdir.glob('Diffusion-G*.nrrd')
@@ -85,46 +89,6 @@ class App(cli.Application):
 
             logging.info('Extract the rotations and realign the gradients')
 
-
-            # header=''
-            # gNum = []
-
-            # with open('dwijoined.nhdr') as f:
-            #     for line in f:
-            #         if line.find('DWMRI_gradient_')!=-1:
-            #             gNum.append(line[15:19])
-            #             gDir.append([float(x) for x in line[21:-1].split()])
-            #         elif line.find('data file:')!=-1:
-            #             # header = header+'data file: EddyCorrect-DWI.nii.gz\n'
-            #             header = header+'data file: dwijoined.raw.gz\n'
-            #         elif line.find('encoding:')!=-1:
-            #             header = header+line+'byteskip: -1\n'
-            #         elif line.find('measurement frame:')!=-1:
-            #             header = header+line
-            #
-            #             # mf =  np.matrix([map(float,line.split()[2][1:-1].split(',')),
-            #             #                  map(float,line.split()[3][1:-1].split(',')),
-            #             #                  map(float,line.split()[4][1:-1].split(','))])
-            #
-            #             # Python 3 compatible command
-            #             mf = np.matrix([[float(x) for x in line.split()[2][1:-1].split(',')],
-            #                             [float(x) for x in line.split()[3][1:-1].split(',')],
-            #                             [float(x) for x in line.split()[4][1:-1].split(',')]])
-            #
-            #         elif line.find('space:')!=-1:
-            #             header = header+line
-            #             # Here I assume either lps or ras so only need to check the first letter
-            #             space = line.split()[1][0]
-            #             if (space=='l')|(space=='L'):
-            #                 spctoras = np.matrix([[-1, 0, 0], [0,-1,0], [0,0,1]])
-            #             else:
-            #                 spctoras = np.matrix([[1, 0, 0], [0,1,0], [0,0,1]])
-            #         else:
-            #             header = header+line
-            #
-            # # Without this conversion, '.raw' file will not be generated
-            # # ConvertBetweenFileFormats('EddyCorrect-DWI.nii.gz', 'EddyCorrect-DWI.nhdr', 'short')
-
             space= hdr_out['space'].lower()
             if (space == 'left'):
                 spctoras = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
@@ -132,12 +96,6 @@ class App(cli.Application):
                 spctoras = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
             mf = np.matrix(hdr['measurement frame'])
 
-            # gDir = []
-            # count = 0
-            # while hdr_out['DWMRI_gradient_' + '{:04}'.format(count)]:
-            #     gDir[count, :] = [float(num) for num in hdr_out['DWMRI_gradient_' + '{:04}'.format(count)].split(' ') if
-            #                       num]
-            #     count += 1
 
             # Transforms are in RAS so need to do inv(MF)*inv(SPC2RAS)*ROTATION*SPC2RAS*MF*GRADIENT
             mfras = mf.I*spctoras.I
@@ -164,9 +122,7 @@ class App(cli.Application):
 
 
             tar('cvzf', outxfms, transforms)
-            # unu('save', '-f', 'nrrd', '-e', 'gzip'
-            #     ,'-i', 'EddyCorrect-DWI.nhdr'
-            #     ,'-o', self.out)
+
 
             nrrd.write(self.out, new_dwi, header= hdr_out, compression_level = 1)
 

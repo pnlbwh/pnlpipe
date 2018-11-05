@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from util import TemporaryDirectory, ExistingNrrd, Nrrd
+from util import ExistingNrrd, Nrrd
 from plumbum import cli, local, FG
 
 class App(cli.Application):

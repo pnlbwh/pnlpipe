@@ -30,7 +30,7 @@ class App(cli.Application):
             import sys
             sys.exit(1)
         with TemporaryDirectory() as tmpdir:
-            #nii = tmpdir / 'dwi.nii.gz'
+
             if nrrd(self.dwi):
                 bse = tmpdir / 'bse.nrrd'
                 bse_py['-i', self.dwi, '-o', bse] & FG

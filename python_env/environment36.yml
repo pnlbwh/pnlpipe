@@ -9,6 +9,7 @@ dependencies:
   - vtk
   - cmake
   - nibabel
+  - pynrrd
   - pyyaml
   - psutil
   - csvkit
