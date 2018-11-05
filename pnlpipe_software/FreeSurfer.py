@@ -27,14 +27,14 @@ def readFreeSurferVersion():
 def validate(version):
     currentVersion = readFreeSurferVersion()
     if not currentVersion:
-        raise Exception("You need to make sure FreeSurfer version {} is installed \
+        raise Exception("You need to make sure FreeSurfer version >= {} is installed \
 and FREESURFER_HOME is set (currently unset).".format(version))
-    if currentVersion != version:
-        raise Exception("You need to make sure FreeSurfer version {} is installed \
+    if currentVersion < version:       
+        raise Exception("You need to make sure FreeSurfer version >= {} is installed \
 and FREESURFER_HOME is set (currently set to version {}).".format(version,
                                                                           currentVersion))
 
-    print("Correct version ({}) of FreeSurfer is set in FREESURFER_HOME.".format(version))
+    print("Version ({}) of FreeSurfer is set in FREESURFER_HOME.".format(version))
 
 def make(version=DEFAULT_VERSION):
     try:
