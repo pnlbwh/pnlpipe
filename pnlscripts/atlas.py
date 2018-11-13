@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from util import logfmt
-import util
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
 from util.antspath import antsRegistrationSyN_sh
 from itertools import zip_longest
 import pandas as pd
 import sys
-import numpy as np
 
 import logging
 logger = logging.getLogger()
