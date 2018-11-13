@@ -35,6 +35,7 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
         with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
             tmpdir = local.path(tmpdir)
 
+            # fileinput() caused trouble reading data file in python 3, so switching to nrrd
             # if the hdr has 'nan' in space origin, the following will take care of that
             img= nrrd.read(self.dwi)
             dwi= img[0]
@@ -45,6 +46,8 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
 
             nrrd.write('dwijoined.nhdr', dwi, header= hdr_out, compression_level = 1)
 
+            # we want to use this hdr to write a new .nhdr file with corresponding data file
+            # so delete old data file from the hdr
             try:
                 del hdr_out['data file']
             except:
@@ -106,11 +109,11 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
 
                 logging.info('Apply ' + t)
                 tra = np.loadtxt(t)
-                #removes the translation
+                # removes the translation
                 aff = np.matrix(tra[0:3,0:3])
                 # computes the finite strain of aff to get the rotation
                 rot = aff*aff.T
-                # Computer the square root of rot
+                # compute the square root of rot
                 [el, ev] = np.linalg.eig(rot)
                 eL = np.identity(3)*np.sqrt(el)
                 sq = ev*eL*ev.I
@@ -123,7 +126,9 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
 
             tar('cvzf', outxfms, transforms)
 
-
+            # the following can be avoided by setting data file = EddyCorrect-DWI.nii.gz
+            # and byteskip = -1
+            # Tashrif updated Pynrrd package to properly handle that
             nrrd.write(self.out, new_dwi, header= hdr_out, compression_level = 1)
 
 
