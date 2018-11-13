@@ -6,7 +6,8 @@ from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, a
 from util.antspath import antsRegistrationSyN_sh
 from itertools import zip_longest
 import pandas as pd
-import sys
+import sys, os
+from tempfile import TemporaryDirectory
 
 import logging
 logger = logging.getLogger()
@@ -29,7 +30,13 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def computeWarp(image, target, out):
-    with local.tempdir() as tmpdir:
+
+
+    # diverting the temporary directory to avoid space shortage in shared /tmp
+    directory= '/'+ ('/').join(os.getcwd().split('/')[1:3])+'/tmp'
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    with TemporaryDirectory(dir= directory) as tmpdir:
         tmpdir = local.path(tmpdir)
         pre = tmpdir / 'ants'
         warp = pre + '1Warp.nii.gz'
