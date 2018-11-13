@@ -29,7 +29,7 @@ def validate(version):
     if not currentVersion:
         raise Exception("You need to make sure FreeSurfer version >= {} is installed \
 and FREESURFER_HOME is set (currently unset).".format(version))
-    if currentVersion < version:       
+    if currentVersion < version:
         raise Exception("You need to make sure FreeSurfer version >= {} is installed \
 and FREESURFER_HOME is set (currently set to version {}).".format(version,
                                                                           currentVersion))
