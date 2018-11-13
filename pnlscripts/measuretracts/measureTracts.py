@@ -18,7 +18,7 @@ def main():
             print("sorry, no file found at" + args.files[fileNum])
     if os.path.isfile(args.fileName) and args.force==False:
         print("The file " + args.fileName + " already exists. Are you sure you want to append? [y/n]")
-        if raw_input()=='n':
+        if input()=='n':
             sys.exit()
     if os.path.isdir(args.fileName):
         print("Sorry, but the file output name you've entered is already the name of a directory. Please rerun with a different output name")
