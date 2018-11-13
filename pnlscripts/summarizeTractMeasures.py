@@ -22,15 +22,12 @@ INTRuST,slf_iii.right,660.472731188003,30.0607433890063,856.412987012987,439.223
 INTRuST,uf.left,589.85265447185,42.8613369562814,195.744125326371,174.371158305798,383
 INTRuST,uf.right,565.9559476129,43.1105907847185,142.316883116883,126.637537840325,385""")
 
-    mask = df.tract.str.lower().apply( lambda x: any([ y in x for y in ['af','uf','slf','ioff']]))
-    # agg = {'FA_mean': {'FAmean_mean': 'mean' ,'FAmean_sd': 'std', 'count':'count'}
-    #        ,'num': {'num_mean':'mean', 'num_sd': 'std'}
-    # }
-    agg = {'FA_mean': ['mean', 'std','count']
+    mask = df.tract.str.lower().apply(lambda x: any([ y in x for y in ['af','uf','slf','ioff']]))
+
+    agg = {'FA_mean': ['mean', 'std', 'count']
            ,'num': ['mean', 'std']}
     df = df[mask].filter(items=['FA_mean','num','tract','algo']).groupby(['tract','algo'], as_index=False).agg(agg)
-    # df = df[mask].filter(items=['FA_mean','num','tract','algo']).groupby(['tract','algo']).agg(agg)
-    # print(df.columns)
+
     dfn = pd.DataFrame()
     dfn['tract'] = df['tract']
     dfn['algo'] = df['algo']
@@ -40,17 +37,12 @@ INTRuST,uf.right,565.9559476129,43.1105907847185,142.316883116883,126.6375378403
     dfn['num_sd'] = df['num']['std']
     dfn['count'] = df['FA_mean']['count']
     dfn = dfn.set_index('algo')
-    # dfn = df['tract']
-    # df.columns = df.columns.droplevel(0)
-    # df.columns = df.columns.droplevel(0)
-    # df.reset_index(inplace=True)
-    # df = df[['algo','tract','FAmean_mean','FAmean_sd','num_mean','num_sd','count']]
-    # df.reset_index()
-    # df.columns = df.columns.get_level_values(0)
-    print(dfn)
     dfintrust= pd.read_csv(INTRUST, sep=",",index_col=0)
+    
     print("Compare to INTRuST:")
     print(dfintrust)
+    print("Project summary:")
+    print(dfn)
     return dfn
 
 

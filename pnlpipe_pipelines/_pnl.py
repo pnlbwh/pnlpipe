@@ -142,6 +142,7 @@ class DwiEpiMask(NrrdOutput):
     """Generates a mask from an EPI corrected DWI, which is already skullstripped."""
 
     def static_build(self):
+        from plumbum.cmd import unu
         with BRAINSTools.env(self.BRAINSTools_hash):
             slicecmd = unu["slice", "-a", "3", "-p", 0, "-i", self.dwi]
             binarizecmd = unu["3op", "ifelse", "-", 1, 0]
@@ -381,15 +382,13 @@ class TractMeasures(CsvOutput):
     def static_build(self):
         measureTracts_py = local[
             'pnlscripts/measuretracts/measureTracts.py']
-        vtks = self.wmql.up() // '*.vtk'
+        vtks = self.wmql // '*.vtk'
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
                          dag.showCompressedDAG(self.deps['wmql']), '-o', self.output(), '-i', vtks] & FG
-
 
 def summarize_tractmeasures(pipename, extra_flags=None):
     from pnlpipe_lib import OUTDIR
     from pnlpipe_cli import read_grouped_combos, make_pipeline
-
     log.info("Combine all csvs into one")
     dfs = []
     for paramid, combo, caseids in read_grouped_combos(pipename):

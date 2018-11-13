@@ -2,7 +2,7 @@
 from __future__ import print_function
 from util import logfmt, TemporaryDirectory
 from plumbum import local, cli, FG
-import sys
+import sys, psutil
 from util.scripts import bse_py, antsRegistrationSyNMI_sh
 from util.antspath import ResampleImageBySpacing, antsApplyTransforms
 import os
@@ -11,6 +11,7 @@ import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
+N_CPU= str(psutil.cpu_count())
 
 class FsToDwi(cli.Application):
     """Registers Freesurfer labelmap to DWI space."""
@@ -85,7 +86,7 @@ class Direct(cli.Application):
             affine = pre + '0GenericAffine.mat'
             warp = pre + '1Warp.nii.gz'
             antsRegistrationSyNMI_sh['-m', brain, '-f', b0masked1mm, '-o', pre,
-                                     '-n', 32] & FG
+                                     '-n', N_CPU] & FG
             antsApplyTransforms('-d', '3', '-i', wmparc, '-t', warp, affine,
                                 '-r', b0masked1mm, '-o', wmparcindwi1mm,
                                 '--interpolation', 'NearestNeighbor')
