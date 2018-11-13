@@ -4,10 +4,10 @@ from util import logfmt
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
 from util.antspath import antsRegistrationSyN_sh
-from itertools import zip_longest
+from itertools import izip_longest
 import pandas as pd
 import sys, os
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 
 import logging
 logger = logging.getLogger()
@@ -26,30 +26,31 @@ def grouper(iterable, n, fillvalue=None):
     if n == 1:
         return [iterable]
     args = [iter(iterable)] * n
-    return zip_longest(fillvalue=fillvalue, *args)
+    return izip_longest(fillvalue=fillvalue, *args)
 
 
 def computeWarp(image, target, out):
-
 
     # diverting the temporary directory to avoid space shortage in shared /tmp
     directory= '/'+ ('/').join(os.getcwd().split('/')[1:3])+'/tmp'
     if not os.path.exists(directory):
         os.mkdir(directory)
-    with TemporaryDirectory(dir= directory) as tmpdir:
-        tmpdir = local.path(tmpdir)
-        pre = tmpdir / 'ants'
-        warp = pre + '1Warp.nii.gz'
-        affine = pre + '0GenericAffine.mat'
+    tmpdir= mkdtemp(dir= directory)
+
+    tmpdir = local.path(tmpdir)
+    pre = tmpdir / 'ants'
+    warp = pre + '1Warp.nii.gz'
+    affine = pre + '0GenericAffine.mat'
 
     # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
-        antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
-                               32] & FG
+    antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
+                           32] & FG
 
     # out is Warp{idx}.nii.gz, saved in the specified output direcotry
     # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
-        ComposeMultiTransform('3', out, '-R', target, warp, affine) 
-
+    ComposeMultiTransform('3', out, '-R', target, warp, affine)
+    
+    os.rmdir(tmpdir)
 
 def applyWarp(moving, warp, reference, out, interpolation='Linear'):
     '''Interpolation options:
