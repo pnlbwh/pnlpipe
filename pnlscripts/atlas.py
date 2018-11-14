@@ -4,10 +4,13 @@ from util import logfmt
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
 from util.antspath import antsRegistrationSyN_sh
+from util import TemporaryDirectory
 from itertools import izip_longest
 import pandas as pd
-import sys, os
-from tempfile import mkdtemp
+import sys
+
+import psutil
+N_CPU= str(psutil.cpu_count())
 
 import logging
 logger = logging.getLogger()
@@ -31,26 +34,21 @@ def grouper(iterable, n, fillvalue=None):
 
 def computeWarp(image, target, out):
 
-    # diverting the temporary directory to avoid space shortage in shared /tmp
-    directory= '/'+ ('/').join(os.getcwd().split('/')[1:3])+'/tmp'
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    tmpdir= mkdtemp(dir= directory)
+    with TemporaryDirectory() as tmpdir:
+        tmpdir = local.path(tmpdir)
+        pre = tmpdir / 'ants'
+        warp = pre + '1Warp.nii.gz'
+        affine = pre + '0GenericAffine.mat'
 
-    tmpdir = local.path(tmpdir)
-    pre = tmpdir / 'ants'
-    warp = pre + '1Warp.nii.gz'
-    affine = pre + '0GenericAffine.mat'
+        # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
+        antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
+                               N_CPU] & FG
 
-    # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
-    antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
-                           32] & FG
+        # out is Warp{idx}.nii.gz, saved in the specified output direcotry
+        # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
+        ComposeMultiTransform('3', out, '-R', target, warp, affine)
 
-    # out is Warp{idx}.nii.gz, saved in the specified output direcotry
-    # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
-    ComposeMultiTransform('3', out, '-R', target, warp, affine)
-    
-    os.rmdir(tmpdir)
+        # shutil.rmtree(tmpdir)
 
 def applyWarp(moving, warp, reference, out, interpolation='Linear'):
     '''Interpolation options:
@@ -84,7 +82,8 @@ def fuseAntsJointFusion(target, images, labels, out):
         ['-l'] +  \
         labels + \
         ['-o', out] + \
-        ANTSJOINTFUSION_PARAMS
+        ANTSJOINTFUSION_PARAMS + \
+        ['--verbose']
 
     antsJointFusion(*antsJointFusionArgs)
 
@@ -103,7 +102,7 @@ def fuseAvg(labels, out):
         unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', out]) & FG
 
 
-def makeAtlases(target, trainingTable, outdir, fusion):
+def makeAtlases(target, trainingTable, outdir, fusion, tmp_dir):
     outdir = local.path(outdir)
     outdir.mkdir()
 
@@ -123,7 +122,7 @@ def makeAtlases(target, trainingTable, outdir, fusion):
     # warp is computed among the first column images and the target image
     # then that warp is applied to images in other columns
     # assuming first column of the dictionary contains moving images
-    computeWarp(r[0], target, warp) # first column of each row is used here
+    computeWarp(r[0], target, warp, tmp_dir) # first column of each row is used here
     applyWarp(r[0], warp, target, atlas) # first column of each row is used here
 
     # labelname is the column header and label is the image in the csv file

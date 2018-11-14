@@ -1,13 +1,15 @@
 from __future__ import print_function
 from os.path import abspath, exists, dirname, join
-import os
+import os, sys
 import os as _os
-import logging
 import warnings as _warnings
 from tempfile import mkdtemp
 from plumbum import cli, local
 import logging
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+import pnlpipe_config
+# from ... import pnlpipe_config
 
 logger = logging.getLogger()
 
@@ -70,7 +72,7 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix="", prefix="tmp", dir=None):
+    def __init__(self, suffix="", prefix="tmp", dir=pnlpipe_config.TMPDIR):
         self._closed = False
         self.name = None # Handle mkdtemp raising an exception
         self.name = mkdtemp(suffix, prefix, dir)
