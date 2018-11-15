@@ -29,7 +29,7 @@ def grouper(iterable, n, fillvalue=None):
     if n == 1:
         return [iterable]
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue=fillvalue, *args)
+    return zip_longest(fillvalue=fillvalue, *args)
 
 
 def computeWarp(image, target, out):
