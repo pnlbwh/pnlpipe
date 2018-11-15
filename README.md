@@ -163,6 +163,12 @@ Now build the software by running-
 see the results in `$PNLPIPE_SOFT`, such as `BRAINSTools-bin-2d5eccb/` and
 `UKFTractography-421a7ad/`.
 
+### Patch
+
+Run the following command to patch `warnings.py`:
+
+`sed -i 's/msg.filename, msg.lineno, line= msg.line)/msg.filename, msg.lineno, msg.line)/g' miniconda3/envs/pnlpipe3/lib/python3.6/warnings.py`
+
 
 ### Run and monitor
 
