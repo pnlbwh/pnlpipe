@@ -5,7 +5,7 @@ from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
 from util.antspath import antsRegistrationSyN_sh
 from util import TemporaryDirectory
-from itertools import izip_longest
+from itertools import zip_longest
 import pandas as pd
 import sys
 
