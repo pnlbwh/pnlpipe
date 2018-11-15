@@ -4,9 +4,13 @@ from util import logfmt
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
 from util.antspath import antsRegistrationSyN_sh
+from util import TemporaryDirectory
 from itertools import zip_longest
 import pandas as pd
 import sys
+
+import psutil
+N_CPU= str(psutil.cpu_count())
 
 import logging
 logger = logging.getLogger()
@@ -29,20 +33,22 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def computeWarp(image, target, out):
-    with local.tempdir() as tmpdir:
+
+    with TemporaryDirectory() as tmpdir:
         tmpdir = local.path(tmpdir)
         pre = tmpdir / 'ants'
         warp = pre + '1Warp.nii.gz'
         affine = pre + '0GenericAffine.mat'
 
-    # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
+        # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
         antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
-                               32] & FG
+                               N_CPU] & FG
 
-    # out is Warp{idx}.nii.gz, saved in the specified output direcotry
-    # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
-        ComposeMultiTransform('3', out, '-R', target, warp, affine) 
+        # out is Warp{idx}.nii.gz, saved in the specified output direcotry
+        # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
+        ComposeMultiTransform('3', out, '-R', target, warp, affine)
 
+        # shutil.rmtree(tmpdir)
 
 def applyWarp(moving, warp, reference, out, interpolation='Linear'):
     '''Interpolation options:
@@ -76,7 +82,8 @@ def fuseAntsJointFusion(target, images, labels, out):
         ['-l'] +  \
         labels + \
         ['-o', out] + \
-        ANTSJOINTFUSION_PARAMS
+        ANTSJOINTFUSION_PARAMS + \
+        ['--verbose']
 
     antsJointFusion(*antsJointFusionArgs)
 
@@ -234,7 +241,7 @@ class AtlasCsv(cli.Application):
         help='target image',
         mandatory=True)
     fusions = cli.SwitchAttr(
-        ['-f', '--fusion'],
+        ['--fusion'],
         cli.Set("avg", "antsJointFusion", case_sensitive=False),
         help='Also create predicted labelmap(s) by combining the atlas labelmaps')
     out = cli.SwitchAttr(

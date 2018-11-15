@@ -1,5 +1,12 @@
 OUTDIR = '_data'
 
+# diverting the temporary directory to avoid space shortage in shared /tmp
+# set to None to write to default /tmp
+import os
+TMPDIR = os.environ['HOME']
+# if the path you are setting doesn't exist, it will point to default /tmp
+TMPDIR = TMPDIR if os.path.exists(TMPDIR) else '/tmp'
+
 intrust = {
     'caseid_placeholder': '003_GNX_007',
     'dwied': '/data/pnl/INTRuST/003_GNX_007/diff/003_GNX_007-dwi-Ed.nhdr',
