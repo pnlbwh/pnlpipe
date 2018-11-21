@@ -4,9 +4,9 @@ from plumbum import local
 import logging
 log = logging.getLogger(__name__)
 
-DEFAULT_HASH = '8f8fb95'
+DEFAULT_HASH = 'py3k'
 NAME = 'tract_querier'
-REPO = 'pnlbwh/tract_querier/tree/py3k'
+REPO = 'pnlbwh/tract_querier'
 
 def make(commit=DEFAULT_HASH):
     """Downloads a lean version of tract_querier. Output is '$soft/tract_querier-<commit>'."""
