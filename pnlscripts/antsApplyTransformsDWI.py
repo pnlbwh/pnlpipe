@@ -35,8 +35,7 @@ class App(cli.Application):
             dicePrefix = 'dwi'
 
             logging.info("Dice DWI")
-            (unu['convert', '-t', 'int16', '-i', self.dwi] | \
-                unu['dice','-a','3','-o',dicePrefix]) & FG
+            unu['dice','-a','3','-i',self.dwi,'-o',dicePrefix] & FG
 
             logging.info("Apply warp to each DWI volume")
             vols = sorted(tmpdir // (dicePrefix + '*'))
@@ -47,25 +46,38 @@ class App(cli.Application):
                 volwarped = vol.stem + '-warped.nrrd'
                 WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
                                         self.xfm)
-                unu('convert', '-t', 'int16', '-i', volwarped, '-o', volwarped)
                 volsWarped.append(volwarped)
 
             logging.info("Join warped volumes together")
+
+
             (unu['join', '-a', '3', '-i', volsWarped] | \
-                unu['save', '-e', 'gzip', '-f', 'nrrd'] | \
-                unu['data','-'] > 'tmpdwi.raw.gz') & FG
+                unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', 'dwi.nhdr']) & FG
+
+            # get data type
+            with open("dwi.nhdr", "r") as hdr:
+                lines = hdr.readlines()
+                for line in lines:
+                    if 'type' in line:
+                        typeline=line
 
             logging.info(
                 "Create new nrrd header pointing to the newly generated data file")
-            unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', self.dwi, '-o',
-                'dwi.nhdr')
-            with open("dwi.nhdr", "r") as hdr:
+
+            unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', self.dwi, '-o', 'tmpdwi.nhdr')
+
+            # get other header fields
+            with open("tmpdwi.nhdr", "r") as hdr:
                 lines = hdr.readlines()
+
             with open("dwi.nhdr", "w") as hdr:
                 for line in lines:
-                    hdr.write(
-                        re.sub(r'^data file:.*$', 'data file: tmpdwi.raw.gz',
-                               line))
+                    if 'data file' in line:
+                        hdr.write('data file: dwi.raw.gz\n')
+                    elif 'type' in line:
+                        hdr.write(typeline)
+                    else:
+                        hdr.write(line)
 
             logging.info('Make ' + str(self.out))
             unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', 'dwi.nhdr', '-o',
