@@ -10,7 +10,8 @@ import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
-eps= -100
+eps= 2.2204e-16 # for difference map generation
+B= 45 # for b0 finding
 
 class App(cli.Application):
 
@@ -46,6 +47,13 @@ class App(cli.Application):
                     grad_axis= i
                     break
 
+            where_dwi= []
+            bmax= float(dwi_hdr['DWMRI_b-value'])
+            for i in range(dwi_data.shape[grad_axis]):
+                vector= [float(x) for x in dwi_hdr['DWMRI_gradient_' + '{:04}'.format(i)].split()]
+                if np.linalg.norm(vector)*bmax>B:
+                    where_dwi.append(i)
+
             if not grad_axis:
                 raise AttributeError('Gradient axis could not be determined')
 
@@ -53,9 +61,12 @@ class App(cli.Application):
                 raise AttributeError('baseline and volumes have different dimensions')
 
             extend_bse= np.expand_dims(bse_data, grad_axis)
-            extend_bse= np.repeat(extend_bse, dwi_data.shape[grad_axis], grad_axis)
+            extend_bse= np.repeat(extend_bse, len(where_dwi), grad_axis)
 
-            minMask= np.min(extend_bse - dwi_data, axis= grad_axis)
+            curtail_dwi= np.take(dwi_data, where_dwi, axis= grad_axis)
+
+            # 1/b0 * min(b0-Gi)
+            minMask= np.min(extend_bse - curtail_dwi, axis= grad_axis)/(bse_data+eps)
             usrMask= (minMask < eps) * 1
 
             prefix= str(self.out).split('.')[0]
