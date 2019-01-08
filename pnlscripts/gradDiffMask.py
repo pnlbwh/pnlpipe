@@ -2,9 +2,9 @@
 from util import logfmt, TemporaryDirectory, ExistingNrrd, NonexistentNrrd, Nrrd
 from util.scripts import bse_py
 from plumbum import local, cli
-from plumbum.cmd import unu
-import sys, nrrd
+import nrrd
 import numpy as np
+import matplotlib.pyplot as plt
 
 import logging
 logger = logging.getLogger()
@@ -58,20 +58,22 @@ class App(cli.Application):
                 raise AttributeError('Gradient axis could not be determined')
 
             if np.shape(bse_data)!= np.shape(np.take(dwi_data,-1,axis=grad_axis)):
-                raise AttributeError('baseline and volumes have different dimensions')
+                raise AttributeError('Baseline and gradients have different dimensions')
 
             extend_bse= np.expand_dims(bse_data, grad_axis)
             extend_bse= np.repeat(extend_bse, len(where_dwi), grad_axis)
 
             curtail_dwi= np.take(dwi_data, where_dwi, axis= grad_axis)
 
-            # 1/b0 * min(b0-Gi)
+            # 1/b0 * min(b0-Gi) with condition at b0~eps
             minMask= np.min(extend_bse - curtail_dwi, axis= grad_axis)/(bse_data+eps)
+            minMask[(bse_data<eps) & (minMask<5*eps)]= 0.
+            minMask[(bse_data<eps) & (minMask>5*eps)]= 10.
             usrMask= (minMask < eps) * 1
 
             prefix= str(self.out).split('.')[0]
             nrrd.write(prefix+'_minMask.nrrd', minMask, header=bse_hdr)
-            nrrd.write(prefix+'_usrMask.nrrd', usrMask, header=bse_hdr)
+            nrrd.write(prefix+'_usrMask.nrrd', usrMask.astype('short'), header=bse_hdr)
 
 
 if __name__ == '__main__':
