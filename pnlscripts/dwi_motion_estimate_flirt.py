@@ -181,7 +181,7 @@ def main(args=sys.argv):
         sys.exit(0)
 
     else:
-        directory_motion_estimate(args.datapath, output_path=args.output)
+        directory_motion_estimate(args.input, output_path=args.output)
         sys.exit(0)
 
 
