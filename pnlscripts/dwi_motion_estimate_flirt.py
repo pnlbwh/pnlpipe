@@ -119,7 +119,7 @@ def _test(testdata_dir):
     subjects = ['test1', 'test2', 'test3']
     for s in subjects:
         data_basename = os.path.join(testdata_dir, s+'-dwi-B3000-Ed-xfms')
-        mtn = subject_motion(load_transforms(data_basename))
+        mtn = subject_motion(load_transforms(data_basename+'.tgz'))
 
         # load the result saved from matlab
         mtn_mat = scipy.io.loadmat(data_basename+'.motionEstimate_general_2.mat')[s].flatten()
@@ -153,28 +153,31 @@ def main(args=sys.argv):
                         help="Run tests. 'datapath' should be test data directory.",
                         action='store_true', required=False)
 
-    parser.add_argument('datapath',
+    parser.add_argument('--input', '-i',
                         help="Input data: directory or archive",
                         type=str)
-    parser.add_argument('output',
+    parser.add_argument('--output', '-o',
                         help="Output (.mat) file",
-                        type=str)
+                        type=str, required=False)
 
     args = parser.parse_args(sys.argv[1:])
 
     if args.test:
-        _test(args.datapath) # this will exit on throw
+        _test(args.input) # this will exit on throw
         sys.exit(0)
+    else:
+        if not args.output:
+            parser.error("'output' argument is required!")
 
-    elif args.single_subject:
-        if (not os.path.exists(os.path.dirname(args.single_subject)) or
-            os.path.isdir(args.single_subject)):
-            print("Error: --single_subject argument must be filename, in an existing directory")
+    if args.single_subject:
+        if (not os.path.exists(os.path.dirname(args.input)) or
+            os.path.isdir(args.input)):
+            print("Error: `output` argument must be filename, in an existing directory")
             sys.exit(1)
 
-        res = subject_motion(load_transforms(args.datapath))
-        scipy.io.savemat(args.single_subject, {'res': res})
-        print("Saved variable 'res' in file: {}".format(args.single_subject))
+        res = subject_motion(load_transforms(args.input))
+        scipy.io.savemat(args.output, {'res': res})
+        print("Saved variable 'res' in file: {}".format(args.output))
         sys.exit(0)
 
     else:
