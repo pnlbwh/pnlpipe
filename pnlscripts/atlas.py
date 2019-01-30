@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from util import logfmt
-import util
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms
 from util.antspath import antsRegistrationSyN_sh
-from itertools import izip_longest
+from util import TemporaryDirectory
+from itertools import zip_longest
 import pandas as pd
 import sys
-import numpy as np
+
+import psutil
+N_CPU= str(psutil.cpu_count())
 
 import logging
 logger = logging.getLogger()
@@ -27,24 +29,26 @@ def grouper(iterable, n, fillvalue=None):
     if n == 1:
         return [iterable]
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue=fillvalue, *args)
+    return zip_longest(fillvalue=fillvalue, *args)
 
 
 def computeWarp(image, target, out):
-    with local.tempdir() as tmpdir:
+
+    with TemporaryDirectory() as tmpdir:
         tmpdir = local.path(tmpdir)
         pre = tmpdir / 'ants'
         warp = pre + '1Warp.nii.gz'
         affine = pre + '0GenericAffine.mat'
 
-    # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
+        # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
         antsRegistrationSyN_sh['-m', image, '-f', target, '-o', pre, '-n',
-                               32] & FG
+                               N_CPU] & FG
 
-    # out is Warp{idx}.nii.gz, saved in the specified output direcotry
-    # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
-        ComposeMultiTransform('3', out, '-R', target, warp, affine) 
+        # out is Warp{idx}.nii.gz, saved in the specified output direcotry
+        # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
+        ComposeMultiTransform('3', out, '-R', target, warp, affine)
 
+        # shutil.rmtree(tmpdir)
 
 def applyWarp(moving, warp, reference, out, interpolation='Linear'):
     '''Interpolation options:
@@ -78,7 +82,8 @@ def fuseAntsJointFusion(target, images, labels, out):
         ['-l'] +  \
         labels + \
         ['-o', out] + \
-        ANTSJOINTFUSION_PARAMS
+        ANTSJOINTFUSION_PARAMS + \
+        ['--verbose']
 
     antsJointFusion(*antsJointFusionArgs)
 
@@ -108,30 +113,30 @@ def makeAtlases(target, trainingTable, outdir, fusion):
  
           
     for idx, r in trainingTable.iterrows(): # reads each row except the headers
-        
+
         print('Registering image {idx} to target'.format(**locals()))
         warp = outdir / 'warp{idx}.nii.gz'.format(**locals())
         atlas = outdir / 'atlas{idx}.nii.gz'.format(**locals())
         logging.info('Make {atlas}'.format(**locals()))
 
-    # warp is computed among the first column images and the target image
-    # then that warp is applied to images in other columns
-    # assuming first column of the dictionary contains moving images
-    computeWarp(r[0], target, warp) # first column of each row is used here
-    applyWarp(r[0], warp, target, atlas) # first column of each row is used here
+        # warp is computed among the first column images and the target image
+        # then that warp is applied to images in other columns
+        # assuming first column of the dictionary contains moving images
+        computeWarp(r[0], target, warp) # first column of each row is used here
+        applyWarp(r[0], warp, target, atlas) # first column of each row is used here
 
-    # labelname is the column header and label is the image in the csv file
-    for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
-        atlaslabel = outdir / '{labelname}{idx}.nii.gz'.format(**locals())
-        logging.info('Make {atlaslabel}'.format(**locals()))
-            
-        # creates {labelname}{idx}.nii.gz in the output directory
-        # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file
-        applyWarp(label,
-                    warp,
-                    target,
-                    atlaslabel,
-                    interpolation='NearestNeighbor')
+        # labelname is the column header and label is the image in the csv file
+        for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
+            atlaslabel = outdir / '{labelname}{idx}.nii.gz'.format(**locals())
+            logging.info('Make {atlaslabel}'.format(**locals()))
+
+            # creates {labelname}{idx}.nii.gz in the output directory
+            # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file
+            applyWarp(label,
+                        warp,
+                        target,
+                        atlaslabel,
+                        interpolation='NearestNeighbor')
 
     
     
@@ -236,7 +241,7 @@ class AtlasCsv(cli.Application):
         help='target image',
         mandatory=True)
     fusions = cli.SwitchAttr(
-        ['-f', '--fusion'],
+        ['--fusion'],
         cli.Set("avg", "antsJointFusion", case_sensitive=False),
         help='Also create predicted labelmap(s) by combining the atlas labelmaps')
     out = cli.SwitchAttr(
