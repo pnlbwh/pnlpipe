@@ -113,30 +113,30 @@ def makeAtlases(target, trainingTable, outdir, fusion):
  
           
     for idx, r in trainingTable.iterrows(): # reads each row except the headers
-        
+
         print('Registering image {idx} to target'.format(**locals()))
         warp = outdir / 'warp{idx}.nii.gz'.format(**locals())
         atlas = outdir / 'atlas{idx}.nii.gz'.format(**locals())
         logging.info('Make {atlas}'.format(**locals()))
 
-    # warp is computed among the first column images and the target image
-    # then that warp is applied to images in other columns
-    # assuming first column of the dictionary contains moving images
-    computeWarp(r[0], target, warp) # first column of each row is used here
-    applyWarp(r[0], warp, target, atlas) # first column of each row is used here
+        # warp is computed among the first column images and the target image
+        # then that warp is applied to images in other columns
+        # assuming first column of the dictionary contains moving images
+        computeWarp(r[0], target, warp) # first column of each row is used here
+        applyWarp(r[0], warp, target, atlas) # first column of each row is used here
 
-    # labelname is the column header and label is the image in the csv file
-    for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
-        atlaslabel = outdir / '{labelname}{idx}.nii.gz'.format(**locals())
-        logging.info('Make {atlaslabel}'.format(**locals()))
-            
-        # creates {labelname}{idx}.nii.gz in the output directory
-        # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file
-        applyWarp(label,
-                    warp,
-                    target,
-                    atlaslabel,
-                    interpolation='NearestNeighbor')
+        # labelname is the column header and label is the image in the csv file
+        for labelname, label in r.iloc[1:].iteritems(): # rest of the columns of each row are used here
+            atlaslabel = outdir / '{labelname}{idx}.nii.gz'.format(**locals())
+            logging.info('Make {atlaslabel}'.format(**locals()))
+
+            # creates {labelname}{idx}.nii.gz in the output directory
+            # applying Warp{idx}.nii.gz on each image under 'labelname' column in the csv file
+            applyWarp(label,
+                        warp,
+                        target,
+                        atlaslabel,
+                        interpolation='NearestNeighbor')
 
     
     
