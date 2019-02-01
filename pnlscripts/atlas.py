@@ -157,8 +157,8 @@ def makeAtlases(target, trainingTable, outdir, fusion):
             atlasimages = outdir // 'atlas*.nii.gz'
             fuseAntsJointFusion(target, atlasimages, labelmaps, out)
 
-    else:
-        print('Unrecognized fusion option: {}. Skipping.'.format(fusion))
+        else:
+            print('Unrecognized fusion option: {}. Skipping.'.format(fusion))
 
 
 class Atlas(cli.Application):
