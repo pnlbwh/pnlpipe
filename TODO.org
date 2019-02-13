@@ -26,3 +26,7 @@ Tashrif has codes for it in pnlbwh/conversion/bval_bvec_io.nrrd_bvals_bvecs
 Tashrif has codes for it in pnlbwh/conversion/nifti_write.py
 
 * fs2dwi.py does not handle 'through T2' case, Tashrif has codes for it in nifti pipeline
+
+** BUG:
+Make the following change in Cmake file 
+https://github.com/pnlbwh/pnlpipe/commit/12130cdfbe8005338d3bd961949fd635f2730f92
