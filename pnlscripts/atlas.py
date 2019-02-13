@@ -49,7 +49,7 @@ def computeWarp(image, target, out):
 
         # pre is the prefix (directory) for saving 1Warp.nii.gz and 0GenericAffine.mat
         antsRegistrationSyNQuick_sh['-m', image, '-f', target, '-o', pre, '-n',
-                               N_CPU] & FG
+                               '8'] & FG
 
         # out is Warp{idx}.nii.gz, saved in the specified output direcotry
         # ComposeMultiTransform combines the 1Warp.nii.gz and 0GenericAffine.mat into a Warp{idx}.nii.gz file
@@ -177,7 +177,7 @@ def train2target(itr):
                   interpolation='NearestNeighbor')
 
 
-def makeAtlases(target, trainingTable, outdir, fusion):
+def makeAtlases(target, trainingTable, outdir, fusion, threads):
 
     outdir = local.path(outdir)
     outdir.mkdir()
@@ -188,13 +188,12 @@ def makeAtlases(target, trainingTable, outdir, fusion):
 
     logging.info('Create {} atlases: compute transforms from images to target and apply over images'.format(L))
 
-    pool = multiprocessing.Pool()  # Use all available cores, otherwise specify the number you want as an argument
+    pool = multiprocessing.Pool(threads)  # Use all available cores, otherwise specify the number you want as an argument
 
     pool.map_async(train2target, multiDataFrame.iterrows())
 
     pool.close()
     pool.join()
-
 
     logging.info('Fuse warped labelmaps to compute output labelmaps')
     atlasimages = outdir // 'atlas*.nii.gz'
@@ -205,7 +204,7 @@ def makeAtlases(target, trainingTable, outdir, fusion):
         ALPHA_DEFAULT= 0.45
 
         logging.info('Compute MI between warped image and target')
-        pool = multiprocessing.Pool()
+        pool = multiprocessing.Pool(threads)
         for img in atlasimages:
             print('MI between {} and target'.format(img))
             miFile= img+'.txt'
@@ -226,7 +225,7 @@ def makeAtlases(target, trainingTable, outdir, fusion):
         weights = weightsFromMIExp(mis, ALPHA_DEFAULT)
 
 
-    pool = multiprocessing.Pool()  # Use all available cores, otherwise specify the number you want as an argument
+    pool = multiprocessing.Pool(threads)  # Use all available cores, otherwise specify the number you want as an argument
     for labelname in list(trainingTable)[1:]:  #list(d) gets column names
 
         out = outdir / labelname + '.nrrd'
@@ -304,6 +303,9 @@ class AtlasArgs(cli.Application):
         ['-n', '--names'],
         help='list of names for generated labelmaps, e.g. "atlasmask atlascingr"',
         mandatory=True)
+    threads= cli.SwitchAttr(['-n', '--numCores'],
+        help='number of processes/threads to use (-1 for all available)',
+        default= 8)
 
     def main(self):
         images = self.images.split()
@@ -329,7 +331,11 @@ class AtlasArgs(cli.Application):
             trainingTable[labelnames[i]]= values
         trainingTable= pd.DataFrame(trainingTable, columns=['image']+labelnames)
 
-        makeAtlases(self.target, trainingTable, self.out, self.fusions)
+        self.threads= int(self.threads)
+        if self.threads==-1 or self.threads>N_CPU:
+            self.threads= N_CPU
+
+        makeAtlases(self.target, trainingTable, self.out, self.fusions, self.threads)
         logging.info('Made ' + self.out)
 
 
@@ -354,11 +360,14 @@ class AtlasCsv(cli.Application):
              'between the warped atlases and target image, antsJointFusion is local weighted averaging', default='wavg')
     out = cli.SwitchAttr(
         ['-o', '--out'], help='output directory', mandatory=True)
+    threads= cli.SwitchAttr(['-n', '--numCores'],
+        help='number of processes/threads to use (-1 for all available)',
+        default= 8)
 
     @cli.positional(cli.ExistingFile)
     def main(self, csvFile):
         trainingTable = pd.read_csv(csvFile)
-        makeAtlases(self.target, trainingTable, self.out, self.fusions)
+        makeAtlases(self.target, trainingTable, self.out, self.fusions, int(self.threads))
         logging.info('Made ' + self.out)
 
 
