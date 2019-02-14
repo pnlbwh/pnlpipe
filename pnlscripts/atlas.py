@@ -197,6 +197,7 @@ def makeAtlases(target, trainingTable, outdir, fusion, threads):
 
     logging.info('Fuse warped labelmaps to compute output labelmaps')
     atlasimages = outdir // 'atlas*.nii.gz'
+    # sorting is required for applying weight to corresponding labelmap
     atlasimages.sort()
 
     if fusion.lower() == 'wavg':
