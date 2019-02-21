@@ -3,7 +3,7 @@ OUTDIR = '_data'
 # diverting the temporary directory to avoid space shortage in shared /tmp
 # set to None to write to default /tmp
 import os
-TMPDIR = os.environ['HOME']
+TMPDIR = os.path.join(os.environ['HOME'],'tmp')
 # if the path you are setting doesn't exist, it will point to default /tmp
 TMPDIR = TMPDIR if os.path.exists(TMPDIR) else '/tmp'
 
@@ -16,3 +16,7 @@ intrust = {
     't2': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-t2w.nhdr'
 }
 INPUT_KEYS = intrust
+
+# every time you input a different std.params/epi.params, give the following a different name
+# so you are able to compare summary across parameters
+PROJECT_ALG_NAME = 'usrAlg '
