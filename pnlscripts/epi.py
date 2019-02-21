@@ -24,6 +24,8 @@ class App(cli.Application):
     t2 = cli.SwitchAttr('--t2', ExistingNrrd, help='T2w', mandatory=True)
     t2mask = cli.SwitchAttr( '--t2mask', ExistingNrrd, help='T2w mask', mandatory=True)
     out = cli.SwitchAttr( ['-o', '--out'], Nrrd, help='EPI corrected DWI', mandatory=True)
+    typeCast = cli.Flag(
+        ['-c', '--typeCast'], help='convert the output to int16 for UKFTractography')
 
     def main(self):
         if not self.force and self.out.exists():
@@ -72,6 +74,10 @@ class App(cli.Application):
                 unu("save", "-e", "gzip", "-f", "nrrd", "-i", dwiepi, self.out)
             else:
                 dwiepi.move(self.out)
+
+            # FIXME: the following conversion is only for UKFTractography, should be removed in future
+            if self.typeCast:
+                unu('convert', '-t', 'int16', '-i', self.out, '-o', self.out)
 
             if self.debug:
                 tmpdir.copy(self.out.dirname / ("epidebug-" + str(getpid())))
