@@ -27,6 +27,11 @@ Tashrif has codes for it in pnlbwh/conversion/nifti_write.py
 
 * fs2dwi.py does not handle 'through T2' case, Tashrif has codes for it in nifti pipeline
 
+* if there is an error about a missing antsRegistration script, copy the script 
+from ./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts to ./pnlpipe/soft_dir/BRAINSTools-bin-95ac1e28
+Alternatively, you can also do export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts
+
 ** BUG:
-Make the following change in Cmake file 
-https://github.com/pnlbwh/pnlpipe/commit/12130cdfbe8005338d3bd961949fd635f2730f92
+* DwiEpiMask-*.nrrd header has gradients in it since it is not a bet mask rather a 
+manually binarized mask over epi corrected DWI. See pnlpipe_pipelines/_pnl.py:class DwiEpiMask(NrrdOutput)
+* conversion to int16 in `epi.py` should be removed
