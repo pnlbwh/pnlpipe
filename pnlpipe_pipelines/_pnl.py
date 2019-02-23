@@ -129,7 +129,7 @@ class DwiEpi(NrrdOutput):
 
     def static_build(self):
         with BRAINSTools.env(self.BRAINSTools_hash):
-            epi_py('--force',
+            epi_py('--force', '--typeCast',
                    '--dwi', self.dwi,
                    '--dwimask', self.dwimask,
                    '--t2', self.t2,

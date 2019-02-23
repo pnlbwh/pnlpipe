@@ -149,6 +149,16 @@ def make(commit=DEFAULT_HASH, delete=False):
     st = os.stat(str(out / 'antsRegistrationSyN.sh'))
     os.chmod(str(out / 'antsRegistrationSyN.sh'), st.st_mode | stat.S_IEXEC)
     # (blddir / 'ANTs/Scripts/antsRegistrationSyN.sh').copy(out)
+    with open(blddir / 'ANTs/Scripts/antsRegistrationSyNQuick.sh', 'r') as src:
+        with open(out / 'antsRegistrationSyNQuick.sh', 'w') as dest:
+            for idx, line in enumerate(src):
+                if idx == 0:
+                    dest.write('#!/usr/bin/env bash')
+                else:
+                    dest.write(line)
+    st = os.stat(str(out / 'antsRegistrationSyNQuick.sh'))
+    os.chmod(str(out / 'antsRegistrationSyNQuick.sh'), st.st_mode | stat.S_IEXEC)
+    # (blddir / 'ANTs/Scripts/antsRegistrationSyNQuick.sh').copy(out)
     with open(out / 'env.sh', 'w') as f:
         f.write("export PATH={}:$PATH\n".format(out))
         f.write("export ANTSPATH={}\n".format(out))

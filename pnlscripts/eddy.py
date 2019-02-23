@@ -48,9 +48,12 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
 
             # we want to use this hdr to write a new .nhdr file with corresponding data file
             # so delete old data file from the hdr
-            try:
+            if 'data file' in hdr_out.keys():
                 del hdr_out['data file']
-            except:
+            elif 'datafile' in hdr_out.key():
+                del hdr_out['datafile']
+
+            if 'content' in hdr_out.keys():
                 del hdr_out['content']
 
 
@@ -88,6 +91,9 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
             transforms = tmpdir.glob('Diffusion-G*.txt')
             transforms.sort()
 
+            # nibabel loading can be avoided by setting 'data file' = EddyCorrect-DWI.nii.gz
+            # and 'byteskip' = -1
+            # Tashrif updated Pynrrd package to properly handle that
             new_dwi= nib.load('EddyCorrect-DWI.nii.gz').get_data()
 
             logging.info('Extract the rotations and realign the gradients')
@@ -126,11 +132,7 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
 
             tar('cvzf', outxfms, transforms)
 
-            # the following can be avoided by setting data file = EddyCorrect-DWI.nii.gz
-            # and byteskip = -1
-            # Tashrif updated Pynrrd package to properly handle that
             nrrd.write(self.out, new_dwi, header= hdr_out, compression_level = 1)
-
 
             if self.debug:
                 tmpdir.move("eddy-debug-"+str(getpid()))

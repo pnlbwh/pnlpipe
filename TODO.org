@@ -1,15 +1,37 @@
-* Test
-** ENH: make bse.py operate on niftis
- - then FsInDwi doens't need to convert to nrrd first as well as fs2dwi.py
-** add antsJointFusion
-** move atlas.py root flags to subcommands (otherwise help doesn't work)
-* Todo
-** handle empty caselist in readparams.py
-** missing caselist: make more descriptive
-** missing params file: change exception to log message
-** STY: rename extra_words/be specific on what it does
-** STY: static_build -> build
-** ENH: add validators to pipeline (e.g. dwi validator/nrrdchecker)
-** ENH: add permutation check to bse.py (currently assumes correct dwi permutation)
-** ENH: add check for correct DWI axes permutation
-** STY: software: if building  master, don't say building '...-master'
+# Check by Ryan Ekbo:
+
+** Add tests
+
+** ENH: 
+* make bse.py and fs2dwi.py operate on niftis, then FsInDwi doesn't need to convert to nrrd first 
+* handle empty caselist in readparams.py
+* missing caselist: make more descriptive
+* missing params file: change exception to log message
+* add validators to pipeline (e.g. dwi validator/nrrdchecker)
+* add permutation check to bse.py (currently assumes correct dwi permutation)
+
+** STY: 
+* static_build -> build
+* if building  master, don't say building '...-master'
+
+--------------------------------------------------------------------------------------------------------
+# Check by Tashrif Billah:
+
+** ENH: 
+* make all unu dice along gradient axis, join accordingly:
+check antsApplyTransformsDWI.py and eddy.py
+Tashrif has codes for it in pnlbwh/conversion/bval_bvec_io.nrrd_bvals_bvecs
+
+* eddy.py assumes only lps or ras for the input DWI which may not be true
+Tashrif has codes for it in pnlbwh/conversion/nifti_write.py
+
+* fs2dwi.py does not handle 'through T2' case, Tashrif has codes for it in nifti pipeline
+
+* if there is an error about a missing antsRegistration script, copy the script 
+from ./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts to ./pnlpipe/soft_dir/BRAINSTools-bin-95ac1e28
+Alternatively, you can also do export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts
+
+** BUG:
+* DwiEpiMask-*.nrrd header has gradients in it since it is not a bet mask rather a 
+manually binarized mask over epi corrected DWI. See pnlpipe_pipelines/_pnl.py:class DwiEpiMask(NrrdOutput)
+* conversion to int16 in `epi.py` should be removed

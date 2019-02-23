@@ -163,12 +163,6 @@ Now build the software by running-
 see the results in `$PNLPIPE_SOFT`, such as `BRAINSTools-bin-2d5eccb/` and
 `UKFTractography-421a7ad/`.
 
-### Patch
-
-Run the following command to patch `warnings.py`:
-
-`sed -i 's/msg.filename, msg.lineno, line= msg.line)/msg.filename, msg.lineno, msg.line)/g' miniconda3/envs/pnlpipe3/lib/python3.6/warnings.py`
-
 
 ### Run and monitor
 
@@ -514,6 +508,6 @@ run
 
 and run setup again.
 
-
-TODO
-provenance files
+if there is an error about a missing antsRegistration script, copy the script 
+    from ./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts to ./pnlpipe/soft_dir/BRAINSTools-bin-95ac1e28
+    Alternatively, you can also do export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts

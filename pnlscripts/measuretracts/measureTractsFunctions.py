@@ -130,9 +130,11 @@ def printToCSV(nodes,fileName,extra_header=[],extra_values=[]):
     import csv
     import os
     if os.path.exists(fileName):
-        fileOut=csv.writer(open(fileName, 'wa'), delimiter=',', quoting=csv.QUOTE_NONNUMERIC, quotechar='"')
+        fileOut=csv.writer(open(fileName, 'a+'), delimiter=',', quoting=csv.QUOTE_NONNUMERIC, quotechar='"')
+        WRITE_HDR= False
     else:
         fileOut=csv.writer(open(fileName, 'w'), delimiter=',', quoting=csv.QUOTE_NONNUMERIC, quotechar='"')
+        WRITE_HDR= True
 
     nodeID=nodes[0]
     firstNode=getData(nodeID)
@@ -159,7 +161,8 @@ def printToCSV(nodes,fileName,extra_header=[],extra_values=[]):
     print(','.join(measureTags))
 
     header = extra_header + ['tract'] + measureTags
-    fileOut.writerow(header)
+    if WRITE_HDR:
+        fileOut.writerow(header)
 
     measureNums = [0]*length
     numberOfInputs=len(nodes)
