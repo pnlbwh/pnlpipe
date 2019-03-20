@@ -41,10 +41,14 @@ based on a library and scripts that you can use to write new pipelines.
 
 # Teaser
 
-    git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
+    git clone https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
+    git checkout py3-compatible
+
     cp pnlpipe_config.py.example pnlpipe_config.py  # add your input paths to pnlpipe_config.py
-    # create a caselist.txt file where each line is a case ID
-    ./pnlpipe std init      # make default parameter file: pnlpipe_params/std.params
+    touch caselist.txt                              # create a caselist.txt file where each line is a case ID
+    
+
+    ./pnlpipe std init      # make default parameter file: pnlpipe_params/std.params, you may edit the parameters
     ./pnlpipe std setup     # builds prerequisite software specified in std.params
     ./pnlpipe std run       # runs 'std' pipeline
     ./pnlpipe std status    # reports progress
@@ -58,6 +62,7 @@ based on a library and scripts that you can use to write new pipelines.
 First clone this repo to your project directory:
     
     git clone https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
+    git checkout py3-compatible
 
 ## 2. Install software:
     
@@ -84,6 +89,8 @@ Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation)
     export PNLPIPE_SOFT=/path/to/software/dir  # where software modules will be installed
 
 ## 4. Configure your input data
+
+    cp pnlpipe_config.py.example pnlpipe_config.py
 
 Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. It will
 look something like
