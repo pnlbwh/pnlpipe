@@ -56,9 +56,8 @@ based on a library and scripts that you can use to write new pipelines.
 ## 1. Install pnlpipe to Your Project Directory
 
 First clone this repo to your project directory:
-
-    cd /project/dir
-    git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
+    
+    git clone https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
 
 ## 2. Install software:
     
