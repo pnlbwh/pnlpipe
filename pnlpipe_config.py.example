@@ -7,16 +7,18 @@ TMPDIR = os.path.join(os.environ['HOME'],'tmp')
 # if the path you are setting doesn't exist, it will point to default /tmp
 TMPDIR = TMPDIR if os.path.exists(TMPDIR) else '/tmp'
 
-intrust = {
+# an input path is found by looking up its key in INPUT_KEYS
+# value of each key is returned after substituting a caseid"
+# give proper paths for one caseid as your files are stored in your system
+INTRuST = {
     'caseid_placeholder': '003_GNX_007',
-    'dwied': '/data/pnl/INTRuST/003_GNX_007/diff/003_GNX_007-dwi-Ed.nhdr',
     'dwi': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-dwi.nhdr',
-    'dwiharm': '/data/pnl/INTRUST/003_GNX_007/diff/003_GNX_007_hmz_iter1.nhdr',
     't1': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-t1w.nhdr',
     't2': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-t2w.nhdr'
 }
-INPUT_KEYS = intrust
+INPUT_KEYS = INTRuST
 
-# every time you input a different std.params/epi.params, give the following a different name
-# so you are able to compare summary across parameters
+# every time you input a different set of std.params/epi.params,
+# give the following a different name
+# so you are able to compare tract-summaries among parameters
 PROJECT_ALG_NAME = 'usrAlg '
