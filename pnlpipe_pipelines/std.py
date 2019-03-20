@@ -48,7 +48,7 @@ def make_pipeline(caseid,
     tags['t1xc'] = T1Xc(params, deps=[tags['t1']])
 
     if inputT1maskKey:
-        tags['t1mask'] = InputKey(params=[inputT1maskKey, caseid])
+        tags['t1mask'] = InputPathFromKey(params=[inputT1maskKey, caseid])
     else:
         tags['t1mask'] = T1wMaskMabs(params, deps=[tags['t1xc']])
 
