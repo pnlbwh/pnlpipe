@@ -136,7 +136,7 @@ A little elaborate instruction is given in [Setup](#setup).
 
 # Running
 
-*(If you would like, you may edit your (bashrc)[#global-bashrc] to have environment automatically setup
+*(If you would like, you may edit your [bashrc](#global-bashrc) to have environment automatically setup
 every time you open a new terminal)*
 
 ## Running individual scripts
