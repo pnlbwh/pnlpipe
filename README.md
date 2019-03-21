@@ -131,13 +131,13 @@ Afterwards, you may also install the epi pipeline:
     ./pnlpipe epi setup                 # builds pipeline dependencies specified in epi.params
 
 
-A little elaborate instruction is given in [Setup]#setup.
+A little elaborate instruction is given in [Setup](#setup).
 
 
 # Running
 
 *(If you would like, you may edit your (bashrc)[#global-bashrc] to have environment automatically setup
-every time you open a new terminal)
+every time you open a new terminal)*
 
 ## Running individual scripts
 
@@ -683,8 +683,8 @@ and run setup again.
 
 ### 2. error about a missing antsRegistration script:
 
-Copy the script from ./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts to ./pnlpipe/soft_dir/BRAINSTools-bin-*/.
-Alternatively, you can also do export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts
+Copy the script from `./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts` to `./pnlpipe/soft_dir/BRAINSTools-bin-*/`.
+Alternatively, you can also do `export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts`
 
 
 ## Support
