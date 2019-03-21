@@ -87,7 +87,7 @@ Dependencies:
 
 Python 3, FreeSurfer>=5.0.3 and FSL (ignore the one(s) you have already):
 
-### Check system architecture:
+### Check system architecture
 
     uname -a # check if 32 or 64 bit
 
@@ -141,7 +141,7 @@ every time you open a new terminal)*
 
 ## Running individual scripts
 
-### 1. Configure your environment:
+### 1. Configure your environment
 
     source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
     conda activate pnlpipe3                    # should introduce '(pnlpipe)' in front of each line
@@ -150,7 +150,7 @@ every time you open a new terminal)*
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
 
-### 2. Source individual software module:
+### 2. Source individual software module
 
 Each software module makes a file called `env.sh` as part of their output,
 and sourcing that file will add their software path to the `PATH` environment variable,
@@ -171,7 +171,7 @@ See [Shell environment](#shell-environment) to learn more about setting up your 
 
 ## Running the pipelines
 
-### 1. Configure your environment:
+### 1. Configure your environment
 
     source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
     conda activate pnlpipe                     # should introduce '(pnlpipe)' in front of each line
@@ -179,7 +179,7 @@ See [Shell environment](#shell-environment) to learn more about setting up your 
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
-### 2. Configure your input data:
+### 2. Configure your input data
 
 Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. See the back-up
 `pnlpipe_config.py.example`:
@@ -203,7 +203,7 @@ you define above. Finally, put the caseids in `./caselist.txt` you want to analy
     ...
 
 
-## 3. Analyze the data:
+## 3. Analyze data
 
     ./pnlpipe std run           # runs 'std' pipeline
     ./pnlpipe std status        # reports progress
@@ -644,7 +644,7 @@ University's
 
 *(This functionality has not been well tested)*
 
-*pnlpipe* is a simple framework for authoring and running file based data
+*pnlpipe* is a well-structured framework for authoring and running file based data
 processing pipelines and for automatically installing prerequisite software
 packages. Unlike many other data processing software, it allows you to:
 
@@ -672,7 +672,7 @@ see `pnlpipe_pipelines/_pnl.py` for examples on how to write your own nodes.
 
 ## Known errors
 
-### 1. error setting certificate verify locations:
+### 1. error setting certificate verify locations
 
 During the setup phase you may encounter this error, in which case
 run
@@ -681,7 +681,7 @@ run
 
 and run setup again.
 
-### 2. error about a missing antsRegistration script:
+### 2. error about a missing antsRegistration script
 
 Copy the script from `./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts` to `./pnlpipe/soft_dir/BRAINSTools-bin-*/`.
 Alternatively, you can also do `export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts`
