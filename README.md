@@ -181,8 +181,8 @@ See [Shell environment](#shell-environment) to learn more about setting up your 
 
 ### 2. Configure your input data:
 
-Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. It will
-look something like:
+Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. See the back-up
+`pnlpipe_config.py.example`:
 
     INPUT_KEYS = {
     'caseid_placeholder': '003_GNX_007',
