@@ -1,6 +1,4 @@
 *.pyc
-caselist.txt
 #.*
-pipeline_config.py
 python_env/
 _data/
