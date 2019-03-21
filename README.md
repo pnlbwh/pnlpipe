@@ -176,7 +176,7 @@ See [Shell environment](#shell-environment) to learn more about setting up your 
 ### 1. Configure your environment
 
     source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
-    conda activate pnlpipe                     # should introduce '(pnlpipe)' in front of each line
+    conda activate pnlpipe3                     # should introduce '(pnlpipe)' in front of each line
     export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
@@ -372,7 +372,7 @@ space directions of all your eddy corrected DWI's, you could do the following:
 *(If you have not configured the following so far, do it now)*
 
     source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe                      # should introduce '(pnlpipe)' in front of each line
+    conda activate pnlpipe3                      # should introduce '(pnlpipe)' in front of each line
     export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
@@ -570,7 +570,7 @@ If you want your terminal to have the scripts automatically discoverable and env
 you may put the following lines in your bashrc:
 
     source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe                      # should introduce '(pnlpipe)' in front of each line
+    conda activate pnlpipe3                      # should introduce '(pnlpipe)' in front of each line
     export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     export FSLDIR=~/fsl                         # you may specify another directory where FreeSurfer is installed
