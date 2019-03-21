@@ -1,4 +1,4 @@
-OUTDIR = '_data'
+OUTDIR = '_data' # pnlpipe/_data, alternatively you may specify an absolute path
 
 # diverting the temporary directory to avoid space shortage in shared /tmp
 # set to None to write to default /tmp
