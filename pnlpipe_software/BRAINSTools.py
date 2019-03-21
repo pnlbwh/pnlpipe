@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 import os
 import stat
 
-DEFAULT_HASH = '95ac1e287c67ece1'
+DEFAULT_HASH = '81a409d77cb2260b'
 
 def make(commit=DEFAULT_HASH, delete=False):
     """Downloads and compiles BRAINSTools binaries. Output is '$soft/BRAINSTools-bin-<hash>'."""
@@ -57,6 +57,7 @@ def make(commit=DEFAULT_HASH, delete=False):
         ,"-DBRAINSTools_MAX_TEST_LEVEL=0"
         ,"-DBRAINSTools_SUPERBUILD=ON"
         ,"-DBRAINSTools_USE_QT=OFF"
+        ,"-DBRAINSTools_REQUIRES_VTK=ON"
         ,"-DBRAINS_DEBUG_IMAGE_WRITE=OFF"
         ,"-DBUILD_STYLE_UTILS=OFF"
         ,"-DBUILD_TESTING=OFF"
@@ -101,7 +102,7 @@ def make(commit=DEFAULT_HASH, delete=False):
         ,"-DSuperBuild_BRAINSTools_USE_GIT_PROTOCOL=ON"
         ,"-DUSE_ANTS=ON"
         ,"-DUSE_AutoWorkup=OFF"
-        ,"-DUSE_BRAINSABC=OFF"
+        ,"-DUSE_BRAINSABC=ON"
         ,"-DUSE_BRAINSConstellationDetector=OFF"
         ,"-DUSE_BRAINSContinuousClass=OFF"
         ,"-DUSE_BRAINSCreateLabelMapFromProbabilityMaps=OFF"
@@ -134,7 +135,7 @@ def make(commit=DEFAULT_HASH, delete=False):
         ,"-DUSE_SYSTEM_ITK=OFF"
         ,"-DUSE_SYSTEM_SlicerExecutionModel=OFF"
         ,"-DUSE_SYSTEM_VTK=OFF"
-        ,"-DVTK_GIT_REPOSITORY=git://vtk.org/VTK.git"
+        ,"-DVTK_GIT_REPOSITORY=https://gitlab.kitware.com/vtk/VTK.git"
         )
         import plumbum.cmd
         plumbum.cmd.make['-j', psutil.cpu_count(logical=False)] & FG

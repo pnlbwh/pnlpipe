@@ -1,172 +1,291 @@
-*pnlpipe* is a simple framework for authoring and running file based data
-processing pipelines and for automatically installing prerequisite software
-packages. Unlike many other data processing software, it allows you to:
+![](Misc/pnl-bwh-hms.png)
 
-* build your pipelines from parameterized nodes that generate their own file paths
-* run your pipelines with many parameter combinations without extra work
-* write new nodes and pipelines with little boilerplate
-    
-It is primarily designed for scientific workflows that have long running
-processes and that operate on a set of observations.  It comes prepackaged with
-some of the [PNL](http://pnl.bwh.harvard.edu)'s neuroimaging pipelines that are
-based on a library and scripts that you can use to write new pipelines.
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.2584271.svg)](https://doi.org/10.5281/zenodo.2584271) [![Python](https://img.shields.io/badge/Python-3.6-green.svg)]() [![Platform](https://img.shields.io/badge/Platform-linux--64%20%7C%20osx--64-orange.svg)]()
 
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
-**Table of Contents**
+Developed by Tashrif Billah, Isaiah Norton, Ryan Eckbo, and Sylvain Bouix, Brigham and Women's Hospital (Harvard Medical School).
 
-- [Teaser](#teaser)
-- [Walkthrough](#walkthrough)
-    - [1. Install pnlpipe to Your Project Directory](#1-install-pnlpipe-to-your-project-directory)
-    - [2. Configure Environment (this is for non-PNL users)](#2-configure-environment-this-is-for-non-pnl-users)
-    - [3. Configure your input data](#3-configure-your-input-data)
-    - [4. Run your pipelines](#4-run-your-pipelines)
-        - [Setup](#setup)
-        - [Run and monitor](#run-and-monitor)
-- [Listing Your Pipeline's Output](#listing-your-pipelines-output)
-- [PNL: Running on the cluster](#pnl-running-on-the-cluster)
-- [Multiple Parameter Combinations](#multiple-parameter-combinations)
-    - [Lists of parameter values](#lists-of-parameter-values)
-    - [Lists of parameter dictionaries](#lists-of-parameter-dictionaries)
-    - [Running and listing specific parameter combinations](#running-and-listing-specific-parameter-combinations)
-- [Shell environment](#shell-environment)
-    - [Pipeline shell environment](#pipeline-shell-environment)
-    - [Ad-hoc shell environment](#ad-hoc-shell-environment)
-- [Installing Software Without Using a Pipeline](#installing-software-without-using-a-pipeline)
-- [`pnlscripts`](#pnlscripts)
-- [Writing your own pipelines](#writing-your-own-pipelines)
-- [Issues](#issues)
-    - [-](#-)
+<!-- markdown-toc start - Don't edit this section. Run [gh-md-toc](https://github.com/ekalinin/github-markdown-toc to generate toc again -->
+
+Table of Contents
+=================
+
+   * [Citation](#citation)
+   * [Introduction](#introduction)
+   * [Installation](#installation)
+      * [1. Install prerequisites](#1-install-prerequisites)
+         * [Check system architecture](#check-system-architecture)
+         * [Python 3](#python-3)
+         * [FreeSurfer](#freesurfer)
+         * [FSL](#fsl)
+      * [2. Install pipeline](#2-install-pipeline)
+   * [Running](#running)
+      * [Running individual scripts](#running-individual-scripts)
+         * [1. Configure your environment](#1-configure-your-environment)
+         * [2. Source individual software module](#2-source-individual-software-module)
+      * [Running the pipelines](#running-the-pipelines)
+         * [1. Configure your environment](#1-configure-your-environment-1)
+         * [2. Configure your input data](#2-configure-your-input-data)
+      * [3. Analyze data](#3-analyze-data)
+   * [Tests](#tests)
+   * [Pipeline scripts overview](#pipeline-scripts-overview)
+   * [Run and monitor](#run-and-monitor)
+   * [Listing your pipeline's output](#listing-your-pipelines-output)
+   * [Setup](#setup)
+   * [Advanced options](#advanced-options)
+      * [1. Parameters](#1-parameters)
+         * [Multiple Parameter Combinations](#multiple-parameter-combinations)
+         * [Lists of parameter values](#lists-of-parameter-values)
+         * [Lists of parameter dictionaries](#lists-of-parameter-dictionaries)
+         * [Running and listing specific parameter combinations](#running-and-listing-specific-parameter-combinations)
+      * [2. Shell environment](#2-shell-environment)
+         * [Pipeline shell environment](#pipeline-shell-environment)
+         * [Ad-hoc shell environment](#ad-hoc-shell-environment)
+         * [Global bashrc](#global-bashrc)
+      * [3. PNL: Running on the cluster](#3-pnl-running-on-the-cluster)
+      * [4. Installing software without using pipeline](#4-installing-software-without-using-pipeline)
+      * [5. Writing your own pipelines](#5-writing-your-own-pipelines)
+   * [Issues](#issues)
+      * [Known errors](#known-errors)
+         * [1. error setting certificate verify locations](#1-error-setting-certificate-verify-locations)
+         * [2. error about a missing antsRegistration script](#2-error-about-a-missing-antsregistration-script)
+      * [Support](#support)
+
 
 <!-- markdown-toc end -->
 
-# Teaser
+# Citation
 
-    git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
-    cp pnlpipe_config.py.example pnlpipe_config.py  # add your input paths to pnlpipe_config.py
-    # create a caselist.txt file where each line is a case ID
-    ./pnlpipe std init      # make default parameter file: pnlpipe_params/std.params
-    ./pnlpipe std setup     # builds prerequisite software specified in std.params
-    ./pnlpipe std run       # runs 'std' pipeline
-    ./pnlpipe std status    # reports progress
-    ./pnlpipe std summarize # generates _data/tractmeasures.csv - tract measures for all process cases
+If this pipeline is useful in your research, please cite as below:
+
+Tashrif Billah, Isaiah Norton, Ryan Eckbo, and Sylvain Bouix,
+Processing pipeline for anatomical and diffusion weighted images,
+https://github.com/pnlbwh/pnlpipe, 2018, DOI: 10.5281/zenodo.2584271
 
 
-# Walkthrough
+# Introduction
 
-## 1. Install pnlpipe to Your Project Directory
+*pnlpipe* is a Python-based framework for processing anatomical (T1, T2) and diffusion weighted images.
+It is prepackaged with some of the [PNL](http://pnl.bwh.harvard.edu)'s neuroimaging pipelines that are
+based on a library and scripts you can use to write new pipelines. Each of the pipelines accepts a
+caselist of images to be analyzed and produces organized output with proper logging. The framework
+also supports execution of individual scripts. A pipeline is a directed acyclic graph (DAG) of dependencies.
+The following diagram depicts functionality of the *std* (standard) pipeline where
+each node represents an output, and the arrows represent dependencies:
 
-First clone this repo to your project directory:
+![](pnlpipe_doc/dag.png)
 
-    cd /project/dir
-    git clone https://github.com/reckbo/pnlpipe.git && cd pnlpipe
+Dependencies:
 
-## 2. Install software:
-    
+* unu
+* freesurfer
+* ANTs
+* numpy
+* FSL
+
+
+# Installation
+
+## 1. Install prerequisites
+
+Python 3, FreeSurfer>=5.0.3 and FSL (ignore the one(s) you have already):
+
+### Check system architecture
+
     uname -a # check if 32 or 64 bit
+
+### Python 3
+
+Download [Miniconda Python 3.6 bash installer](https://conda.io/miniconda.html) (32/64-bit based on your environment):
     
-Download [Miniconda Python 3.6 bash installer](https://conda.io/miniconda.html) (64/36-bit based on your environment)
-    
-    sh /path/to/installation/script.sh
+    sh Miniconda3-latest-Linux-x86_64.sh -b # -b flag is for license agreement
+
+Activate the conda environment:
+
+    source ~/miniconda3/bin/activate # should introduce '(base)' in front of each line
+
+### FreeSurfer
     
 Follow the [instruction](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to download and install FreeSurfer >= 5.0.3
 After installation, you can check FreeSurfer version by typing `freesurfer` on the terminal.
 
 
-Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL
+### FSL
 
-   
-## 3. (For non-PNL Users: Configure Environment)
-    
-    source path/to/miniconda3/bin/activate # should introduce '(base)' in front of each line
-        
-    cd /path/to/pnlpipe/python_env
-    make conda  # makes pnlpipe environment for conda
-    source activate pnlpipe # should introduce '(pnlpipe)' in front of each line
-    export PNLPIPE_SOFT=/path/to/software/dir  # where software modules will be installed
+Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL.
 
-## 4. Configure your input data
 
-Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. It will
-look something like
+## 2. Install pipeline
+
+Now that you have installed the prerequisite software, you are ready to install the pipelines (std, epi, hcp):
+
+    git clone https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
+    git checkout py3-compatible         # temporarily we are using py3-compatible branch
+    cd python_env && make conda
+    conda activate pnlpipe3             # should introduce '(pnlpipe)' in front of each line
+    cd .. && mkdir soft_dir             # 'soft_dir' is where pipeline dependencies will be installed
+    export PNLPIPE_SOFT=`pwd`/soft_dir
+    ./pnlpipe std init                  # makes default parameter file: pnlpipe_params/std.params
+    ./pnlpipe std setup                 # builds pipeline dependencies specified in std.params
+
+Afterwards, you may also install the epi pipeline:
+
+    ./pnlpipe epi init                  # makes default parameter file: pnlpipe_params/epi.params
+    ./pnlpipe epi setup                 # builds pipeline dependencies specified in epi.params
+
+
+A little elaborate instruction is given in [Setup](#setup).
+
+
+# Running
+
+*(If you would like, you may edit your [bashrc](#global-bashrc) to have environment automatically setup
+every time you open a new terminal)*
+
+## Running individual scripts
+
+### 1. Configure your environment
+
+    source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
+    conda activate pnlpipe3                    # should introduce '(pnlpipe)' in front of each line
+    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
+
+
+### 2. Source individual software module
+
+Each software module makes a file called `env.sh` as part of their output,
+and sourcing that file will add their software path to the `PATH` environment variable,
+as well as set any other necessary environment variables. Currently, the following
+modules make an `env.sh` file:
+
+* UKFTractography
+* BRAINSTools
+* tract_querier
+
+E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
+
+    source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
+
+See [Pipeline scripts overview](#pipeline-scripts-overview) for details about functionality of each script.
+See [Shell environment](#shell-environment) to learn more about setting up your environment.
+
+
+## Running the pipelines
+
+### 1. Configure your environment
+
+    source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
+    conda activate pnlpipe                     # should introduce '(pnlpipe)' in front of each line
+    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
+
+### 2. Configure your input data
+
+Edit the paths of `INPUT_KEYS` in `pnlpipe_config.py` to point to your data. See the back-up
+`pnlpipe_config.py.example`:
 
     INPUT_KEYS = {
-        'caseid_placeholder': '001',
-        'dwi': '../001/001-dwi.nhdr',
-        't1': '../001/001-t1w.nrrd'
-        't2': '../001/001-t2w.nrrd'
+    'caseid_placeholder': '003_GNX_007',
+    'dwi': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-dwi.nhdr',
+    't1': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-t1w.nhdr',
+    't2': '/data/pnl/INTRuST/003_GNX_007/raw/003_GNX_007-t2w.nhdr'
     }
 
-Each path is a template that is a placeholder representing a case id (in
-this example its '001'). Every pipeline is expected to accept a case id
-parameter, and when run with a particular id, it will use this dictionary to
-find the input paths it needs. You only need to define this dictionary once.
+An input path is found by looking up its key (left hand side of colon) in INPUT_KEYS.
+Value of each key (right hand side of colon) is returned after substituting a caseid.
+So, make sure your input data is organized according to the file structure
+you define above. Finally, put the caseids in `./caselist.txt` you want to analyze:
 
-## 5. Run your pipelines
-
-### Setup
-
-Premade pipelines are in the `pnlpipe_pipelines` directory. For example, the
-standard PNL pipeline is defined in `pnlpipe_pipelines/std.py`, and the EPI
-correction pipeline is defined in `pnlpipe_pipelines/epi.py`. You can also get a
-list of available pipelines by running `./pnlpipe -h`. As an example, we will
-run the PNL standard pipeline, the one named `std`.
-
-Before running a pipeline, we need to configure it. This involves two steps:
-one, we need to specify its parameters, and two, we need to build the
-software it requires.
-
-To specify the parameters, we put them a [yaml](http://www.yaml.org/start.html)
-configuration file, in this case called `pnlpipe_params/std.params`. To make a
-default version of this file, run
-
-    ./pnlpipe std init
-
-This makes a parameter file with the pipeline's default parameters. For the
-`std` pipeline, the most important ones are the input keys, `inputDwiKey`,
-`inputT1Key`, etc. These are the keys the pipeline uses to find its input data,
-by looking up their paths in `pnlpipe_config.INPUT_KEYS`. For example,
-`inputDwiKey: [dwi]` means that the pipeline will find its DWI input by looking
-up 'dwi' in `INPUT_KEYS`. Likewise, `inputT1Key: [t1]` means that the pipeline
-will find its T1w input by looking up 't1' in `INPUT_KEYS`.  The reason it is
-done this way is that if you happen to reorganize your data, you just have to
-update your `pnlpipe_config.INPUT_KEYS`, and your parameters remain the same.
-
-Another important field is `caseid`; the default is `./caselist.txt`, which
-means the pipeline will look in that file to find the case ids you want to use
-with this pipeline. Make it by putting each case id on its own line.
-
-You will notice that the parameter values are wrapped in square brackets. This
-is because you can specify more than one value for each parameter. For example,
-if you wanted to run the `std` pipeline using a DWI masking bet threshold of 0.1
-as well as a 0.15, you would write: `bet_threshold: [0.1, 0.15]`. For more
-details on specifying multiple parameter combinations, see further down in this
-README.
-
-Now you're ready to build the software needed by the pipeline. The required
-software is determined by the parameters that end in '_version' and '_hash' (a
-Github commit hash). Before building the software packages, you need to specify
-the directory to install them to, and you do this by setting a global
-environment variable called `$PNLPIPE_SOFT` (e.g. `export PNLPIPE_SOFT=path/to/software/dir`).
-Now build the software by running-
-    
-(We assume the following sourcing has already been done) 
- 
-    source path/to/miniconda3/bin/activate # should intoduce '(base)' in front of each line
-    source activate pnlpipe # should introduce '(pnlpipe)' in front of each line
-    export FREESURFER_HOME=<freesurfer_installation_directory>/freesurfer
-    source $FREESURFER_HOME/SetUpFreeSurfer.sh 
-    
-    
-    ./pnlpipe std setup
-
-(if any of the software packages already exist, they will not rebuild). You should now
-see the results in `$PNLPIPE_SOFT`, such as `BRAINSTools-bin-2d5eccb/` and
-`UKFTractography-421a7ad/`.
+    003_GNX_007
+    003_GNX_021
+    003_GNX_012
+    ...
+    ...
 
 
-### Run and monitor
+## 3. Analyze data
 
-Now you're ready to run the pipeline:
+    ./pnlpipe std run           # runs 'std' pipeline
+    ./pnlpipe std status        # reports progress
+    ./pnlpipe std summarize     # generates _data/tractmeasures.csv - tract measures for all process cases
+
+See [Run and monitor](#run-and-monitor) and [Listing your pipelines output](#listing-your-pipelines-output) for more details.
+
+
+# Tests
+
+Two test cases are provided with release >= v2.0.
+Download *test_data.zip* from the [release](https://github.com/pnlbwh/pnlpipe/releases) and run test as follows:
+
+    tar -xzvf test_data.zip          # unzip the tar ball
+    cd INTRuST                       # you should see cases 003_GNX_007 and 003_GNX_021
+    cp pnlpipe_config.py pnlpipe/    # edit pnlpipe_config.py with proper paths
+    cp caselist.txt pnlpipe/
+    cd pnlpipe/ && ./pnlpipe std run # also ./pnlpipe epi run
+
+
+# Pipeline scripts overview
+
+`pnlscripts` is a directory of PNL specific scripts that implement various
+pipeline steps. The PNL pipelines (via the nodes defined in
+`pnlpipe_pipelines/_pnl.py`) call these scripts at each step. These scripts are
+the successors to the ones in [pnlutil](https://github.com/pnlbwh/pnlutil).
+Besides being more robust and up to date with respect to software such
+as [ANTS](http://stnava.github.io/ANTs/), they are implemented in python using
+the shell scripting library [plumbum](https://plumbum.readthedocs.io/en/latest/).
+Being written in python means they are easier to understand and modify,
+and [plumbum](https://plumbum.readthedocs.io/en/latest/) allows them to be
+almost as concise as a regular shell script.
+
+You can call any these scripts directly, e.g.
+
+    ./pnlscripts/bse.py -h
+
+To add them to the path, run `source env.sh`, and you'll be able to call
+them from any directory.
+
+It's important to note that usually the scripts are calling other binaries, such
+as those in [BRAINSTools](https://github.com/BRAINSia/BRAINSTools/). All the
+software they rely on, with the exception of FreeSurfer and FSL, can be
+installed by setting up a pipeline and running `./pnlpipe <pipeline> setup`, or
+by running `./pnlpipe install <software> `. The software is installed to the
+`$PNLPIPE_SOFT` directory. Some of the software modules also write an `env.sh`
+file to their output directories, which you can source to add them to your
+environment (see the section above). This makes it easy to add them to your
+environment before calling any of the scripts in `pnlscripts`.
+
+
+This table summarizes the scripts in `pnlpipe/pnlscripts/`:
+
+|                    |                                    |                                                                       |
+|--------------------|------------------------------------|-----------------------------------------------------------------------|
+| Category           |  Script                            |  Function                                                             |
+| General            |  **axisAlign.py**                  |   removes oblique coordinate tranform                                 |
+| General            |  **center.py**                     |   changes origin to be at the center of the volume                    |
+| General            |  **alignAndCenter.py**             |   axis aligns and centers an image                                    |
+| General            |  **mask**                          |  skullstrips by applying a labelmap mask                              |
+| DWI                |  **antsApplyTransformsDWI.py**     |  applies a transform to a DWI                                         |
+| DWI                |  **bse.py**                        |  extracts a baseline b0 image                                         |
+| DWI                |  **dwiconvert.py**                 |  DWI conversion                                                       |
+| DWI                |  **bet.py**                        |  extracts a baseline b0 image and masks it                            |
+| DWI                |  **epi.py**                        |  corrects EPI distortion via registration                             |
+| DWI                |  **eddy.py**                       |  corrects eddy distortion via registration                            |
+| DWI                |  **dwi_motion_estimate_flirt.py**  |  read transforms by FLIRT and calculates displacement                 |
+| Structural         |  **atlas.py**                      |  computes a brain mask from training data                             |
+| Structural         |  **fs.py**                         |  runs freesurfer but takes care of some common preprocessing steps    |
+| Structural         |  **makeRigidMask.py**              |  rigidly transforms a labelmap to align with another structural image |
+| Freesurfer to DWI  |  **fs2dwi.py**                     |  registers a freesurfer segmentation to a DWI                         |
+| Tractography       |  **wmql.py**                       |  simple wrapper for tract_querier                                     |
+| Tractography       |  **wmqlqc.py**                     |  makes html page of rendered wmql tracts                              |
+| Tractography       |  **summarizeTractMeasures.py**     |  makes a summary of tract measures for a project
+
+
+
+# Run and monitor
+
+Once you're ready to run the pipeline:
 
     ./pnlpipe std run
 
@@ -208,8 +327,7 @@ You will then see the files
     _data/epi-tractmeasures-summary.csv
 
 
-
-# Listing Your Pipeline's Output
+# Listing your pipeline's output
 
 Every pipeline gives a short name for some, usually all, of its outputs. You can
 see these names when you run `./pnlpipe <pipeline> status` (or by inspecting the
@@ -248,51 +366,81 @@ space directions of all your eddy corrected DWI's, you could do the following:
     ./pnlpipe std ls dwied | unu head | grep 'space directions'
 
 
-# PNL: Running on the cluster
 
-The PNL uses a high performance computing cluster for most of its data
-processing, and this cluster
-uses [LSF](https://en.wikipedia.org/wiki/Platform_LSF) to manage batch
-processing. *pnlpipe* provides a Makefile that allows you to easily submit your
-pipeline jobs to this system.
+# Setup
 
-Edit `Makefile` and replace `std` in the line `PIPE := std` to the name
-of the pipeline you wish to run. Now you can submit pipeline jobs for individual
-case ids like this:
+*(If you have not configured the following so far, do it now)*
 
-    make 001-bsub8 002-bsub8 003-bsub8
+    source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
+    conda activate pnlpipe                      # should introduce '(pnlpipe)' in front of each line
+    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
-This submits an 8 core LSF job for each of the case ids `001`, `002`, and `003`.
-If resources are limited, 4 cores might be better:
+Premade pipelines are in the `pnlpipe_pipelines` directory. For example, the
+standard PNL pipeline is defined in `pnlpipe_pipelines/std.py`, and the EPI
+correction pipeline is defined in `pnlpipe_pipelines/epi.py`. You can also get a
+list of available pipelines by running `./pnlpipe -h`. As an example, we will
+run the PNL standard pipeline, the one named `std`.
 
-    make 001-bsub4 002-bsub4 003-bsub4
+Before running a pipeline, we need to configure it. This involves two steps:
+one, we need to specify its parameters, and two, we need to build the
+software it requires.
 
-For a large case list, this method is tedious and it's possible that you accidentally submit
-a job for a case id that's already in the queue or running.  A better way is to
-run
+To specify the parameters, we put them in a [yaml](http://www.yaml.org/start.html)
+configuration file, in this case called `pnlpipe_params/std.params`. To make a
+default version of this file, run
 
-    make caselist-bsub8  # or, make caselist-bsub4
+    ./pnlpipe std init
 
-This will iterate over each case id in `caselist.txt` and submit an 8 core job
-to the LSF system, but only if that case id is not already running (it uses the
-LSF command `bjobs` to determine this). If your caselist is not named
-`caselist.txt`, edit the `Makefile` and modify the line `CASELIST :=
-caselist.txt` to point to your file.
+This makes a parameter file with the pipeline's default parameters. For the
+`std` pipeline, the most important ones are the input keys, `inputDwiKey`,
+`inputT1Key`, etc. These are the keys the pipeline uses to find its input data,
+by looking up their paths in `pnlpipe_config.INPUT_KEYS`. For example,
+`inputDwiKey: [dwi]` means that the pipeline will find its DWI input by looking
+up 'dwi' in `INPUT_KEYS`. Likewise, `inputT1Key: [t1]` means that the pipeline
+will find its T1w input by looking up 't1' in `INPUT_KEYS`.  The reason it is
+done this way is that if you happen to reorganize your data, you just have to
+update your `pnlpipe_config.INPUT_KEYS`, and your parameters remain the same.
 
-An alternative to modifying the Makefile is to set the variables on the command
-line:
+Another important field is `caseid`; the default is `./caselist.txt`, which
+means the pipeline will look in that file to find the case ids you want to use
+with this pipeline. Make it by putting each case id on its own line.
 
-    make PIPE=std CASELIST=caselist2.txt caselist-bsub8
+You will notice that the parameter values are wrapped in square brackets. This
+is because you can specify more than one value for each parameter. For example,
+if you wanted to run the `std` pipeline using a DWI masking bet threshold of 0.1
+as well as a 0.15, you would write: `bet_threshold: [0.1, 0.15]`. For more
+details on specifying multiple parameter combinations, see further down in this
+README.
+
+Now you're ready to build the software needed by the pipeline. The required
+software is determined by the parameters that end in '_version' and '_hash' (a
+Github commit hash). Before building the software packages, you need to specify
+the directory to install them to, and you do this by setting a global
+environment variable called `$PNLPIPE_SOFT` (e.g. `export PNLPIPE_SOFT=path/to/software/dir`).
+Now build the software by running-
+
+    ./pnlpipe std setup
+
+(if any of the software packages already exist, they will not rebuild). You should now
+see the results in `$PNLPIPE_SOFT`, such as `BRAINSTools-bin-2d5eccb/` and
+`UKFTractography-421a7ad/`.
 
 
-# Multiple Parameter Combinations
+# Advanced options
+
+## 1. Parameters
+
+### Multiple Parameter Combinations
 
 Sometimes you'd like to run a pipeline using different parameters, for example
 when trying to optimize results, or to test out the effect of different software
 versions. The walkthrough briefly mentioned how to have multiple parameter values,
 but this section will provide more details.
 
-## Lists of parameter values
+
+### Lists of parameter values
 
 Each pipeline has one parameters file: `pnlpipe_params/<pipeline>.params`. This
 is a file that is expected to be in [yaml](http://www.yaml.org/start.html)
@@ -336,7 +484,7 @@ Then `./pnlpipe simple status` will show the parameters, output template paths,
 and progress for 2 parameter combinations, (`dwi`, `0.1`) and (`dwiharm`, `0.1`).
 If we made `someparam: [0.1, 0.2]`, then there would be 4 parameter combinations.
 
-## Lists of parameter dictionaries
+### Lists of parameter dictionaries
 
 Say that for the above example, instead of running the pipeline for `someparam=0.1`
 and `someparam=0.2`  for both `dwi` and `dwiharm`, we only wanted to use `0.1` for
@@ -367,7 +515,7 @@ or more dictionaries:
       someparam: [0.1]
 
 
-## Running and listing specific parameter combinations
+### Running and listing specific parameter combinations
 
 `./pnlpipe <pipeline> run` will automatically run for every parameter combination.
 To only run it for particular combination, you can use the `-p` switch.
@@ -381,9 +529,9 @@ This runs the pipeline for the second parameter combination, as listed by `./pnl
     eval $(./pnlpipe <pipeline> env -p 1)
 
 
-# Shell environment
+## 2. Shell environment
 
-## Pipeline shell environment
+### Pipeline shell environment
 
 Sometimes you want access to the same software environment that your pipeline
 does when it runs with a particular parameter combination.  This is possible by using
@@ -399,7 +547,7 @@ run
     eval $(./pnlpipe <pipeline> env -p 2)
 
 
-## Ad-hoc shell environment
+### Ad-hoc shell environment
 
 Some of the pre-made software modules make a file called `env.sh` as part of their output,
 and sourcing that file will add their software path to the `PATH` environment variable,
@@ -416,7 +564,65 @@ E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
     source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
 
 
-# Installing Software without Using Pipeline
+### Global bashrc
+
+If you want your terminal to have the scripts automatically discoverable and environment ready to go,
+you may put the following lines in your bashrc:
+
+    source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
+    conda activate pnlpipe                      # should introduce '(pnlpipe)' in front of each line
+    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    export FSLDIR=~/fsl                         # you may specify another directory where FreeSurfer is installed
+    export PATH=$PATH:$FSLDIR/bin
+    source $FSLDIR/etc/fslconf/fsl.sh
+    export $PATH=$PATH:/absolute/path/to/pnlpipe/pnlscripts
+    export PNLPIPE_SOFT=/absolute/path/to/pnlpipe/soft_dir
+    source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
+    source $PNLPIPE_SOFT/BRAINSTools-bin-<hash>/env.sh
+    source $PNLPIPE_SOFT/UKFTractography-<hash>/env.sh
+
+
+## 3. PNL: Running on the cluster
+
+*(This functionality has not been well tested)*
+
+The PNL uses a high performance computing cluster for most of its data
+processing, and this cluster
+uses [LSF](https://en.wikipedia.org/wiki/Platform_LSF) to manage batch
+processing. *pnlpipe* provides a Makefile that allows you to easily submit your
+pipeline jobs to this system.
+
+Edit `Makefile` and replace `std` in the line `PIPE := std` to the name
+of the pipeline you wish to run. Now you can submit pipeline jobs for individual
+case ids like this:
+
+    make 001-bsub8 002-bsub8 003-bsub8
+
+This submits an 8 core LSF job for each of the case ids `001`, `002`, and `003`.
+If resources are limited, 4 cores might be better:
+
+    make 001-bsub4 002-bsub4 003-bsub4
+
+For a large case list, this method is tedious and it's possible that you accidentally submit
+a job for a case id that's already in the queue or running.  A better way is to
+run
+
+    make caselist-bsub8  # or, make caselist-bsub4
+
+This will iterate over each case id in `caselist.txt` and submit an 8 core job
+to the LSF system, but only if that case id is not already running (it uses the
+LSF command `bjobs` to determine this). If your caselist is not named
+`caselist.txt`, edit the `Makefile` and modify the line `CASELIST :=
+caselist.txt` to point to your file.
+
+An alternative to modifying the Makefile is to set the variables on the command
+line:
+
+    make PIPE=std CASELIST=caselist2.txt caselist-bsub8
+
+
+## 4. Installing software without using pipeline
 
 You can install software without configuring a pipeline and running `./pnlpipe <pipeline> setup`.
 To do this, use the `install` subcommand:
@@ -448,45 +654,23 @@ University's
     ./pnlpipe install HCPPipelines --version 3.22.0
 
 
-# `pnlscripts`
+## 5. Writing your own pipelines
 
-`pnlscripts` is a directory of PNL specific scripts that implement various
-pipeline steps. The PNL pipelines (via the nodes defined in
-`pnlpipe_pipelines/_pnl.py`) call these scripts at each step. These scripts are
-the successors to the ones in [pnlutil](https://github.com/pnlbwh/pnlutil).
-Besides being more robust and up to date with respect to software such
-as [ANTS](http://stnava.github.io/ANTs/), they are implemented in python using
-the shell scripting library [plumbum](https://plumbum.readthedocs.io/en/latest/).
-Being written in python means they are easier to understand and modify,
-and [plumbum](https://plumbum.readthedocs.io/en/latest/) allows them to be
-almost as concise as a regular shell script.
+*(This functionality has not been well tested)*
 
-You can call any these scripts directly, e.g.
+*pnlpipe* is a well-structured framework for authoring and running file based data
+processing pipelines and for automatically installing prerequisite software
+packages. Unlike many other data processing software, it allows you to:
 
-    ./pnlscripts/bse.py -h
+* build your pipelines from parameterized nodes that generate their own file paths
+* run your pipelines with many parameter combinations without extra work
+* write new nodes and pipelines with little boilerplate
 
-To add them to the path, run `source env.sh`, and you'll be able to call
-them from any directory.
+It is primarily designed for scientific workflows that have long running
+processes and that operate on a set of observations. It comes prepackaged with
+some of the [PNL](http://pnl.bwh.harvard.edu)'s neuroimaging pipelines that are
+based on a library and scripts that you can use to write new pipelines.
 
-It's important to note that usually the scripts are calling other binaries, such
-as those in [BRAINSTools](https://github.com/BRAINSia/BRAINSTools/). All the
-software they rely on, with the exception of FreeSurfer and FSL, can be
-installed by setting up a pipeline and running `./pnlpipe <pipeline> setup`, or
-by running `./pnlpipe install <software> `. The software is installed to the
-`$PNLPIPE_SOFT` directory. Some of the software modules also write an `env.sh`
-file to their output directories, which you can source to add them to your
-environment (see the section above). This makes it easy to add them to your
-environment before calling any of the scripts in `pnlscripts`.
-
-
-# Writing your own pipelines
-
-A pipeline is a directed acyclic graph (DAG) of dependencies.  Here's a diagram
-of the standard PNL pipeline's DAG.
-
-![](pnlpipe_doc/dag.png)
-
-Each node represents an output, and the arrows represent dependencies.
 To author a pipeline in *pnlpipe*, you construct a DAG using python code.
 This DAG must be returned by a function called `make_pipeline` in
 a python module under `pnlpipe_pipelines`.  The name of the module
@@ -497,9 +681,12 @@ This section will be expanded in the future, but for now, see
 `pnlpipe_pipelines/std.py` for an example on how to construct a pipeline, and
 see `pnlpipe_pipelines/_pnl.py` for examples on how to write your own nodes.
 
+
 # Issues
 
-### error: error setting certificate verify locations:
+## Known errors
+
+### 1. error setting certificate verify locations
 
 During the setup phase you may encounter this error, in which case
 run
@@ -508,6 +695,12 @@ run
 
 and run setup again.
 
-if there is an error about a missing antsRegistration script, copy the script 
-    from ./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts to ./pnlpipe/soft_dir/BRAINSTools-bin-95ac1e28
-    Alternatively, you can also do export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts
+### 2. error about a missing antsRegistration script
+
+Copy the script from `./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts` to `./pnlpipe/soft_dir/BRAINSTools-bin-*/`.
+Alternatively, you can also do `export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts`
+
+
+## Support
+
+Create an issue at https://github.com/pnlbwh/pnlpipe/issues . We shall get back to you as early as possible.

@@ -12,6 +12,8 @@ def nrrd(f):
 
 
 class App(cli.Application):
+    '''Extracts a baseline b0 image and masks it'''
+
     force = cli.Flag(['--force'], help='Force overwrite if output already exists',mandatory=False,default=False)
     threshold = cli.SwitchAttr('-f', help='Bet fractional intensity threshold', default=0.1)
     dwi = cli.SwitchAttr(
