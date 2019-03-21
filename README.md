@@ -25,7 +25,8 @@ Table of Contents
       * [Running the pipelines](#running-the-pipelines)
          * [1. Configure your environment](#1-configure-your-environment-1)
          * [2. Configure your input data](#2-configure-your-input-data)
-      * [3. Analyze the data](#3-analyze-the-data)
+      * [3. Analyze data](#3-analyze-data)
+   * [Tests](#tests)
    * [Pipeline scripts overview](#pipeline-scripts-overview)
    * [Run and monitor](#run-and-monitor)
    * [Listing your pipeline's output](#listing-your-pipelines-output)
@@ -48,6 +49,7 @@ Table of Contents
          * [1. error setting certificate verify locations](#1-error-setting-certificate-verify-locations)
          * [2. error about a missing antsRegistration script](#2-error-about-a-missing-antsregistration-script)
       * [Support](#support)
+
 
 <!-- markdown-toc end -->
 
@@ -210,6 +212,18 @@ you define above. Finally, put the caseids in `./caselist.txt` you want to analy
     ./pnlpipe std summarize     # generates _data/tractmeasures.csv - tract measures for all process cases
 
 See [Run and monitor](#run-and-monitor) and [Listing your pipelines output](#listing-your-pipelines-output) for more details.
+
+
+# Tests
+
+Two test cases are provided with release >= v2.0.
+Download *test_data.zip* from the [release](https://github.com/pnlbwh/pnlpipe/releases) and run test as follows:
+
+    tar -xzvf test_data.zip          # unzip the tar ball
+    cd INTRuST                       # you should see cases 003_GNX_007 and 003_GNX_021
+    cp pnlpipe_config.py pnlpipe/    # edit pnlpipe_config.py with proper paths
+    cp caselist.txt pnlpipe/
+    cd pnlpipe/ && ./pnlpipe std run # also ./pnlpipe epi run
 
 
 # Pipeline scripts overview
