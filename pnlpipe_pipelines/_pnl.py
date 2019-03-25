@@ -21,7 +21,7 @@ BRAINSTools_hash = '81a409d'
 trainingDataT1AHCC_hash = 'd6e5990'
 FreeSurfer_version = '5.3.0'
 UKFTractography_hash = 'ce12942'
-tract_querier_hash = '8f8fb95'
+tract_querier_hash = 'cff29a3'
 ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              "--recordLength", 1.7, "--seedFALimit", 0.18, "--seedsPerVoxel",
              10, "--stepLength", 0.3]
@@ -274,7 +274,7 @@ class MaskRigid(NrrdOutput):
             out.move(self.output())
 
 
-@node(params=['FreeSurfer_version'], deps=['t1', 't1mask'])
+@node(params=['FreeSurfer_version','BRAINSTools_hash'], deps=['t1', 't1mask'])
 class FreeSurferUsingMask(DirOutput):
     """Runs FreeSurfer after masking the T1w with the given mask."""
 
@@ -283,7 +283,8 @@ class FreeSurferUsingMask(DirOutput):
 
     def static_build(self):
         soft.FreeSurfer.validate(self.FreeSurfer_version)
-        fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
+        with BRAINSTools.env(self.BRAINSTools_hash):
+            fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
 
 
 @node(params=['BRAINSTools_hash'], deps=['fs', 'dwi', 'dwimask'])
@@ -361,7 +362,7 @@ class Ukf(VtkOutput):
             ukfbin.bound_command(*params) & FG
 
 
-@node(params=['tract_querier_hash'], deps=['fsindwi', 'ukf'])
+@node(params=['tract_querier_hash','BRAINSTools_hash'], deps=['fsindwi', 'ukf'])
 class Wmql(DirOutput):
     """White matter query language"""
 
@@ -370,7 +371,7 @@ class Wmql(DirOutput):
 
     def static_build(self):
         self.output().delete()
-        with soft.tract_querier.env(self.tract_querier_hash):
+        with soft.tract_querier.env(self.tract_querier_hash), BRAINSTools.env(self.BRAINSTools_hash):
             wmql_py['-i', self.ukf, '--fsindwi', self.fsindwi, '-o',
                     self.output()] & FG
 
