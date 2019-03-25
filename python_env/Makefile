@@ -6,9 +6,6 @@ conda: environment36.yml
 	@echo "Adding conda-forge to default conda channels"
 	conda config --add channels conda-forge	
 	conda env create -f $<
-	
-	# conda already prints the instruction, so removing the following to avoid confusion
-	# @echo "Now run 'source activate pnlpipe'"
 
 _venv: requirements.txt
 	virtualenv $@; $@/bin/pip install -r $<
