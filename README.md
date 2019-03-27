@@ -259,9 +259,8 @@ environment before calling any of the scripts in `pnlscripts`.
 
 This table summarizes the scripts in `pnlpipe/pnlscripts/`:
 
-|                    |                                    |                                                                       |
-|--------------------|------------------------------------|-----------------------------------------------------------------------|
 | Category           |  Script                            |  Function                                                             |
+|--------------------|------------------------------------|-----------------------------------------------------------------------|
 | General            |  **axisAlign.py**                  |   removes oblique coordinate tranform                                 |
 | General            |  **center.py**                     |   changes origin to be at the center of the volume                    |
 | General            |  **alignAndCenter.py**             |   axis aligns and centers an image                                    |
