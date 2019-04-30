@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.2584271.svg)](https://doi.org/10.5281/zenodo.2584271) [![Python](https://img.shields.io/badge/Python-3.6-green.svg)]() [![Platform](https://img.shields.io/badge/Platform-linux--64%20%7C%20osx--64-orange.svg)]()
 
-Developed by Tashrif Billah, Isaiah Norton, Ryan Eckbo, and Sylvain Bouix, Brigham and Women's Hospital (Harvard Medical School).
+Developed by Tashrif Billah, Ryan Eckbo, Sylvain Bouix, and Isaiah Norton, Brigham and Women's Hospital (Harvard Medical School).
 
 <!-- markdown-toc start - Don't edit this section. Run [gh-md-toc](https://github.com/ekalinin/github-markdown-toc to generate toc again -->
 
@@ -57,10 +57,11 @@ Table of Contents
 
 If this pipeline is useful in your research, please cite as below:
 
-Tashrif Billah, Isaiah Norton, Ryan Eckbo, and Sylvain Bouix,
+Billah, Tashrif*; Eckbo, Ryan*; Bouix, Sylvain; Norton, Isaiah;
 Processing pipeline for anatomical and diffusion weighted images,
 https://github.com/pnlbwh/pnlpipe, 2018, DOI: 10.5281/zenodo.2584271
 
+*denotes equal first authorship
 
 # Introduction
 
