@@ -20,8 +20,8 @@ bet_threshold = 0.1
 BRAINSTools_hash = '81a409d'
 trainingDataT1AHCC_hash = 'd6e5990'
 FreeSurfer_version = '5.3.0'
-UKFTractography_hash = 'ce12942'
-tract_querier_hash = 'cff29a3'
+UKFTractography_hash = '662c16f'
+tract_querier_hash = 'd4a88aa'
 ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              "--recordLength", 1.7, "--seedFALimit", 0.18, "--seedsPerVoxel",
              10, "--stepLength", 0.3]
