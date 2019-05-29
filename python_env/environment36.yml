@@ -16,9 +16,8 @@ dependencies:
   - joblib
   - matplotlib
   - conda-build
-  - gcc_linux-64
-  - gxx_linux-64
   - git
   - pip:
      - git+https://github.com/dstrohl/Python_log_indenter.git
      - git+https://github.com/mhe/pynrrd.git
+     - git+https://github.com/pnlbwh/conversion.git
