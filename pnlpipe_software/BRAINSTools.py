@@ -1,31 +1,16 @@
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, prefixPATH, envFromDict
 import psutil, sys
 from plumbum import local, FG
-from plumbum.cmd import cmake
+from plumbum.cmd import cmake, make
 import logging
 log = logging.getLogger(__name__)
 import os
-import stat
 
-DEFAULT_HASH = '81a409d77cb2260b'
+
+DEFAULT_HASH = '81a409d'
 
 def make(commit=DEFAULT_HASH, delete=False):
     """Downloads and compiles BRAINSTools binaries. Output is '$soft/BRAINSTools-bin-<hash>'."""
-
-    if os.getenv("CONDA_PREFIX"):
-        # add CONDA_PREFIX paths to the compiler flags so we prefer conda's includes and libs
-        conda_prefix = os.getenv("CONDA_PREFIX")
-        build_flags = " -I{conda_prefix}/include -L{conda_prefix}/lib".format(conda_prefix=conda_prefix)
-        
-        if os.getenv("CFLAGS") is None or os.getenv("CXXFLAGS") is None:
-            raise Exception("Missing CFLAGS or CXXFLAGS in environment")
-
-        cflags = os.getenv("CFLAGS") + " " + build_flags
-        cxxflags = os.getenv("CXXFLAGS") + " " + build_flags
-        local.env["CFLAGS"] = cflags
-        local.env["CXXFLAGS"] = cxxflags
-        local.env["ICU_ROOT_DIR"] = conda_prefix
-        local.env["ICU_ROOT"] = conda_prefix
 
     dest = getSoftDir()
 
@@ -53,123 +38,43 @@ def make(commit=DEFAULT_HASH, delete=False):
     blddir.mkdir()
     with local.cwd(blddir):
         cmake(repo
-        ,"-DBRAINSTools_INSTALL_DEVELOPMENT=OFF"
-        ,"-DBRAINSTools_MAX_TEST_LEVEL=0"
-        ,"-DBRAINSTools_SUPERBUILD=ON"
-        ,"-DBRAINSTools_USE_QT=OFF"
-        ,"-DBRAINSTools_REQUIRES_VTK=ON"
-        ,"-DBRAINS_DEBUG_IMAGE_WRITE=OFF"
-        ,"-DBUILD_STYLE_UTILS=OFF"
-        ,"-DBUILD_TESTING=OFF"
-        ,"-DCMAKE_BUILD_TYPE=Release"
-        ,"-DCMAKE_COLOR_MAKEFILE=ON"
-        ,"-DCMAKE_EXE_LINKER_FLAGS=' '"
-        ,"-DCMAKE_EXE_LINKER_FLAGS_DEBUG="
-        ,"-DCMAKE_EXE_LINKER_FLAGS_MINSIZEREL="
-        ,"-DCMAKE_EXE_LINKER_FLAGS_RELEASE="
-        ,"-DCMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO="
-        ,"-DCMAKE_EXPORT_COMPILE_COMMANDS=OFF"
-        ,"-DCMAKE_INSTALL_PREFIX:PATH=/usr/local"
-        ,"-DCMAKE_MODULE_LINKER_FLAGS=' '"
-        ,"-DCMAKE_MODULE_LINKER_FLAGS_DEBUG="
-        ,"-DCMAKE_MODULE_LINKER_FLAGS_MINSIZEREL="
-        ,"-DCMAKE_MODULE_LINKER_FLAGS_RELEASE="
-        ,"-DCMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO="
-        ,"-DCMAKE_PROJECT_NAME:STATIC=SuperBuild_BRAINSTools"
-        ,"-DCMAKE_SHARED_LINKER_FLAGS=' '"
-        ,"-DCMAKE_SHARED_LINKER_FLAGS_DEBUG="
-        ,"-DCMAKE_SHARED_LINKER_FLAGS_MINSIZEREL="
-        ,"-DCMAKE_SHARED_LINKER_FLAGS_RELEASE="
-        ,"-DCMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO="
-        ,"-DCMAKE_SKIP_INSTALL_RPATH=NO"
-        ,"-DCMAKE_SKIP_RPATH=NO"
-        ,"-DCMAKE_STATIC_LINKER_FLAGS="
-        ,"-DCMAKE_STATIC_LINKER_FLAGS_DEBUG="
-        ,"-DCMAKE_STATIC_LINKER_FLAGS_MINSIZEREL="
-        ,"-DCMAKE_STATIC_LINKER_FLAGS_RELEASE="
-        ,"-DCMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO="
-        ,"-DCMAKE_USE_RELATIVE_PATHS=OFF"
-        ,"-DCMAKE_VERBOSE_MAKEFILE=FALSE"
-        ,"-DCOVERAGE_EXTRA_FLAGS=-l"
-        ,"-DCTEST_SUBMIT_RETRY_COUNT=3"
-        ,"-DCTEST_SUBMIT_RETRY_DELAY=5"
-        ,"-DDART_TESTING_TIMEOUT=1500"
-        ,"-DEXTERNAL_PROJECT_BUILD_TYPE=Release"
-        ,"-DFORCE_EXTERNAL_BUILDS=OFF"
-        ,"-DITK_VERSION_MAJOR=4"
-        ,"-DSuperBuild_BRAINSTools_BUILD_DICOM_SUPPORT=ON"
-        ,"-DSuperBuild_BRAINSTools_USE_CTKAPPLAUNCHER=OFF"
-        ,"-DSuperBuild_BRAINSTools_USE_GIT_PROTOCOL=ON"
-        ,"-DUSE_ANTS=ON"
-        ,"-DUSE_AutoWorkup=OFF"
-        ,"-DUSE_BRAINSABC=ON"
-        ,"-DUSE_BRAINSConstellationDetector=OFF"
-        ,"-DUSE_BRAINSContinuousClass=OFF"
-        ,"-DUSE_BRAINSCreateLabelMapFromProbabilityMaps=OFF"
-        ,"-DUSE_BRAINSCut=OFF"
-        ,"-DUSE_BRAINSDWICleanup=OFF"
-        ,"-DUSE_BRAINSDemonWarp=OFF"
-        ,"-DUSE_BRAINSFit=OFF"
-        ,"-DUSE_BRAINSInitializedControlPoints=OFF"
-        ,"-DUSE_BRAINSLabelStats=OFF"
-        ,"-DUSE_BRAINSLandmarkInitializer=OFF"
-        ,"-DUSE_BRAINSMultiModeSegment=OFF"
-        ,"-DUSE_BRAINSMultiSTAPLE=OFF"
-        ,"-DUSE_BRAINSMush=OFF"
-        ,"-DUSE_BRAINSPosteriorToContinuousClass=OFF"
-        ,"-DUSE_BRAINSROIAuto=OFF"
-        ,"-DUSE_BRAINSResample=OFF"
-        ,"-DUSE_BRAINSSnapShotWriter=OFF"
-        ,"-DUSE_BRAINSStripRotation=OFF"
-        ,"-DUSE_BRAINSSurfaceTools=OFF"
-        ,"-DUSE_BRAINSTalairach=OFF"
-        ,"-DUSE_BRAINSTransformConvert=OFF"
-        ,"-DUSE_ConvertBetweenFileFormats=ON"
-        ,"-DUSE_DWIConvert=ON"
-        ,"-DUSE_DebugImageViewer=OFF"
-        ,"-DUSE_GTRACT=OFF"
-        ,"-DUSE_ICCDEF=OFF"
-        ,"-DUSE_ImageCalculator=ON"
-        ,"-DUSE_ReferenceAtlas=OFF"
-        ,"-DUSE_SYSTEM_DCMTK=OFF"
-        ,"-DUSE_SYSTEM_ITK=OFF"
-        ,"-DUSE_SYSTEM_SlicerExecutionModel=OFF"
-        ,"-DUSE_SYSTEM_VTK=OFF"
-        ,"-DVTK_GIT_REPOSITORY=https://gitlab.kitware.com/vtk/VTK.git"
-        )
+              ,"-DBRAINSTools_BUILD_DICOM_SUPPORT:BOOL=OFF"
+              ,"-DBRAINSTools_MAX_TEST_LEVEL:STRING=0"
+              ,"-DBRAINSTools_REQUIRES_VTK:BOOL=OFF"
+              ,"-DBRAINSTools_USE_CTKAPPLAUNCHER:BOOL=OFF"
+              ,"-DBUILD_TESTING:BOOL=OFF"
+              ,"-DUSE_ANTS:BOOL=OFF"
+              ,"-DUSE_AutoWorkup:BOOL=OFF"
+              ,"-DUSE_BRAINSABC:BOOL=OFF"
+              ,"-DUSE_BRAINSConstellationDetector:BOOL=OFF"
+              ,"-DUSE_BRAINSDWICleanup:BOOL=OFF"
+              ,"-DUSE_BRAINSFit:BOOL=OFF"
+              ,"-DUSE_BRAINSInitializedControlPoints:BOOL=OFF"
+              ,"-DUSE_BRAINSLabelStats:BOOL=OFF"
+              ,"-DUSE_BRAINSLandmarkInitializer:BOOL=OFF"
+              ,"-DUSE_BRAINSROIAuto:BOOL=OFF"
+              ,"-DUSE_BRAINSResample:BOOL=OFF"
+              ,"-DUSE_BRAINSSnapShotWriter:BOOL=OFF"
+              ,"-DUSE_BRAINSStripRotation:BOOL=OFF"
+              ,"-DUSE_BRAINSTransformConvert:BOOL=OFF"
+              ,"-DUSE_DWIConvert:BOOL=OFF"
+              ,"-DUSE_ImageCalculator:BOOL=OFF"
+              ,"-DUSE_ReferenceAtlas:BOOL=OFF"
+              ,"-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON"
+              ,"-DCMAKE_SKIP_RPATH:BOOL=ON"
+              )
+
         import plumbum.cmd
         plumbum.cmd.make['-j', psutil.cpu_count(logical=False)] & FG
     (blddir / 'bin').move(out)
-    with open(blddir / 'ANTs/Scripts/antsRegistrationSyN.sh', 'r') as src:
-        with open(out / 'antsRegistrationSyN.sh', 'w') as dest:
-            for idx, line in enumerate(src):
-                if idx == 0:
-                    dest.write('#!/usr/bin/env bash')
-                else:
-                    dest.write(line)
-    st = os.stat(str(out / 'antsRegistrationSyN.sh'))
-    os.chmod(str(out / 'antsRegistrationSyN.sh'), st.st_mode | stat.S_IEXEC)
-    # (blddir / 'ANTs/Scripts/antsRegistrationSyN.sh').copy(out)
-    with open(blddir / 'ANTs/Scripts/antsRegistrationSyNQuick.sh', 'r') as src:
-        with open(out / 'antsRegistrationSyNQuick.sh', 'w') as dest:
-            for idx, line in enumerate(src):
-                if idx == 0:
-                    dest.write('#!/usr/bin/env bash')
-                else:
-                    dest.write(line)
-    st = os.stat(str(out / 'antsRegistrationSyNQuick.sh'))
-    os.chmod(str(out / 'antsRegistrationSyNQuick.sh'), st.st_mode | stat.S_IEXEC)
-    # (blddir / 'ANTs/Scripts/antsRegistrationSyNQuick.sh').copy(out)
+
+
     with open(out / 'env.sh', 'w') as f:
         f.write("export PATH={}:$PATH\n".format(out))
-        f.write("export ANTSPATH={}\n".format(out))
-    # chmod('a-w', out.glob('*'))
-    # chmod('a-w', out)
+        f.write("export ANTSPATH={}\n".format(local.path(os.environ['CONDA_PREFIX']) / 'bin'))
     symlink.unlink()
     out.symlink(symlink)
-    if sys.flags.interactive:
-        if input("Delete build directory? [y/N]") == "y":
-            blddir.delete()
+
     log.info("Made '{}'".format(get_path(sha)))
     log.info("Made '{}'".format(symlink))
 
