@@ -4,7 +4,7 @@ from plumbum import local, FG
 from plumbum.cmd import cmake
 import logging
 
-DEFAULT_HASH = 'ce12942bd'
+DEFAULT_HASH = '662c16f'
 
 def make(commit=DEFAULT_HASH):
 
@@ -40,7 +40,6 @@ def make(commit=DEFAULT_HASH):
     outbinary.dirname.mkdir()
 
     binary.move(outbinary)
-    # chmod('a-w', outbinary)
 
     with open(outbinary.dirname / 'env.sh', 'w') as f:
         f.write("export PATH={}:$PATH".format(outbinary.dirname))
@@ -50,7 +49,6 @@ def make(commit=DEFAULT_HASH):
     symlink.unlink()
     get_path(sha).dirname.symlink(symlink)
 
-    blddir.delete()
 
     logging.info("Made '{}'".format(outbinary))
     logging.info("Made '{}'".format(get_path(date)))
