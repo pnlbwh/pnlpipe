@@ -1,12 +1,12 @@
+ipython
 plumbum
 future
 numpy
 pandas
 nibabel
 dipy
-pynrrd
-python_log_indenter
 pyyaml
 psutil
-checksumdir
+python_log_indenter
+pynrrd
 git+https://github.com/pnlbwh/conversion.git
