@@ -9,7 +9,6 @@ import logging
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import pnlpipe_config
-# from ... import pnlpipe_config
 
 logger = logging.getLogger()
 
@@ -174,8 +173,8 @@ class LocalModule(ModuleType):
     def __getattr__(self, name):
         antspath = os.environ.get('ANTSPATH',None)
         if not antspath:
-            raise Exception("ANTSPATH not set, make sure it's exported, e.g export ANTSPATH[=/path/to/software]")
-        path = os.environ.get('PATH',None)
+            raise Exception("ANTSPATH is not set, make sure it is exported, e.g export ANTSPATH[=/path/to/software]")
+
         scriptname = name.replace('_', '.')
         filename = join(antspath, scriptname)
         if not antspath or not exists(filename):
