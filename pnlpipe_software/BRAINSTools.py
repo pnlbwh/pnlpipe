@@ -61,7 +61,6 @@ def make(commit=DEFAULT_HASH, delete=False):
               ,"-DUSE_BRAINSSnapShotWriter:BOOL=OFF"
               ,"-DUSE_BRAINSStripRotation:BOOL=OFF"
               ,"-DUSE_BRAINSTransformConvert:BOOL=OFF"
-              ,"-DUSE_DWIConvert:BOOL=OFF"
               ,"-DUSE_ImageCalculator:BOOL=OFF"
               ,"-DUSE_ReferenceAtlas:BOOL=OFF"
               ,"-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON"
