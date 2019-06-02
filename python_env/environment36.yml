@@ -10,9 +10,11 @@ dependencies:
   - future
   - numpy
   - pandas
+  - vtk
   - ants
   - cmake
   - nibabel
+  - nilearn
   - dipy
   - pyyaml
   - psutil

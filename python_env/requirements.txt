@@ -3,7 +3,9 @@ plumbum
 future
 numpy
 pandas
+vtk
 nibabel
+nilearn
 dipy
 pyyaml
 psutil
