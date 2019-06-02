@@ -21,7 +21,7 @@ INPUT_KEYS = INTRuST
 # every time you input a different set of std.params/epi.params,
 # give the following a different name
 # so you are able to compare tract-summaries among parameters
-PROJECT_ALG_NAME = 'usrAlg '
+PROJECT_ALG_NAME = 'usrAlg'
 
 # number of processors to use, if other processes in your computer
 # becomes sluggish/you run into memory error, reduce NCPU
