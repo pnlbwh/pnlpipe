@@ -112,7 +112,7 @@ class DwiEd(NrrdOutput):
 
     def static_build(self):
         with BRAINSTools.env(self.BRAINSTools_hash):
-            eddy_py['-i', self.dwi, '-o', self.output(), '--force', -n, NCPU] & LOG
+            eddy_py['-i', self.dwi, '-o', self.output(), '--force', '-n', NCPU] & LOG
 
 
 @node(params=['bet_threshold', 'BRAINSTools_hash'], deps=['dwi'])
@@ -249,7 +249,7 @@ class T1wMaskMabs(NrrdOutput):
             ConvertBetweenFileFormats[self.t1, tmpt1] & FG
             trainingCsv = soft.trainingDataT1AHCC.get_path(
                 self.trainingDataT1AHCC_hash) / 'trainingDataT1AHCC-hdr.csv'
-            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir, -n, NCPU,
+            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir, '-n', NCPU,
                      trainingCsv] & FG
             (tmpdir / 'mask.nrrd').copy(self.output())
 
@@ -337,7 +337,7 @@ class Wmql(DirOutput):
         self.output().delete()
         with soft.tract_querier.env(self.tract_querier_hash), BRAINSTools.env(self.BRAINSTools_hash):
             wmql_py['-i', self.ukf, '--fsindwi', self.fsindwi, '-o',
-                    self.output(), -n, NCPU] & FG
+                    self.output(), '-n', NCPU] & FG
 
 
 @node(params=['caseid'], deps=['wmql'])
