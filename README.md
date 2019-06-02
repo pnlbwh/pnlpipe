@@ -18,6 +18,7 @@ Table of Contents
          * [FreeSurfer](#freesurfer)
          * [FSL](#fsl)
       * [2. Install pipeline](#2-install-pipeline)
+      * [3. Tests](#3-tests)
    * [Running](#running)
       * [Running individual scripts](#running-individual-scripts)
          * [1. Configure your environment](#1-configure-your-environment)
@@ -136,6 +137,29 @@ Afterwards, you may also install the epi pipeline:
 
 A little elaborate instruction is given in [Setup](#setup).
 
+
+## 3. Tests
+
+A small test data is provided with each release. You should download test data as follows:
+    
+    cd pnlpipe
+    wget https://github.com/pnlbwh/pnlpipe/releases/download/v2.1.0/test_data.zip
+    unzip test_data.zip # should unzip to INTRuST folder
+    cp INTRuST/pnlpipe_config.py .
+    cp INTRuST/caselist.txt .
+    
+Then, as you would run the pipeline (see [Running](#running)):
+
+    ./pnlpipe std run
+
+During pipeline execution, you can check the progress:
+
+    ./pnlpipe std status
+    
+Also, at the end of execution, you can check the summary:
+    
+    ./pnlpipe std summarize
+    
 
 # Running
 
