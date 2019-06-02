@@ -71,10 +71,10 @@ class App(cli.Application):
             subjid = t1.stem
 
             from plumbum.cmd import bash
-            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -s '+subjid+' -i '+t1+' -autorecon1 ' +skullstrip] & FG
+            bash['-c', 'recon-all -s '+subjid+' -i '+t1+' -autorecon1 ' +skullstrip] & FG
             (tmpdir / subjid / 'mri/T1.mgz').copy(tmpdir / subjid / 'mri/brainmask.mgz')
-            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon2 -subjid '+subjid] & FG
-            bash['-c', 'source '+fshome+'/FreeSurferEnv.sh; recon-all -autorecon3 -subjid '+subjid] & FG
+            bash['-c', 'recon-all -autorecon2 -subjid '+subjid] & FG
+            bash['-c', 'recon-all -autorecon3 -subjid '+subjid] & FG
             logging.info("Freesurfer done.")
 
             (tmpdir / subjid).copy(self.out, override=True)  # overwrites existing
