@@ -16,7 +16,7 @@ import multiprocessing
 from math import exp
 
 import psutil
-N_CPU= str(psutil.cpu_count())
+N_CPU= psutil.cpu_count()
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 
 import logging
@@ -204,7 +204,7 @@ def makeAtlases(target, trainingTable, outdir, fusion, threads):
 
         ALPHA_DEFAULT= 0.45
 
-        logging.info('Compute MI between warped image and target')
+        logging.info('Compute MI between warped images and target')
         pool = multiprocessing.Pool(threads)
         for img in atlasimages:
             print('MI between {} and target'.format(img))
@@ -304,7 +304,7 @@ class AtlasArgs(cli.Application):
         ['-n', '--names'],
         help='list of names for generated labelmaps, e.g. "atlasmask atlascingr"',
         mandatory=True)
-    threads= cli.SwitchAttr(['-n', '--numCores'],
+    threads= cli.SwitchAttr(['-n', '--nproc'],
         help='number of processes/threads to use (-1 for all available)',
         default= 8)
 
@@ -361,7 +361,7 @@ class AtlasCsv(cli.Application):
              'between the warped atlases and target image, antsJointFusion is local weighted averaging', default='wavg')
     out = cli.SwitchAttr(
         ['-o', '--out'], help='output directory', mandatory=True)
-    threads= cli.SwitchAttr(['-n', '--numCores'],
+    threads= cli.SwitchAttr(['-n', '--nproc'],
         help='number of processes/threads to use (-1 for all available)',
         default= 8)
 

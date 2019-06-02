@@ -10,18 +10,39 @@ import numpy as np
 import nrrd
 import nibabel as nib
 import sys
+from multiprocessing import Pool
 
 import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
+def _Register_vol(vol):
+
+    volnii = vol.with_suffix('.nii.gz')
+    ConvertBetweenFileFormats(vol, volnii, 'short')
+    logging.info('Run FSL flirt affine registration')
+    flirt('-interp' ,'sinc'
+          ,'-sincwidth' ,'7'
+          ,'-sincwindow' ,'blackman'
+          ,'-in', volnii
+          ,'-ref', 'b0.nii.gz'
+          ,'-nosearch'
+          ,'-o', volnii
+          ,'-omat', volnii.with_suffix('.txt', depth=2)
+          ,'-paddingsize', '1')
+
+    return volnii
+
 class App(cli.Application):
-    DESCRIPTION='''Eddy current correction. The NRRD DWI must have volumes stacked along 
-the last axis. If not, use `unu permute` to shuffle the axes.'''
+    '''Eddy current correction. The NRRD DWI must have volumes stacked along
+    the last axis. If not, use `unu permute` to shuffle the axes.'''
     debug = cli.Flag('-d', help='Debug, saves registrations to eddy-debug-<pid>')
     dwi = cli.SwitchAttr('-i', cli.ExistingFile, help='DWI (nrrd)')
     out = cli.SwitchAttr('-o', help='Eddy corrected DWI')
     overwrite = cli.Flag('--force', default=False, help='Force overwrite')
+    nproc = cli.SwitchAttr(
+        ['-n', '--nproc'], help='''number of threads to use, if other processes in your computer 
+        becomes sluggish/you run into memory error, reduce --nproc''', default= 8)
 
     def main(self):
         self.out = local.path(self.out)
@@ -72,21 +93,32 @@ the last axis. If not, use `unu permute` to shuffle the axes.'''
             ConvertBetweenFileFormats('b0.nrrd', 'b0.nii.gz', 'short')
 
             logging.info('Register each volume to the B0')
-            volsRegistered = []
-            for vol in vols:
-                volnii = vol.with_suffix('.nii.gz')
-                ConvertBetweenFileFormats(vol, volnii, 'short')
-                logging.info('Run FSL flirt affine registration')
-                flirt('-interp' ,'sinc'
-                      ,'-sincwidth' ,'7'
-                      ,'-sincwindow' ,'blackman'
-                      ,'-in', volnii
-                      ,'-ref', 'b0.nii.gz'
-                      ,'-nosearch'
-                      ,'-o', volnii
-                      ,'-omat', volnii.with_suffix('.txt', depth=2)
-                      ,'-paddingsize', '1')
-                volsRegistered.append(volnii)
+
+            # use the following multi-processed loop
+            pool= Pool(int(self.nproc))
+            res= pool.map_async(_Register_vol, vols)
+            volsRegistered= res.get()
+            pool.close()
+            pool.join()
+
+            # or use the following for loop
+            # volsRegistered = []
+            # for vol in vols:
+            #     volnii = vol.with_suffix('.nii.gz')
+            #     ConvertBetweenFileFormats(vol, volnii, 'short')
+            #     logging.info('Run FSL flirt affine registration')
+            #     flirt('-interp' ,'sinc'
+            #           ,'-sincwidth' ,'7'
+            #           ,'-sincwindow' ,'blackman'
+            #           ,'-in', volnii
+            #           ,'-ref', 'b0.nii.gz'
+            #           ,'-nosearch'
+            #           ,'-o', volnii
+            #           ,'-omat', volnii.with_suffix('.txt', depth=2)
+            #           ,'-paddingsize', '1')
+            #     volsRegistered.append(volnii)
+
+
             fslmerge('-t', 'EddyCorrect-DWI', volsRegistered)
             transforms = tmpdir.glob('Diffusion-G*.txt')
             transforms.sort()
