@@ -22,3 +22,8 @@ INPUT_KEYS = INTRuST
 # give the following a different name
 # so you are able to compare tract-summaries among parameters
 PROJECT_ALG_NAME = 'usrAlg '
+
+# number of processors to use, if other processes in your computer
+# becomes sluggish/you run into memory error, reduce NCPU
+# atlas.py, eddy.py, and wmql.py make use of python multi-processing capability
+NCPU = '8'
