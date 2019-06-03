@@ -71,7 +71,7 @@ class App(cli.Application):
             # so delete old data file from the hdr
             if 'data file' in hdr_out.keys():
                 del hdr_out['data file']
-            elif 'datafile' in hdr_out.key():
+            elif 'datafile' in hdr_out.keys():
                 del hdr_out['datafile']
 
             if 'content' in hdr_out.keys():

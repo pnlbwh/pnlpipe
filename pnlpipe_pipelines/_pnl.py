@@ -135,7 +135,8 @@ class DwiEpi(NrrdOutput):
                    '--dwimask', self.dwimask,
                    '--t2', self.t2,
                    '--t2mask', self.t2mask,
-                   '-o', self.output())
+                   '-o', self.output(),
+                   '-n', NCPU)
 
 
 @node(params=['BRAINSTools_hash'], deps=['dwi'])

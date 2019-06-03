@@ -9,6 +9,17 @@ import re
 import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+from multiprocessing import Pool
+
+
+def _WarpImage(dwimask, vol, xfm):
+
+    if dwimask:
+        unu('3op', 'ifelse', dwimask, vol, '0', '-o', vol)
+    volwarped = vol.stem + '-warped.nrrd'
+    WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
+                            xfm)
+    return volwarped
 
 
 class App(cli.Application):
@@ -28,6 +39,9 @@ class App(cli.Application):
         mandatory=True)
     out = cli.SwitchAttr(
         ['-o', '--out'], NonexistentNrrd, help='Transformed DWI')
+    nproc = cli.SwitchAttr(
+        ['-n', '--nproc'], help='''number of threads to use, if other processes in your computer 
+        becomes sluggish/you run into memory error, reduce --nproc''', default= 8)
 
     def main(self):
         with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
@@ -39,16 +53,29 @@ class App(cli.Application):
 
             logging.info("Apply warp to each DWI volume")
             vols = sorted(tmpdir // (dicePrefix + '*'))
-            volsWarped = []
-            for vol in vols:
-                if self.dwimask:
-                    unu('3op','ifelse',self.dwimask,vol,'0','-o',vol)
-                volwarped = vol.stem + '-warped.nrrd'
-                WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
-                                        self.xfm)
-                volsWarped.append(volwarped)
 
-            logging.info("Join warped volumes together")
+            # use the following multi-processed loop
+            pool= Pool(int(self.nproc))
+            res= []
+            for vol in vols:
+                res.append(pool.apply_async(_WarpImage, (self.dwimask, vol, self.xfm)))
+
+            volsWarped= [r.get() for r in res]
+            pool.close()
+            pool.join()
+
+
+            # or use the following for loop
+            # volsWarped = []
+            # for vol in vols:
+            #     if self.dwimask:
+            #         unu('3op','ifelse',self.dwimask,vol,'0','-o',vol)
+            #     volwarped = vol.stem + '-warped.nrrd'
+            #     WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
+            #                             self.xfm)
+            #     volsWarped.append(volwarped)
+            #
+            # logging.info("Join warped volumes together")
 
 
             (unu['join', '-a', '3', '-i', volsWarped] | \
