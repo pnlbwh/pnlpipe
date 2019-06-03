@@ -144,8 +144,9 @@ class DwiEpiMask(NrrdOutput):
     """Generates a mask from an EPI corrected DWI, which is already skullstripped."""
 
     def static_build(self):
-        from plumbum.cmd import unu
+
         with BRAINSTools.env(self.BRAINSTools_hash):
+            from plumbum.cmd import unu
             slicecmd = unu["slice", "-a", "3", "-p", 0, "-i", self.dwi]
             binarizecmd = unu["3op", "ifelse", "-", 1, 0]
             gzipcmd = unu["save", "-e", "gzip", "-f", "nrrd", "-o", self.output()]
