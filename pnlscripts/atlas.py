@@ -301,7 +301,7 @@ class AtlasArgs(cli.Application):
         help='list of labelmap images in quotations, e.g. "mask1.nrrd mask2.nrrd cingr1.nrrd cingr2.nrrd"',
         mandatory=True)
     names = cli.SwitchAttr(
-        ['-n', '--names'],
+        '--names',
         help='list of names for generated labelmaps, e.g. "atlasmask atlascingr"',
         mandatory=True)
     threads= cli.SwitchAttr(['-n', '--nproc'],
