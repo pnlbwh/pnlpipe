@@ -122,7 +122,7 @@ Now that you have installed the prerequisite software, you are ready to install 
 
     git clone https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
     git checkout py3-compatible         # temporarily we are using py3-compatible branch
-    conda env create -f python_env/environment.yml
+    conda env create -f python_env/environment36.yml
     conda activate pnlpipe3             # should introduce '(pnlpipe3)' in front of each line
     mkdir soft_dir                      # 'soft_dir' is where pipeline dependencies will be installed
     export PNLPIPE_SOFT=`pwd`/soft_dir
@@ -750,3 +750,4 @@ and run setup again.
 ## Support
 
 Create an issue at https://github.com/pnlbwh/pnlpipe/issues . We shall get back to you as early as possible.
+
