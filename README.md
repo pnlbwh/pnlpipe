@@ -30,6 +30,7 @@ Table of Contents
       * [3. Analyze data](#3-analyze-data)
    * [Tests](#tests)
    * [Pipeline scripts overview](#pipeline-scripts-overview)
+   * [DICOM to NRRD](#dicom-to-nrrd)
    * [Run and monitor](#run-and-monitor)
    * [Listing your pipeline's output](#listing-your-pipelines-output)
    * [Setup](#setup)
@@ -329,6 +330,12 @@ This table summarizes the scripts in `pnlpipe/pnlscripts/`:
 | Tractography       |  **wmqlqc.py**                     |  makes html page of rendered wmql tracts                              |
 | Tractography       |  **summarizeTractMeasures.py**     |  makes a summary of tract measures for a project
 
+
+# DICOM to NRRD
+
+*pnlpipe* accepts 3D/4D MRI in NRRD format. To generate NRRD from DWI, use [dcm2niix](https://github.com/rordenlab/dcm2niix)
+
+    ./dcm2niix -o outputDir -f namePrefix -z y -e y -b y dicomDir
 
 
 # Run and monitor
