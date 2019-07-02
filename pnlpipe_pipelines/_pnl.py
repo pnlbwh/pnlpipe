@@ -252,9 +252,10 @@ class T1wMaskMabs(NrrdOutput):
             ConvertBetweenFileFormats[self.t1, tmpt1] & FG
             trainingCsv = soft.trainingDataT1AHCC.get_path(
                 self.trainingDataT1AHCC_hash) / 'trainingDataT1AHCC-hdr.csv'
-            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir, '-n', NCPU,
+            outPrefix= tmpdir / 'trainingDataT1'
+            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir / 'trainingDataT1', '-n', NCPU,
                      trainingCsv] & FG
-            (tmpdir / 'mask.nrrd').copy(self.output())
+            (tmpdir / 'trainingDataT1-mask.nrrd').copy(self.output())
 
 
 @node(params=['BRAINSTools_hash'], deps=['moving', 'moving_mask', 'fixed'])
