@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from util import logfmt
+from util import logfmt, TemporaryDirectory, abspath, dirname, join
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms, \
     MeasureImageSimilarity
@@ -149,12 +149,12 @@ def fuseAvg(labels, out):
 def train2target(itr):
 
     idx, attr = itr
-    outdir, target= attr[-2: ]
+    tmpdir, target= attr[-2: ]
     r= attr[:-2]
 
     print('Registering image {} to target'.format(idx))
-    warp = outdir / 'warp{}.nii.gz'.format(idx)
-    atlas = outdir / 'atlas{}.nii.gz'.format(idx)
+    warp = tmpdir / 'warp{}.nii.gz'.format(idx)
+    atlas = tmpdir / 'atlas{}.nii.gz'.format(idx)
     logging.info('Make {}'.format(atlas))
 
     # warp is computed among the first column images and the target image
@@ -165,7 +165,7 @@ def train2target(itr):
 
     # labelname is the column header and label is the image in the csv file
     for labelname, label in r.iloc[1:].iteritems():  # rest of the columns of each row are used here
-        atlaslabel = outdir / '{}{}.nii.gz'.format(labelname,idx)
+        atlaslabel = tmpdir / '{}{}.nii.gz'.format(labelname,idx)
         logging.info('Make {}'.format(atlaslabel))
 
         # creates {labelname}{idx}.nii.gz in the output directory
@@ -177,92 +177,97 @@ def train2target(itr):
                   interpolation='NearestNeighbor')
 
 
-def makeAtlases(target, trainingTable, outdir, fusion, threads):
+def makeAtlases(target, trainingTable, outPrefix, fusion, threads, debug):
 
-    outdir = local.path(outdir)
-    outdir.mkdir()
+    with TemporaryDirectory() as tmpdir:
 
-    L= len(trainingTable)
+        tmpdir= local.path(tmpdir)
 
-    multiDataFrame= pd.concat([trainingTable, pd.DataFrame({'outdir': [outdir]*L, 'target': [str(target)]*L})], axis= 1)
+        L= len(trainingTable)
 
-    logging.info('Create {} atlases: compute transforms from images to target and apply over images'.format(L))
+        multiDataFrame= pd.concat([trainingTable, pd.DataFrame({'tmpdir': [tmpdir]*L, 'target': [str(target)]*L})], axis= 1)
 
-    pool = multiprocessing.Pool(threads)  # Use all available cores, otherwise specify the number you want as an argument
+        logging.info('Create {} atlases: compute transforms from images to target and apply over images'.format(L))
 
-    pool.map_async(train2target, multiDataFrame.iterrows())
+        pool = multiprocessing.Pool(threads)  # Use all available cores, otherwise specify the number you want as an argument
 
-    pool.close()
-    pool.join()
-
-    logging.info('Fuse warped labelmaps to compute output labelmaps')
-    atlasimages = outdir // 'atlas*.nii.gz'
-    # sorting is required for applying weight to corresponding labelmap
-    atlasimages.sort()
-
-    if fusion.lower() == 'wavg':
-
-        ALPHA_DEFAULT= 0.45
-
-        logging.info('Compute MI between warped images and target')
-        pool = multiprocessing.Pool(threads)
-        for img in atlasimages:
-            print('MI between {} and target'.format(img))
-            miFile= img+'.txt'
-            pool.apply_async(func= computeMI, args= (target, img, miFile, ))
+        pool.map_async(train2target, multiDataFrame.iterrows())
 
         pool.close()
         pool.join()
 
-        mis= []
-        with open(outdir+'/MI.txt','w') as fw:
+        logging.info('Fuse warped labelmaps to compute output labelmaps')
+        atlasimages = tmpdir // 'atlas*.nii.gz'
+        # sorting is required for applying weight to corresponding labelmap
+        atlasimages.sort()
 
+        if fusion.lower() == 'wavg':
+
+            ALPHA_DEFAULT= 0.45
+
+            logging.info('Compute MI between warped images and target')
+            pool = multiprocessing.Pool(threads)
             for img in atlasimages:
-                with open(img+'.txt') as f:
-                    mi= f.read().strip()
-                    fw.write(img+','+mi+'\n')
-                    mis.append(float(mi))
+                print('MI between {} and target'.format(img))
+                miFile= img+'.txt'
+                pool.apply_async(func= computeMI, args= (target, img, miFile, ))
 
-        weights = weightsFromMIExp(mis, ALPHA_DEFAULT)
+            pool.close()
+            pool.join()
+
+            mis= []
+            with open(tmpdir+'/MI.txt','w') as fw:
+
+                for img in atlasimages:
+                    with open(img+'.txt') as f:
+                        mi= f.read().strip()
+                        fw.write(img+','+mi+'\n')
+                        mis.append(float(mi))
+
+            weights = weightsFromMIExp(mis, ALPHA_DEFAULT)
 
 
-    pool = multiprocessing.Pool(threads)  # Use all available cores, otherwise specify the number you want as an argument
-    for labelname in list(trainingTable)[1:]:  #list(d) gets column names
+        pool = multiprocessing.Pool(threads)  # Use all available cores, otherwise specify the number you want as an argument
+        for labelname in list(trainingTable)[1:]:  #list(d) gets column names
 
-        out = outdir / labelname + '.nrrd'
-        if os.path.exists(out):
-            os.remove(out)
-        labelmaps = outdir // (labelname + '*')
-        labelmaps.sort()
+            out = outPrefix+ f'-{labelname}.nrrd'
+            if os.path.exists(out):
+                os.remove(out)
+            labelmaps = tmpdir // (labelname + '*')
+            labelmaps.sort()
 
-        if fusion.lower() == 'avg':
-            print(' ')
-            # parellelize
-            # fuseAvg(labelmaps, out)
-            pool.apply_async(func= fuseAvg, args= (labelmaps, out, ))
+            if fusion.lower() == 'avg':
+                print(' ')
+                # parellelize
+                # fuseAvg(labelmaps, out)
+                pool.apply_async(func= fuseAvg, args= (labelmaps, out, ))
 
-        elif fusion.lower() == 'antsjointfusion':
-            print(' ')
-            # atlasimages are the warped images
-            # labelmaps are the warped labels
-            # parellelize
-            # fuseAntsJointFusion(target, atlasimages, labelmaps, out)
-            pool.apply_async(func= fuseAntsJointFusion, args= (target, atlasimages, labelmaps, out, ))
+            elif fusion.lower() == 'antsjointfusion':
+                print(' ')
+                # atlasimages are the warped images
+                # labelmaps are the warped labels
+                # parellelize
+                # fuseAntsJointFusion(target, atlasimages, labelmaps, out)
+                pool.apply_async(func= fuseAntsJointFusion, args= (target, atlasimages, labelmaps, out, ))
 
-        elif fusion.lower() == 'wavg':
-            print(' ')
-            # parellelize
-            # fuseWeightedAvg(labelmaps, weights, out)
-            pool.apply_async(func= fuseWeightedAvg, args= (labelmaps, weights, out, ))
+            elif fusion.lower() == 'wavg':
+                print(' ')
+                # parellelize
+                # fuseWeightedAvg(labelmaps, weights, out)
+                pool.apply_async(func= fuseWeightedAvg, args= (labelmaps, weights, out, ))
 
-        else:
-            print('Unrecognized fusion option: {}. Skipping.'.format(fusion))
+            else:
+                print('Unrecognized fusion option: {}. Skipping.'.format(fusion))
 
-    pool.close()
-    pool.join()
+        pool.close()
+        pool.join()
+
+        if debug:
+            tmpdir.copy(join(dirname(outPrefix), 'atlas-debug-' + str(os.getpid())))
+
 
 class Atlas(cli.Application):
-    """Makes atlas image/labelmap pairs for a target image. Option to merge labelmaps via averaging (MABS)
+    """Makes atlas image/labelmap pairs for a target image. Option to merge labelmaps via averaging
     or AntsJointFusion."""
 
     def main(self, *args):
@@ -290,7 +295,8 @@ class AtlasArgs(cli.Application):
              'avg is naive mathematical average, wavg is weighted average where weights are computed from MI '
              'between the warped atlases and target image, antsJointFusion is local weighted averaging', default='wavg')
     out = cli.SwitchAttr(
-        ['-o', '--out'], help='output directory', mandatory=True)
+        ['-o', '--outPrefix'], help='output prefix, output labelmaps are saved as outPrefix-mask.nrrd, outPrefix-cingr.nrrd, ...',
+        mandatory=True)
 
     images = cli.SwitchAttr(
         ['-i', '--images'],
@@ -307,6 +313,7 @@ class AtlasArgs(cli.Application):
     threads= cli.SwitchAttr(['-n', '--nproc'],
         help='number of processes/threads to use (-1 for all available)',
         default= 8)
+    debug = cli.Flag('-d', help='Debug mode, saves intermediate labelmaps to atlas-debug-<pid> in output directory')
 
     def main(self):
         images = self.images.split()
@@ -336,8 +343,8 @@ class AtlasArgs(cli.Application):
         if self.threads==-1 or self.threads>N_CPU:
             self.threads= N_CPU
 
-        makeAtlases(self.target, trainingTable, self.out, self.fusions, self.threads)
-        logging.info('Made ' + self.out)
+        makeAtlases(self.target, trainingTable, self.out, self.fusions, self.threads, self.debug)
+        logging.info('Made ' + self.out + '-*.nrrd')
 
 
 @Atlas.subcommand("csv")
@@ -360,16 +367,18 @@ class AtlasCsv(cli.Application):
              'avg is naive mathematical average, wavg is weighted average where weights are computed from MI '
              'between the warped atlases and target image, antsJointFusion is local weighted averaging', default='wavg')
     out = cli.SwitchAttr(
-        ['-o', '--out'], help='output directory', mandatory=True)
+        ['-o', '--outPrefix'], help='output prefix, output labelmaps are saved as outPrefix-mask.nrrd, outPrefix-cingr.nrrd, ...',
+        mandatory=True)
     threads= cli.SwitchAttr(['-n', '--nproc'],
         help='number of processes/threads to use (-1 for all available)',
         default= 8)
+    debug = cli.Flag('-d', help='Debug mode, saves intermediate labelmaps to atlas-debug-<pid> in output directory')
 
     @cli.positional(cli.ExistingFile)
     def main(self, csvFile):
         trainingTable = pd.read_csv(csvFile)
-        makeAtlases(self.target, trainingTable, self.out, self.fusions, int(self.threads))
-        logging.info('Made ' + self.out)
+        makeAtlases(self.target, trainingTable, self.out, self.fusions, int(self.threads), self.debug)
+        logging.info('Made ' + self.out + '-*.nrrd')
 
 
 if __name__ == '__main__':
