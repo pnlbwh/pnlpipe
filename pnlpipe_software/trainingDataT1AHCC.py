@@ -3,12 +3,13 @@ from plumbum import local
 from plumbum.cmd import cmake, make
 import logging
 
+DEFAULT_HASH = '8141805'
 
-def make(commit):
+def make(commit= DEFAULT_HASH):
     """Downloads t1 training set. Has masks, amygdala-hippocampus (left/right), and cingulate (left/right). Makes '<dest>/trainingDataT1AHCC'"""
     installTraining('trainingDataT1AHCC', commit)
 
-def get_path(hash):
+def get_path(hash= DEFAULT_HASH):
     return local.path(getSoftDir() / 'trainingDataT1AHCC-' + hash)
 
 
@@ -30,4 +31,3 @@ def installTraining(repo, commit):
     with local.cwd(out):
         from plumbum.cmd import bash
         bash('./mktrainingcsv.sh', '.')
-        # chmod('a-w', local.cwd.glob('*'))
