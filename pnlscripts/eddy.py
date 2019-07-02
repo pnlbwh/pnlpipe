@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 from os import getpid
-from util import logfmt, TemporaryDirectory
+from util import logfmt, TemporaryDirectory, abspath, dirname, join
 from util.scripts import bse_py
 from plumbum import local, cli
 from plumbum.cmd import unu, ls, ConvertBetweenFileFormats, flirt, fslmerge, tar
@@ -167,7 +167,7 @@ class App(cli.Application):
             nrrd.write(self.out, new_dwi, header= hdr_out, compression_level = 1)
 
             if self.debug:
-                tmpdir.move("eddy-debug-"+str(getpid()))
+                tmpdir.copy(join(dirname(self.out),"eddy-debug-"+str(getpid())))
 
 if __name__ == '__main__':
     App.run()
