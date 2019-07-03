@@ -3,7 +3,7 @@ from __future__ import print_function
 from util import logfmt, TemporaryDirectory, abspath, dirname, join
 from plumbum import local, cli, FG
 from plumbum.cmd import unu, ConvertBetweenFileFormats, ComposeMultiTransform, antsApplyTransforms, \
-    MeasureImageSimilarity
+    MeasureImageSimilarity, head, cut, antsRegistration
 from util.antspath import antsRegistrationSyN_sh, antsRegistrationSyNQuick_sh
 from util import TemporaryDirectory
 from itertools import zip_longest
@@ -18,6 +18,17 @@ from math import exp
 import psutil
 N_CPU= psutil.cpu_count()
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
+
+
+# determine ANTS_VERSION
+# $ antsRegistration --version
+#   ANTs Version: 2.2.0.dev233-g19285
+#   Compiled: Sep  2 2018 23:23:33
+
+(antsRegistration['--version'] > '/tmp/ANTS_VERSION') & FG
+with open('/tmp/ANTS_VERSION') as f:
+      content=f.read().split('\n')
+      ANTS_VERSION= content[0].split()[-1]
 
 import logging
 logger = logging.getLogger()
@@ -78,8 +89,12 @@ def applyWarp(moving, warp, reference, out, interpolation='Linear'):
 
 
 def computeMI(target, img, miFile):
-    (MeasureImageSimilarity['-d', '3',
-                            '-m', 'MI[{},{},1,256]'.format(target, img)] > miFile) & FG
+
+    if ANTS_VERSION <= '2.1.0':
+        (MeasureImageSimilarity['3', '2', target, img] | head['-n', '-2'] | cut['-d ', '-f6'] > miFile)()
+
+    else:
+        (MeasureImageSimilarity['-d', '3', '-m', 'MI[{},{},1,256]'.format(target, img)] > miFile) & FG
 
 
 def weightsFromMIExp(mis, alpha):
