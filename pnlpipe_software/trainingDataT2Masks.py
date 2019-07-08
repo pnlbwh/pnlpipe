@@ -3,7 +3,7 @@ from plumbum import local
 from plumbum.cmd import cmake, make, chmod
 import logging
 
-DEFAULT_HASH = '8dd9239'
+DEFAULT_HASH = '12a14d9'
 
 def make(commit=DEFAULT_HASH):
     """Downloads t2 training set (has masks only). Makes '<dest>/trainingDataT2Masks"""

@@ -4,6 +4,7 @@ from util import logfmt, TemporaryDirectory
 from plumbum import local, cli, FG
 from plumbum.cmd import ConvertBetweenFileFormats
 from util.scripts import activateTensors_py
+from multiprocessing import Pool
 
 import logging
 logger = logging.getLogger()
@@ -11,6 +12,13 @@ logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
 def nrrd(f):
     return '.nhdr' in f.suffixes or '.nrrd' in f.suffixes
+
+
+def _activateTensors_py(vtk):
+    vtknew = vtk.dirname / (vtk.stem[2:] + ''.join(vtk.suffixes))
+    activateTensors_py(vtk, vtknew)
+    vtk.delete()
+
 
 class App(cli.Application):
     """Runs tract_querier. Output is <out>/*.vtk"""
@@ -32,6 +40,11 @@ class App(cli.Application):
         default=local.path(__file__).dirname / 'wmql-2.0.qry')
     out = cli.SwitchAttr(
         ['-o', '--out'], cli.NonexistentPath, help='output directory', mandatory=True)
+
+    nproc = cli.SwitchAttr(
+        ['-n', '--nproc'], help='''number of threads to use, if other processes in your computer 
+        becomes sluggish/you run into memory error, reduce --nproc''', default= 8)
+
 
     def main(self):
         with TemporaryDirectory() as t:
@@ -57,10 +70,18 @@ class App(cli.Application):
             tract_querier['-t', ukfpruned, '-a', fsindwi, '-q', self.query, '-o', self.out / '_'] & FG
 
             logging.info('Convert vtk field data to tensor data')
-            for vtk in self.out.glob('*.vtk'):
-                vtknew = vtk.dirname / (vtk.stem[2:] + ''.join(vtk.suffixes))
-                activateTensors_py(vtk, vtknew)
-                vtk.delete()
+
+            # use the following multi-processed loop
+            pool= Pool(int(self.nproc))
+            pool.map_async(_activateTensors_py, self.out.glob('*.vtk'))
+            pool.close()
+            pool.join()
+
+            # or use the following for loop
+            # for vtk in self.out.glob('*.vtk'):
+            #     vtknew = vtk.dirname / (vtk.stem[2:] + ''.join(vtk.suffixes))
+            #     activateTensors_py(vtk, vtknew)
+            #     vtk.delete()
 
 if __name__ == '__main__':
     App.run()

@@ -12,7 +12,8 @@ def make_pipeline(caseid,
                   trainingDataT1AHCC_hash=trainingDataT1AHCC_hash,
                   FreeSurfer_version=FreeSurfer_version,
                   UKFTractography_hash=UKFTractography_hash,
-                  tract_querier_hash=tract_querier_hash):
+                  tract_querier_hash=tract_querier_hash,
+                  dcm2niix_hash=dcm2niix_hash):
     """Standard PNL pipeline.
 
     dwi:           input DWI

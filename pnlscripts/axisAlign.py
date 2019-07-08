@@ -54,11 +54,11 @@ def get_numpy_rotation(spcdir_orig):
     return R
 
 
-def axis_align_dwi(dwi, hdr, outfile=None, precision=5):
+def axis_align_dwi(dwi, hdr_out, outfile=None, precision=5):
 
-    hdr_out= hdr.copy()
+    # hdr_out= hdr.copy()
 
-    spcdir_orig= hdr['space directions'][0:3, 0:3]
+    spcdir_orig= hdr_out['space directions'][0:3, 0:3]
     print(spcdir_orig)
 
     sizes = diag([linalg.norm(spcdir_orig[0,:]),linalg.norm(spcdir_orig[1,:]),linalg.norm(spcdir_orig[2,:])])
@@ -70,7 +70,7 @@ def axis_align_dwi(dwi, hdr, outfile=None, precision=5):
     spcdir_new = matrix.round(sizes @ R @ linalg.inv(sizes) @ spcdir_orig, precision)
     print(spcdir_new)
 
-    mf_orig= hdr['measurement frame']
+    mf_orig= hdr_out['measurement frame']
     print(mf_orig)
 
     mf_new = matrix.round(R @ matrix(mf_orig), precision)
@@ -82,11 +82,11 @@ def axis_align_dwi(dwi, hdr, outfile=None, precision=5):
     nrrd.write(outfile, dwi, header=hdr_out, compression_level = 1)
 
 
-def axis_align_3d(mri, hdr, outfile=None, precision= 5):
+def axis_align_3d(mri, hdr_out, outfile=None, precision= 5):
 
-    hdr_out= hdr.copy()
+    # hdr_out= hdr.copy()
 
-    spcdir_orig = hdr['space directions'][0:3, 0:3]
+    spcdir_orig = hdr_out['space directions'][0:3, 0:3]
     print(spcdir_orig)
 
     sizes = diag([linalg.norm(spcdir_orig[0,:]),linalg.norm(spcdir_orig[1,:]),linalg.norm(spcdir_orig[2,:])])
@@ -105,9 +105,8 @@ def axis_align_3d(mri, hdr, outfile=None, precision= 5):
 
 def main():
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('-i','--infile', help='a 3d or 4d nrrd image')
-    argparser.add_argument('-o','--outfile', help='a 3d or 4d nrrd image',
-                           required=False)
+    argparser.add_argument('-i','--infile', help='a 3d or 4d nrrd image', required= True)
+    argparser.add_argument('-o','--outfile', help='a 3d or 4d nrrd image', required= True)
     argparser.add_argument('-p','--precision',
                            help='precision of computed rotation matrix for dwi gradients',
                            required=False, type=int, default=5)
@@ -116,6 +115,7 @@ def main():
     args = argparser.parse_args()
 
     image_in = abspath(args.infile)
+    image_new = abspath(args.outfile)
 
     if not exists(image_in):
         print(image_in + ' doesn\'t exist')
@@ -129,12 +129,22 @@ def main():
     mri, hdr= get_attr(image_in)
     dim= str(hdr['dimension'])
 
-    image_new = splitext(image_in)[0] + '_axisaligned.nhdr' if not args.outfile else args.outfile
+
+    hdr_out= hdr.copy()
+
+    if 'data file' in hdr_out.keys():
+        del hdr_out['data file']
+    elif 'datafile' in hdr_out.keys():
+        del hdr_out['datafile']
+
+    if 'content' in hdr_out.keys():
+        del hdr_out['content']
+
 
     if dim == '4':
-        axis_align_dwi(mri, hdr, outfile= image_new, precision= args.precision)
+        axis_align_dwi(mri, hdr_out, outfile= image_new, precision= args.precision)
     elif dim == '3':
-        axis_align_3d(mri, hdr, outfile= image_new, precision= args.precision)
+        axis_align_3d(mri, hdr_out, outfile= image_new, precision= args.precision)
     else:
         print(image_in + ' has dimension %s, needs to be 3 or 4' % dim)
 

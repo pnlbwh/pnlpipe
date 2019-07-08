@@ -5,7 +5,7 @@ except ImportError:
     print('Couldn\'t import plumbum')
     print(
         'Did you forget to load python environment? (e.g. source activate pnlpipe)')
-import pnlpipe_software
+
 import pnlpipe_pipelines
 import pnlpipe_cli.pipecmd
 import pnlpipe_cli.readparams as readparams

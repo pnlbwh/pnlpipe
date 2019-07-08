@@ -1,14 +1,22 @@
 name: pnlpipe3
 
+channels:
+  - conda-forge
+  - aramislab
+
 dependencies:
   - python=3.6
+  - ipython
   - plumbum
   - future
   - numpy
   - pandas
   - vtk
+  - ants
   - cmake
   - nibabel
+  - nilearn
+  - dipy
   - pyyaml
   - psutil
   - csvkit
@@ -16,9 +24,9 @@ dependencies:
   - joblib
   - matplotlib
   - conda-build
-  - gcc_linux-64
-  - gxx_linux-64
   - git
+  - pip
   - pip:
      - git+https://github.com/dstrohl/Python_log_indenter.git
      - git+https://github.com/mhe/pynrrd.git
+     - git+https://github.com/pnlbwh/conversion.git

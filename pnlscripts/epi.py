@@ -4,7 +4,7 @@ from os import getpid
 from util import logfmt, TemporaryDirectory, ExistingNrrd, NonexistentNrrd, Nrrd
 from util.scripts import bse_py, antsApplyTransformsDWI_py
 from util.antspath import antsRegistrationSyN_sh, antsApplyTransforms, antsRegistration
-from plumbum import local, cli
+from plumbum import local, cli, FG
 from plumbum.cmd import unu
 import sys
 
@@ -26,6 +26,10 @@ class App(cli.Application):
     out = cli.SwitchAttr( ['-o', '--out'], Nrrd, help='EPI corrected DWI', mandatory=True)
     typeCast = cli.Flag(
         ['-c', '--typeCast'], help='convert the output to int16 for UKFTractography')
+
+    nproc = cli.SwitchAttr(
+        ['-n', '--nproc'], help='''number of threads to use, if other processes in your computer 
+        becomes sluggish/you run into memory error, reduce --nproc''', default= 8)
 
     def main(self):
         if not self.force and self.out.exists():
@@ -68,7 +72,8 @@ class App(cli.Application):
             local.path(str(pre) + "0Warp.nii.gz").move(epiwarp)
 
             logging.info("5. Apply warp to the DWI")
-            antsApplyTransformsDWI_py('-i', self.dwi, '-m', self.dwimask, '-t', epiwarp, '-o', dwiepi)
+            antsApplyTransformsDWI_py['-i', self.dwi, '-m', self.dwimask, '-t', epiwarp, '-o', dwiepi,
+                                      '-n', str(self.nproc)] & FG
 
             if '.nhdr' in dwiepi.suffixes:
                 unu("save", "-e", "gzip", "-f", "nrrd", "-i", dwiepi, self.out)

@@ -18,6 +18,7 @@ Table of Contents
          * [FreeSurfer](#freesurfer)
          * [FSL](#fsl)
       * [2. Install pipeline](#2-install-pipeline)
+      * [3. Tests](#3-tests)
    * [Running](#running)
       * [Running individual scripts](#running-individual-scripts)
          * [1. Configure your environment](#1-configure-your-environment)
@@ -25,9 +26,11 @@ Table of Contents
       * [Running the pipelines](#running-the-pipelines)
          * [1. Configure your environment](#1-configure-your-environment-1)
          * [2. Configure your input data](#2-configure-your-input-data)
+         * [3. Multiprocessing](#3-multiprocessing)
       * [3. Analyze data](#3-analyze-data)
    * [Tests](#tests)
    * [Pipeline scripts overview](#pipeline-scripts-overview)
+   * [DICOM to NRRD](#dicom-to-nrrd)
    * [Run and monitor](#run-and-monitor)
    * [Listing your pipeline's output](#listing-your-pipelines-output)
    * [Setup](#setup)
@@ -47,7 +50,6 @@ Table of Contents
    * [Issues](#issues)
       * [Known errors](#known-errors)
          * [1. error setting certificate verify locations](#1-error-setting-certificate-verify-locations)
-         * [2. error about a missing antsRegistration script](#2-error-about-a-missing-antsregistration-script)
       * [Support](#support)
 
 
@@ -121,9 +123,9 @@ Now that you have installed the prerequisite software, you are ready to install 
 
     git clone https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
     git checkout py3-compatible         # temporarily we are using py3-compatible branch
-    cd python_env && make conda
-    conda activate pnlpipe3             # should introduce '(pnlpipe)' in front of each line
-    cd .. && mkdir soft_dir             # 'soft_dir' is where pipeline dependencies will be installed
+    conda env create -f python_env/environment36.yml
+    conda activate pnlpipe3             # should introduce '(pnlpipe3)' in front of each line
+    mkdir soft_dir                      # 'soft_dir' is where pipeline dependencies will be installed
     export PNLPIPE_SOFT=`pwd`/soft_dir
     ./pnlpipe std init                  # makes default parameter file: pnlpipe_params/std.params
     ./pnlpipe std setup                 # builds pipeline dependencies specified in std.params
@@ -137,6 +139,29 @@ Afterwards, you may also install the epi pipeline:
 A little elaborate instruction is given in [Setup](#setup).
 
 
+## 3. Tests
+
+A small test data is provided with each release. You should download test data as follows:
+    
+    cd pnlpipe
+    wget https://github.com/pnlbwh/pnlpipe/releases/download/v2.1.0/test_data.zip
+    unzip test_data.zip # should unzip to INTRuST folder
+    cp INTRuST/pnlpipe_config.py .
+    cp INTRuST/caselist.txt .
+    
+Then, as you would run the pipeline (see [Running](#running)):
+
+    ./pnlpipe std run
+
+During pipeline execution, you can check the progress:
+
+    ./pnlpipe std status
+    
+Also, at the end of execution, you can check the summary:
+    
+    ./pnlpipe std summarize
+    
+
 # Running
 
 *(If you would like, you may edit your [bashrc](#global-bashrc) to have environment automatically setup
@@ -147,11 +172,14 @@ every time you open a new terminal)*
 ### 1. Configure your environment
 
     source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
-    conda activate pnlpipe3                    # should introduce '(pnlpipe)' in front of each line
+    conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
     export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    export FSLDIR=~/fsl/                       # setup fsl environment
+    source $FSLDIR/etc/fslconf/fsl.sh
+    export PATH=$PATH:$FSLDIR/bin
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
-
+    
 
 ### 2. Source individual software module
 
@@ -171,16 +199,22 @@ E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
 See [Pipeline scripts overview](#pipeline-scripts-overview) for details about functionality of each script.
 See [Shell environment](#shell-environment) to learn more about setting up your environment.
 
+Additionally, see [Multiprocessing](#3-multiprocessing) to speed-up your computation.
+
 
 ## Running the pipelines
 
 ### 1. Configure your environment
 
     source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
-    conda activate pnlpipe3                     # should introduce '(pnlpipe)' in front of each line
+    conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
     export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    export FSLDIR=~/fsl/                       # setup fsl environment
+    source $FSLDIR/etc/fslconf/fsl.sh
+    export PATH=$PATH:$FSLDIR/bin
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
+
 
 ### 2. Configure your input data
 
@@ -205,6 +239,21 @@ you define above. Finally, put the caseids in `./caselist.txt` you want to analy
     ...
     ...
 
+
+### 3. Multiprocessing
+
+Multi-processing is another advanced feature of *pnlpipe*. Scripts like `atlas.py`, `eddy.py`, and `wmql.py` utilizes 
+python multi-processing capability to make the work faster. You may specify `NCPU` parameter in `pnlpipe_config.py`.
+
+    NCPU = '8'
+    
+On a Linux machine, you should find the number of processors by the command `lscpu`:
+
+    On-line CPU(s) list:   0-55 
+
+You can specify any number not greater than the On-line CPU(s). However, one caveat is, other applications in your computer 
+may become sluggish or you may run into memory error due to heavier computation in the background. If this is the case, 
+reduce NCPU (`--nproc`) to less than 4.
 
 ## 3. Analyze data
 
@@ -281,6 +330,12 @@ This table summarizes the scripts in `pnlpipe/pnlscripts/`:
 | Tractography       |  **wmqlqc.py**                     |  makes html page of rendered wmql tracts                              |
 | Tractography       |  **summarizeTractMeasures.py**     |  makes a summary of tract measures for a project
 
+
+# DICOM to NRRD
+
+*pnlpipe* accepts 3D/4D MRI in NRRD format. To generate NRRD from DWI, use [dcm2niix](https://github.com/rordenlab/dcm2niix)
+
+    ./dcm2niix -o outputDir -f namePrefix -z y -e y -b y dicomDir
 
 
 # Run and monitor
@@ -372,9 +427,12 @@ space directions of all your eddy corrected DWI's, you could do the following:
 *(If you have not configured the following so far, do it now)*
 
     source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe3                      # should introduce '(pnlpipe)' in front of each line
+    conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
     export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    export FSLDIR=~/fsl/                        # setup fsl environment
+    source $FSLDIR/etc/fslconf/fsl.sh
+    export PATH=$PATH:$FSLDIR/bin
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
 Premade pipelines are in the `pnlpipe_pipelines` directory. For example, the
@@ -466,11 +524,11 @@ When you run `./pnlpipe simple init`, it will make a file like this:
 
 Now say that our `pnlpipe_config.py` looks like the following:
 
-        INPUT_KEYS = {
-        'caseid_placeholder': '{case},
-        'dwi': '../{case}/{case}-dwi.nhdr',
-        'dwiharm': '../{case}/{case}-dwi-harm.nhdr'
-        }
+    INPUT_KEYS = {
+    'caseid_placeholder': '{case},
+    'dwi': '../{case}/{case}-dwi.nhdr',
+    'dwiharm': '../{case}/{case}-dwi-harm.nhdr'
+    }
 
 where `dwi` stands for our raw DWI's, and `dwiharm` are some preprocessed
 versions. To run the `simple` pipeline on both types of DWI using the same
@@ -570,7 +628,7 @@ If you want your terminal to have the scripts automatically discoverable and env
 you may put the following lines in your bashrc:
 
     source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe3                      # should introduce '(pnlpipe)' in front of each line
+    conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
     export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     export FSLDIR=~/fsl                         # you may specify another directory where FreeSurfer is installed
@@ -695,12 +753,8 @@ run
 
 and run setup again.
 
-### 2. error about a missing antsRegistration script
-
-Copy the script from `./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts` to `./pnlpipe/soft_dir/BRAINSTools-bin-*/`.
-Alternatively, you can also do `export PATH=$PATH:./pnlpipe/soft_dir/BRAINSTools-build/ANTs/Scripts`
-
 
 ## Support
 
 Create an issue at https://github.com/pnlbwh/pnlpipe/issues . We shall get back to you as early as possible.
+

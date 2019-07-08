@@ -1,12 +1,11 @@
-import os
 from pnlpipe_software import downloadGithubRepo, getCommitInfo, getSoftDir, checkExists, TemporaryDirectory, envFromDict
 from plumbum import local
 import logging
 log = logging.getLogger(__name__)
 
-DEFAULT_HASH = 'py3k'
+DEFAULT_HASH = 'd4a88aa'
 NAME = 'tract_querier'
-REPO = 'pnlbwh/tract_querier'
+REPO = 'demianw/tract_querier'
 
 def make(commit=DEFAULT_HASH):
     """Downloads a lean version of tract_querier. Output is '$soft/tract_querier-<commit>'."""
@@ -30,8 +29,7 @@ def make(commit=DEFAULT_HASH):
         log.info("Make '{out}'".format(**locals()))
         repo.move(out)
 
-    # chmod('-R', 'a-w', out)
-    # chmod('a-w', out)
+
     with open(out / 'env.sh', 'w') as f:
         f.write("export PATH={}:$PATH\n".format(out / 'scripts'))
         f.write("export PYTHONPATH={}:$PYTHONPATH\n".format(out))

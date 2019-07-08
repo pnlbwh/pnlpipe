@@ -26,9 +26,11 @@ def centered_origin(hdr):
 
     sizes= hdr['sizes']
 
+    origin= hdr['space origin']
+
     print("space directions: " + str(spc_dirs))
     print("sizes: " + str(sizes))
-    print(hdr['space origin'])
+    print("origin: " + str(origin))
 
     new_origin = []
     for dir in spc_dirs:
@@ -39,9 +41,9 @@ def centered_origin(hdr):
         maxmin_elem = dp_abs.index(max(dp_abs))
         new_origin.append(-dp[maxmin_elem])
 
-    print("new origin: " + str(new_origin))
+    print("new origin: " + str(new_origin[:3]))
 
-    return new_origin
+    return new_origin[:3]
 
     
 class App(cli.Application):
@@ -52,14 +54,22 @@ class App(cli.Application):
 
     def main(self):
 
-        mri, hdr= get_attr(str(self.image_in))
+        mri, hdr= get_attr(self.image_in._path)
         hdr_out= hdr.copy()
 
         new_origin = centered_origin(hdr)
 
         hdr_out['space origin'] = array(new_origin)
 
-        nrrd.write(str(self.outfile), mri, header=hdr_out, compression_level=1)
+        if 'data file' in hdr_out.keys():
+            del hdr_out['data file']
+        elif 'datafile' in hdr_out.keys():
+            del hdr_out['datafile']
+
+        if 'content' in hdr_out.keys():
+            del hdr_out['content']
+
+        nrrd.write(self.outfile, mri, header=hdr_out, compression_level=1)
 
 if __name__ == '__main__':
     App.run()

@@ -2,12 +2,7 @@
 from __future__ import print_function
 import sys
 import os
-from os.path import dirname, basename, isfile
-import glob
 from tempfile import mkdtemp
-# modules = glob.glob(dirname(__file__) + "/*.py")
-# __all__ = [basename(f)[:-3] for f in modules
-#            if isfile(f) and not f.startswith('_')]
 from plumbum import local, FG, cli
 from plumbum.cmd import git, cmake, make
 import logging
@@ -17,7 +12,6 @@ log = logging.getLogger(__name__)
 def modules():
     import pkgutil
     import pnlpipe_software
-    from os.path import isfile
     for importer, modname, ispkg in pkgutil.iter_modules(
             pnlpipe_software.__path__):
         if not modname.startswith('_') and not modname.endswith('.sh'):
@@ -95,7 +89,7 @@ def downloadGithubArchive(ownerrepo, version='master'):
 
 def getCommitInfo(repo_path):
     with local.cwd(local.path(repo_path)):
-        sha = git('rev-parse', '--short', 'HEAD').strip()
+        sha = git('rev-parse', '--short=7', 'HEAD').strip()
         date = git('show', '-s', '--format=%cd', '--date=short').strip()
     return (sha, date)
 
