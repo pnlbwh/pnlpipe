@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
+
+# check python version compatibility
+import sys
+if sys.version_info.major!=2:
+    raise EnvironmentError('Requires Python 2 interpreter')
+
 from plumbum import local, cli, FG
 import itertools
 
@@ -26,10 +32,14 @@ class App(cli.Application):
         mandatory=True)
 
     def main(self):
-        wm_quality_control_tractography = local['wm_quality_control_tractography.py']
+        try:
+            wm_quality_control_tractography = local['wm_quality_control_tractography.py']
+        except:
+            raise EnvironmentError('wm_quality_control_tractography.py not in PATH, '
+                                   'see http://dmri.slicer.org/atlases/ for installation instruction.')
         tuples = zip(self.caseids.split(), map(local.path, self.wmqldirs.split()))
         vtks = [(caseid, vtk) for (caseid, d) in tuples for vtk in d // '*.vtk']
-        keyfn = lambda (s,x) : local.path(x).name[:-4]
+        keyfn = lambda s,x : local.path(x).name[:-4]
         groupedvtks = itertools.groupby(sorted(vtks, key=keyfn), key=keyfn)
         self.out.mkdir()
         for group, vtks in groupedvtks:
