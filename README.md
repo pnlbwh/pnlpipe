@@ -348,7 +348,7 @@ This table summarizes the scripts in `pnlpipe/pnlscripts/`:
 
 *pnlpipe* accepts 3D/4D MRI in NRRD format. To generate NRRD from DWI, use [dcm2niix](https://github.com/rordenlab/dcm2niix)
 
-    ./dcm2niix -o outputDir -f namePrefix -z y -e y -b y dicomDir
+    dcm2niix -o outputDir -f namePrefix -z y -e y -b y dicomDir
 
 
 # Run and monitor
