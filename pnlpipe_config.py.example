@@ -1,12 +1,5 @@
 OUTDIR = '_data' # pnlpipe/_data, alternatively you may specify an absolute path
 
-# diverting the temporary directory to avoid space shortage in shared /tmp
-# set to None to write to default /tmp
-import os
-TMPDIR = os.path.join(os.environ['HOME'],'tmp')
-# if the path you are setting doesn't exist, it will point to default /tmp
-TMPDIR = TMPDIR if os.path.exists(TMPDIR) else '/tmp'
-
 # an input path is found by looking up its key in INPUT_KEYS
 # value of each key is returned after substituting a caseid"
 # give proper paths for one caseid as your files are stored in your system

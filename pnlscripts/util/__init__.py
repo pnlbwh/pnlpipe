@@ -7,9 +7,6 @@ from tempfile import mkdtemp
 from plumbum import cli, local
 import logging
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-import pnlpipe_config
-
 logger = logging.getLogger()
 
 def logfmt(scriptname):
@@ -59,6 +56,12 @@ def NonexistentNrrd(val):
         raise ValueError("%r must be a non-existent nrrd file" % (val,))
     return p
 
+    
+TMPDIR= local.path(os.getenv('PNLPIPE_TMPDIR','/tmp/'))
+# TMPDIR= local.path(os.getenv('PNLPIPE_TMPDIR',pjoin(os.environ['HOME'],'tmp'))
+if not TMPDIR.exists():
+    TMPDIR.mkdir()
+
 class TemporaryDirectory(object):
     """Create and return a temporary directory.  This has the same
     behavior as mkdtemp but can be used as a context manager.  For
@@ -71,7 +74,7 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix="", prefix="tmp", dir=pnlpipe_config.TMPDIR):
+    def __init__(self, suffix="", prefix="tmp", dir=TMPDIR):
         self._closed = False
         self.name = None # Handle mkdtemp raising an exception
         self.name = mkdtemp(suffix, prefix, dir)
