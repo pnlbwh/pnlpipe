@@ -25,8 +25,9 @@ SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 #   ANTs Version: 2.2.0.dev233-g19285
 #   Compiled: Sep  2 2018 23:23:33
 
-(antsRegistration['--version'] > '/tmp/ANTS_VERSION') & FG
-with open('/tmp/ANTS_VERSION') as f:
+antsVerFile='/tmp/ANTS_VERSION_'+os.environ['USER']
+(antsRegistration['--version'] > antsVerFile) & FG
+with open(antsVerFile) as f:
       content=f.read().split('\n')
       ANTS_VERSION= content[0].split()[-1]
 
@@ -245,7 +246,7 @@ def makeAtlases(target, trainingTable, outPrefix, fusion, threads, debug):
         pool = multiprocessing.Pool(threads)  # Use all available cores, otherwise specify the number you want as an argument
         for labelname in list(trainingTable)[1:]:  #list(d) gets column names
 
-            out = outPrefix+ f'-{labelname}.nrrd'
+            out = os.path.abspath(outPrefix+ f'-{labelname}.nrrd')
             if os.path.exists(out):
                 os.remove(out)
             labelmaps = tmpdir // (labelname + '*')
