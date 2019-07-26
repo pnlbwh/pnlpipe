@@ -9,20 +9,22 @@ Developed by Tashrif Billah, Ryan Eckbo, Sylvain Bouix, and Isaiah Norton, Brigh
 Table of Contents
 =================
 
+   * [Table of Contents](#table-of-contents)
    * [Citation](#citation)
    * [Introduction](#introduction)
    * [Installation](#installation)
       * [1. Install prerequisites](#1-install-prerequisites)
          * [Check system architecture](#check-system-architecture)
          * [Python 3](#python-3)
-         * [FreeSurfer](#freesurfer)
          * [FSL](#fsl)
+         * [FreeSurfer](#freesurfer)
       * [2. Install pipeline](#2-install-pipeline)
       * [3. Tests](#3-tests)
    * [Running](#running)
       * [Running individual scripts](#running-individual-scripts)
          * [1. Configure your environment](#1-configure-your-environment)
-         * [2. Source individual software module](#2-source-individual-software-module)
+         * [2. Temporary directory](#2-temporary-directory)
+         * [3. Source individual software module](#3-source-individual-software-module)
       * [Running the pipelines](#running-the-pipelines)
          * [1. Configure your environment](#1-configure-your-environment-1)
          * [2. Configure your input data](#2-configure-your-input-data)
@@ -106,15 +108,15 @@ Activate the conda environment:
 
     source ~/miniconda3/bin/activate # should introduce '(base)' in front of each line
 
+### FSL
+
+Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL.    
+    
 ### FreeSurfer
     
 Follow the [instruction](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to download and install FreeSurfer >= 5.0.3
 After installation, you can check FreeSurfer version by typing `freesurfer` on the terminal.
 
-
-### FSL
-
-Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL.
 
 
 ## 2. Install pipeline
@@ -179,9 +181,19 @@ every time you open a new terminal)*
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
-    
 
-### 2. Source individual software module
+    
+### 2. Temporary directory
+
+Both *pnlpipe* and *pnlNipype* have centralized control over various temporary directories created down the pipeline. 
+The temporary directories can be large, and may possibly clog the default `/tmp/` directory. You may define custom 
+temporary directory with environment variable `PNLPIPE_TMPDIR`:
+
+    mkdir ~/tmp/
+    export PNLPIPE_TMPDIR=~/tmp/
+
+    
+### 3. Source individual software module
 
 Each software module makes a file called `env.sh` as part of their output,
 and sourcing that file will add their software path to the `PATH` environment variable,
@@ -190,6 +202,7 @@ modules make an `env.sh` file:
 
 * UKFTractography
 * BRAINSTools
+* dcm2niix
 * tract_querier
 
 E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
@@ -197,7 +210,7 @@ E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
     source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
 
 See [Pipeline scripts overview](#pipeline-scripts-overview) for details about functionality of each script.
-See [Shell environment](#shell-environment) to learn more about setting up your environment.
+See [Shell environment](#2-shell-environment) to learn more about setting up your environment.
 
 Additionally, see [Multiprocessing](#3-multiprocessing) to speed-up your computation.
 
@@ -289,7 +302,7 @@ Being written in python means they are easier to understand and modify,
 and [plumbum](https://plumbum.readthedocs.io/en/latest/) allows them to be
 almost as concise as a regular shell script.
 
-You can call any these scripts directly, e.g.
+You can call any of these scripts directly, e.g.
 
     ./pnlscripts/bse.py -h
 
@@ -614,6 +627,7 @@ modules make an `env.sh` file:
 
 * UKFTractography
 * BRAINSTools
+* dcm2niix
 * tract_querier
 * whitematteranalysis
 
