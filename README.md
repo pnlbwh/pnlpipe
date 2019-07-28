@@ -203,6 +203,7 @@ modules make an `env.sh` file:
 * UKFTractography
 * BRAINSTools
 * dcm2niix
+* ANTs
 * tract_querier
 
 E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
@@ -419,8 +420,8 @@ Sometimes you just want the list of case ids for which a particular
 output exists (or is missing), or perhaps you want the case ids alongside
 their output paths.  You can do that as follows:
 
-   ./pnlpipe std ls -s dwied # prints <caseid> for existing paths
-   ./pnlpipe std ls -c dwid  # prints <caseid>,<path> for existing paths
+    ./pnlpipe std ls -s dwied # prints <caseid> for existing paths
+    ./pnlpipe std ls -c dwid  # prints <caseid>,<path> for existing paths
 
 You can combine flags together. To get the csv of all missing Freesurfer
 subject directories, you would run
@@ -628,12 +629,17 @@ modules make an `env.sh` file:
 * UKFTractography
 * BRAINSTools
 * dcm2niix
+* ANTs
 * tract_querier
 * whitematteranalysis
 
 E.g. to add `tract_querier` to the `PATH` and `PYTHONPATH`, you would run
 
     source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
+    
+Similarly, for ANTs, you would run
+
+    source $PNLPIPE_SOFT/ANTs-bin-<hash>/env.sh
 
 
 ### Global bashrc
@@ -653,6 +659,8 @@ you may put the following lines in your bashrc:
     source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
     source $PNLPIPE_SOFT/BRAINSTools-bin-<hash>/env.sh
     source $PNLPIPE_SOFT/UKFTractography-<hash>/env.sh
+    source $PNLPIPE_SOFT/dcm2niix-<hash>/env.sh
+    source $PNLPIPE_SOFT/ANTs-bin-<hash>/env.sh
 
 
 ## 3. PNL: Running on the cluster

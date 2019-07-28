@@ -25,11 +25,11 @@ SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 #   ANTs Version: 2.2.0.dev233-g19285
 #   Compiled: Sep  2 2018 23:23:33
 
-antsVerFile='/tmp/ANTS_VERSION_'+os.environ['USER']
-(antsRegistration['--version'] > antsVerFile) & FG
-with open(antsVerFile) as f:
-      content=f.read().split('\n')
-      ANTS_VERSION= content[0].split()[-1]
+# antsVerFile='/tmp/ANTS_VERSION_'+os.environ['USER']
+# (antsRegistration['--version'] > antsVerFile) & FG
+# with open(antsVerFile) as f:
+#       content=f.read().split('\n')
+#       ANTS_VERSION= content[0].split()[-1]
 
 import logging
 logger = logging.getLogger()
@@ -91,12 +91,13 @@ def applyWarp(moving, warp, reference, out, interpolation='Linear'):
 
 def computeMI(target, img, miFile):
 
-    if ANTS_VERSION <= '2.1.0':
-        (MeasureImageSimilarity['3', '2', target, img] | head['-n', '-2'] | cut['-d ', '-f6'] > miFile)()
+    # if ANTS_VERSION <= '2.1.0':
+    #     (MeasureImageSimilarity['3', '2', target, img] | head['-n', '-2'] | cut['-d ', '-f6'] > miFile)()
+    #
+    # else:
+    #     (MeasureImageSimilarity['-d', '3', '-m', 'MI[{},{},1,256]'.format(target, img)] > miFile) & FG
 
-    else:
-        (MeasureImageSimilarity['-d', '3', '-m', 'MI[{},{},1,256]'.format(target, img)] > miFile) & FG
-
+    (MeasureImageSimilarity['-d', '3', '-m', 'MI[{},{},1,256]'.format(target, img)] > miFile) & FG
 
 def weightsFromMIExp(mis, alpha):
     factor = alpha / (max(mis) - min(mis))

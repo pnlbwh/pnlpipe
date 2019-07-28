@@ -9,10 +9,6 @@ import os
 
 DEFAULT_HASH = '81a409d'
 
-ANTSPATH= os.getenv('ANTSPATH', None)
-if not ANTSPATH:
-    ANTSPATH= local.path(os.environ['CONDA_PREFIX']) / 'bin'
-
 def make(commit=DEFAULT_HASH, delete=False):
     """Downloads and compiles BRAINSTools binaries. Output is '$soft/BRAINSTools-bin-<hash>'."""
 
@@ -74,7 +70,6 @@ def make(commit=DEFAULT_HASH, delete=False):
 
     with open(out / 'env.sh', 'w') as f:
         f.write("export PATH={}:$PATH\n".format(out))
-        f.write("export ANTSPATH={}\n".format(ANTSPATH))
     symlink.unlink()
     out.symlink(symlink)
 
@@ -88,7 +83,7 @@ def get_path(bthash=DEFAULT_HASH):
 
 def env_dict(bthash):
     btpath = get_path(bthash)
-    return { 'PATH': btpath, 'ANTSPATH': ANTSPATH}
+    return { 'PATH': btpath}
 
 def env(bthash):
     return envFromDict(env_dict(bthash))
