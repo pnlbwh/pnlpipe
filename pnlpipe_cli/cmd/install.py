@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from plumbum import local, cli
 import logging
 logger = logging.getLogger(__name__)
@@ -24,3 +26,6 @@ where softwareModule is one of:
         else:
             logger.info("Make '{}'".format(softwareModule.get_path()))
             softwareModule.make()
+
+if __name__=='__main__':
+    SoftwareCommand()
