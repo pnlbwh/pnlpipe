@@ -20,6 +20,7 @@ Table of Contents
          * [FreeSurfer](#freesurfer)
       * [2. Install pipeline](#2-install-pipeline)
       * [3. Tests](#3-tests)
+      * [4. whitematteranalysis package](#4-whitematteranalysis-package)
    * [Running](#running)
       * [Running individual scripts](#running-individual-scripts)
          * [1. Configure your environment](#1-configure-your-environment)
@@ -110,7 +111,11 @@ Activate the conda environment:
 
 ### FSL
 
-Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL.    
+Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL.
+
+Make sure to do the patch for *imcp/imglob/immv errors* from the instruction.
+
+
     
 ### FreeSurfer
     
@@ -162,7 +167,34 @@ During pipeline execution, you can check the progress:
 Also, at the end of execution, you can check the summary:
     
     ./pnlpipe std summarize
+
+
+## 4. whitematteranalysis package
+
+If you would like to analyze quality of tractography fibers, you should also install [whitematteranalysis](https://github.com/SlicerDMRI/whitematteranalysis) by Lauren O'Donnell. 
+While *pnlpipe* is based on *Python 3*, `whitematteranalysis` requires *Python 2* interpreter. 
+To install `whitematteranalysis`, open a new terminal and run the following set of commands:
     
+    # download proper binay for your platform from https://repo.anaconda.com/miniconda.html
+    wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/Miniconda2-latest-Linux-x86_64.sh
+    
+    # install Python 2, you may install in another location specified by -p
+    sh ~/Miniconda2-latest-Linux-x86_64.sh -b -p ~/miniconda2/ 
+    
+    # this will set up the conda environment for package installation
+    source ~/miniconda2/bin/activate
+    
+    # install the package
+    pip install git+https://github.com/SlicerDMRI/whitematteranalysis.git
+    
+    # define an environment variable so Python 2 can be found by pnlscripts/wmqlqc.py
+    export PY2BIN=/absolute/path/to/miniconda2/bin
+    
+    
+[Here](https://github.com/SlicerDMRI/whitematteranalysis) is the detailed instruction for installation. Upon successful 
+installation, you should be able to run `~/miniconda2/bin/wm_quality_control_tractography.py --help`.
+
+
 
 # Running
 
