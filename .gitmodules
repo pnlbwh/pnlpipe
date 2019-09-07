@@ -1,0 +1,6 @@
+[submodule "pnlpipe_software"]
+	path = pnlpipe_software
+	url = https://github.com/pnlbwh/pnlpipe_software.git
+[submodule "pnlpipe_cli/cmd"]
+	path = pnlpipe_cli/cmd
+	url = https://github.com/pnlbwh/cmd.git

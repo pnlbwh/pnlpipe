@@ -2,7 +2,7 @@ import sys
 import os
 from pnlpipe_lib import node, Node, reduce_hash, filehash, dirhash, LOG, find_tag
 import pnlpipe_lib.dag as dag
-from pnlpipe_software import BRAINSTools
+from pnlpipe_software import BRAINSTools, ANTs
 from pnlpipe_config import NCPU
 import pnlpipe_software as soft
 from plumbum import local, FG
@@ -24,6 +24,7 @@ FreeSurfer_version = '5.3.0'
 UKFTractography_hash = '662c16f'
 tract_querier_hash = 'd4a88aa'
 dcm2niix_hash= '54cfd51'
+ANTs_hash= 'ca32228'
 ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              "--recordLength", 1.7, "--seedFALimit", 0.18, "--seedsPerVoxel",
              10, "--stepLength", 0.3]
@@ -107,12 +108,12 @@ class DwiXc(NrrdOutput):
             alignAndCenter_py['-i', inputnrrd, '-o', self.output()] & LOG
 
 
-@node(params=['BRAINSTools_hash'], deps=['dwi'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['dwi'])
 class DwiEd(NrrdOutput):
     """ Eddy current correction. Accepts nrrd only. """
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash):
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
             eddy_py['-i', self.dwi, '-o', self.output(), '--force', '-n', NCPU] & LOG
 
 
@@ -125,12 +126,12 @@ class DwiMaskBet(NrrdOutput):
                    self.output())
 
 
-@node(params=['BRAINSTools_hash'], deps=['dwi', 'dwimask', 't2', 't2mask'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['dwi', 'dwimask', 't2', 't2mask'])
 class DwiEpi(NrrdOutput):
     """DWI EPI correction."""
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash):
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
             epi_py('--force', '--typeCast',
                    '--dwi', self.dwi,
                    '--dwimask', self.dwimask,
@@ -239,13 +240,12 @@ class T2Xc(StrctXc):
     pass
 
 
-@node(params=['BRAINSTools_hash', 'trainingDataT1AHCC_hash'], deps=['t1'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash', 'trainingDataT1AHCC_hash'], deps=['t1'])
 class T1wMaskMabs(NrrdOutput):
     """Generates a T1w mask using multi-atlas brain segmentation."""
 
     def static_build(self):
-        with local.tempdir() as tmpdir, BRAINSTools.env(
-                self.BRAINSTools_hash):
+        with local.tempdir() as tmpdir, BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
             tmpdir = local.path(tmpdir)
             tmpt1 = tmpdir / ('t1' + ''.join(self.t1.suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
@@ -258,12 +258,12 @@ class T1wMaskMabs(NrrdOutput):
             (tmpdir / 'trainingDataT1-mask.nrrd').copy(self.output())
 
 
-@node(params=['BRAINSTools_hash'], deps=['moving', 'moving_mask', 'fixed'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['moving', 'moving_mask', 'fixed'])
 class MaskRigid(NrrdOutput):
     """Rigidly transforms a mask from one structural scan to another."""
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash), local.tempdir() as tmpdir:
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash), local.tempdir() as tmpdir:
             moving = tmpdir / 'moving.nrrd'
             movingmask = tmpdir / 'movingmask.nrrd'
             fixed = tmpdir / 'fixed.nrrd'
@@ -286,17 +286,17 @@ class FreeSurferUsingMask(DirOutput):
     def static_build(self):
         soft.FreeSurfer.validate(self.FreeSurfer_version)
         with BRAINSTools.env(self.BRAINSTools_hash):
-            fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
+            pass
+            # fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
 
 
-@node(params=['BRAINSTools_hash'], deps=['fs', 'dwi', 'dwimask'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['fs', 'dwi', 'dwimask'])
 class FsInDwiDirect(NiftiOutput):
     """Direct registration from FreeSurfer wmparc to DWI."""
 
     def static_build(self):
         fssubjdir = self.fs
-        with local.tempdir() as tmpdir, BRAINSTools.env(
-                self.BRAINSTools_hash):
+        with local.tempdir() as tmpdir, BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
             tmpoutdir = tmpdir / 'fsindwi'
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'

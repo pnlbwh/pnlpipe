@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-# check python version compatibility
-import sys
-if sys.version_info.major!=2:
-    raise EnvironmentError('Requires Python 2 interpreter')
-
 from plumbum import local, cli, FG
 import itertools
+from os import getenv
+from os.path import join as pjoin, isfile
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
@@ -32,14 +29,21 @@ class App(cli.Application):
         mandatory=True)
 
     def main(self):
-        try:
-            wm_quality_control_tractography = local['wm_quality_control_tractography.py']
-        except:
-            raise EnvironmentError('wm_quality_control_tractography.py not in PATH, '
-                                   'see http://dmri.slicer.org/atlases/ for installation instruction.')
+
+        PY2BIN= getenv('PY2BIN', None)
+        if not PY2BIN:
+            raise EnvironmentError('whitematteranalysis requires Python 2 interpreter, define export PY2BIN=/absolute/path/to/miniconda2/bin')
+
+        else:
+            wmqlqc_tract_path = pjoin(PY2BIN, 'wm_quality_control_tractography.py')
+            if isfile(wmqlqc_tract_path):
+                wm_quality_control_tractography = local[wmqlqc_tract_path]
+            else:
+                raise FileNotFoundError(f'whitematteranalysis not found in {PY2BIN}, see README.md for instruction')
+
         tuples = zip(self.caseids.split(), map(local.path, self.wmqldirs.split()))
         vtks = [(caseid, vtk) for (caseid, d) in tuples for vtk in d // '*.vtk']
-        keyfn = lambda s,x : local.path(x).name[:-4]
+        keyfn = lambda x : local.path(x).name[:-4]
         groupedvtks = itertools.groupby(sorted(vtks, key=keyfn), key=keyfn)
         self.out.mkdir()
         for group, vtks in groupedvtks:

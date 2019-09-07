@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from util import logfmt, TemporaryDirectory
+from util import logfmt, TemporaryDirectory, join, dirname
 from plumbum import local, cli, FG
 from plumbum.cmd import ConvertBetweenFileFormats
 import sys, os, psutil, warnings
@@ -101,6 +101,11 @@ class FsToDwi(cli.Application):
         default= False,
         mandatory= False)
 
+    debug = cli.Flag(
+        ['-d','--debug'],
+        help='Debug mode, saves intermediate transforms to out/fs2dwi-debug-<pid>',
+        default= False)
+
 
     def main(self):
 
@@ -196,6 +201,9 @@ class Direct(cli.Application):
                 wmparcinbrain.copy(self.parent.out)
 
 
+            if self.parent.debug:
+                tmpdir.copy(self.parent.out, 'fs2dwi-debug-' + str(os.getpid()))
+
         logging.info('See output files in '+ self.parent.out._path)
 
 
@@ -214,6 +222,7 @@ class WithT2(cli.Application):
         cli.ExistingFile,
         help='T2 mask',
         mandatory=True)
+
 
 
     def main(self):
@@ -304,6 +313,10 @@ class WithT2(cli.Application):
             if b0maskedbrain.exists():
                 b0maskedbrain.copy(self.parent.out)
                 wmparcinbrain.copy(self.parent.out)
+
+
+            if self.parent.debug:
+                tmpdir.copy(self.parent.out, 'fs2dwi-debug-' + str(os.getpid()))
 
 
         logging.info('See output files in '+ self.parent.out._path)
