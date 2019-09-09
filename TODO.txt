@@ -1,18 +1,8 @@
 # Checks by Ryan Ekbo:
 
-## Add tests
-
 ## ENH:
-* make bse.py and fs2dwi.py operate on niftis, then FsInDwi doesn't need to convert to nrrd first 
 * handle empty caselist in readparams.py
-* missing caselist: make more descriptive
-* missing params file: change exception to log message
 * add validators to pipeline (e.g. dwi validator/nrrdchecker)
-* add permutation check to bse.py (currently assumes correct dwi permutation)
-
-## STY:
-* static_build -> build
-* if building  master, don't say building '...-master'
 
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
@@ -32,3 +22,4 @@ Tashrif has codes for it in pnlbwh/conversion/nifti_write.py
 manually binarized mask over epi corrected DWI. See pnlpipe_pipelines/_pnl.py:class DwiEpiMask(NrrdOutput)
 
 * conversion to int16 in `epi.py` should be removed
+
