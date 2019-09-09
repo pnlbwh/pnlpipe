@@ -128,7 +128,7 @@ After installation, you can check FreeSurfer version by typing `freesurfer` on t
 
 Now that you have installed the prerequisite software, you are ready to install the pipelines (std, epi, hcp):
 
-    git clone https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
+    git clone --recurse-submodules https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
     git checkout py3-compatible         # temporarily we are using py3-compatible branch
     conda env create -f python_env/environment36.yml
     conda activate pnlpipe3             # should introduce '(pnlpipe3)' in front of each line
