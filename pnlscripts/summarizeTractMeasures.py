@@ -6,7 +6,7 @@ if sys.version_info[0] < 3:
     from StringIO import StringIO
 else:
     from io import StringIO
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from pnlpipe_config import PROJECT_ALG_NAME
 
 def summarize(df):
