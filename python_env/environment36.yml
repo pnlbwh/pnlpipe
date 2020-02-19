@@ -2,7 +2,6 @@ name: pnlpipe3
 
 channels:
   - conda-forge
-  - aramislab
 
 dependencies:
   - python=3.6
