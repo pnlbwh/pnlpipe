@@ -207,11 +207,11 @@ every time you open a new terminal)*
 
     source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
     conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
-    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
-    source $FREESURFER_HOME/SetUpFreeSurfer.sh
-    export FSLDIR=~/fsl/                       # setup fsl environment
+    export FSLDIR=~/fsl/                       # you may specify another directory where FSL is installed
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
+    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
     
@@ -254,11 +254,11 @@ Additionally, see [Multiprocessing](#3-multiprocessing) to speed-up your computa
 
     source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
     conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
-    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
-    source $FREESURFER_HOME/SetUpFreeSurfer.sh
-    export FSLDIR=~/fsl/                       # setup fsl environment
+    export FSLDIR=~/fsl/                       # you may specify another directory where FSL is installed
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
+    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
 
@@ -474,11 +474,11 @@ space directions of all your eddy corrected DWI's, you could do the following:
 
     source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
     conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
-    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
-    source $FREESURFER_HOME/SetUpFreeSurfer.sh
-    export FSLDIR=~/fsl/                        # setup fsl environment
+    export FSLDIR=~/fsl/                        # you may specify another directory where FSL is installed 
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
+    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
 Premade pipelines are in the `pnlpipe_pipelines` directory. For example, the
@@ -681,12 +681,12 @@ you may put the following lines in your bashrc:
 
     source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
     conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
-    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
-    source $FREESURFER_HOME/SetUpFreeSurfer.sh
-    export FSLDIR=~/fsl                         # you may specify another directory where FreeSurfer is installed
+    export FSLDIR=~/fsl                         # you may specify another directory where FSL is installed
     export PATH=$PATH:$FSLDIR/bin
     source $FSLDIR/etc/fslconf/fsl.sh
-    export $PATH=$PATH:/absolute/path/to/pnlpipe/pnlscripts
+    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    export PATH=$PATH:/absolute/path/to/pnlpipe/pnlscripts
     export PNLPIPE_SOFT=/absolute/path/to/pnlpipe/soft_dir
     source $PNLPIPE_SOFT/tract_querier-<hash>/env.sh
     source $PNLPIPE_SOFT/BRAINSTools-bin-<hash>/env.sh
