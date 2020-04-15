@@ -393,7 +393,7 @@ class AtlasCsv(cli.Application):
 
     @cli.positional(cli.ExistingFile)
     def main(self, csvFile):
-        trainingTable = pd.read_csv(csvFile)
+        trainingTable = pd.read_csv(csvFile._path)
         makeAtlases(self.target, trainingTable, self.out, self.fusions, int(self.threads), self.debug)
         logging.info('Made ' + self.out + '-*.nrrd')
 
