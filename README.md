@@ -4,6 +4,8 @@
 
 Developed by Tashrif Billah, Ryan Eckbo, Sylvain Bouix, and Isaiah Norton, Brigham and Women's Hospital (Harvard Medical School).
 
+This pipeline is also available as Docker and Singularity containers. See [pnlpipe-containers](https://github.com/pnlbwh/pnlpipe-containers) for details.
+
 <!-- markdown-toc start - Don't edit this section. Run [gh-md-toc](https://github.com/ekalinin/github-markdown-toc to generate toc again -->
 
 Table of Contents
