@@ -123,7 +123,7 @@ def fuseWeightedAvg(labels, weights, out):
     with TemporaryDirectory() as tmpdir:
         nii = local.path(tmpdir) / 'avg.nii.gz'
         Nifti1Image= nib.Nifti1Image(data, affine= affine, header= img.header)
-        nib.save(Nifti1Image, nii)
+        nib.save(Nifti1Image, str(nii))
         ConvertBetweenFileFormats(nii, out)
 
     print("Made labelmap: " + out)
