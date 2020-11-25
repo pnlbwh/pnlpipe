@@ -173,7 +173,6 @@ class Direct(cli.Application):
 
             if dwi_res.ptp() or brain_res.ptp():
                 logging.info('Resolution is not uniform among all the axes')
-                sys.exit(1)
 
 
             logging.info('Registering wmparc to B0')
@@ -286,7 +285,6 @@ class WithT2(cli.Application):
 
             if dwi_res.ptp() or brain_res.ptp():
                 logging.info('Resolution is not uniform among all the axes')
-                sys.exit(1)
 
 
             logging.info('Registering wmparc to B0 through T2')
