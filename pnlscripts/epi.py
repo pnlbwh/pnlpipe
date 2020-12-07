@@ -86,7 +86,7 @@ class App(cli.Application):
             unu('convert', '-t', 'uchar', '-i', epimask, '-o', epimask)
 
             if '.nhdr' in dwiepi.suffixes:
-                unu("save", "-e", "gzip", "-f", "nrrd", "-i", dwiepi, self.out)
+                unu("save", "-e", "gzip", "-f", "nrrd", "-i", dwiepi, "-o", self.out)
             else:
                 dwiepi.move(self.out)
 
