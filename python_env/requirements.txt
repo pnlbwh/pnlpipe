@@ -26,7 +26,7 @@ dash
 tensorflow==1.12.0
 keras==2.2.4
 git
-git+https://github.com/tashrifbillah/whitematteranalysis.git
+git+https://github.com/SlicerDMRI/whitematteranalysis.git
 git+https://github.com/dstrohl/Python_log_indenter.git
 git+https://github.com/mhe/pynrrd.git
 git+https://github.com/pnlbwh/conversion.git
