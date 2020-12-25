@@ -1,14 +1,32 @@
+# This recipe is not maintained actively.
+# Please follow environment36.yml instead.
+# In fact, it is a mirror of environment36.yml
+# but not tested adequately as `pip install -r requirements.txt`.
+
 ipython
 plumbum
 future
 numpy
 pandas
 vtk
+cmake
 nibabel
 nilearn
 dipy
 pyyaml
 psutil
-python_log_indenter
-pynrrd
+csvkit
+cython
+joblib
+matplotlib
+conda-build
+luigi
+sqlalchemy
+dash
+tensorflow==1.12.0
+keras==2.2.4
+git
+git+https://github.com/tashrifbillah/whitematteranalysis.git
+git+https://github.com/dstrohl/Python_log_indenter.git
+git+https://github.com/mhe/pynrrd.git
 git+https://github.com/pnlbwh/conversion.git
