@@ -108,7 +108,7 @@ Download [Miniconda Python 3.6 bash installer](https://conda.io/miniconda.html) 
 
 Activate the conda environment:
 
-    source ~/miniconda3/bin/activate # should introduce '(base)' in front of each line
+    source ~/miniconda3/bin/activate        # should introduce '(base)' in front of each line
 
 ### FSL
 
@@ -130,7 +130,6 @@ After installation, you can check FreeSurfer version by typing `freesurfer` on t
 Now that you have installed the prerequisite software, you are ready to install the pipelines (std, epi, hcp):
 
     git clone --recurse-submodules https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
-    git checkout py3-compatible         # temporarily we are using py3-compatible branch
     conda env create -f python_env/environment36.yml
     conda activate pnlpipe3             # should introduce '(pnlpipe3)' in front of each line
     mkdir soft_dir                      # 'soft_dir' is where pipeline dependencies will be installed
@@ -180,12 +179,12 @@ every time you open a new terminal)*
 
 ### 1. Configure your environment
 
-    source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
-    conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl/                       # you may specify another directory where FSL is installed
+    source ~/miniconda3/bin/activate                  # should introduce '(base)' in front of each line
+    conda activate pnlpipe3                           # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl/                       # you may specify another directory where FSL is installed
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
-    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer        # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
@@ -196,8 +195,8 @@ Both *pnlpipe* and *pnlNipype* have centralized control over various temporary d
 The temporary directories can be large, and may possibly clog the default `/tmp/` directory. You may define custom 
 temporary directory with environment variable `PNLPIPE_TMPDIR`:
 
-    mkdir ~/tmp/
-    export PNLPIPE_TMPDIR=~/tmp/
+    mkdir /path/to/tmp/
+    export PNLPIPE_TMPDIR=/path/to/tmp/
 
     
 ### 3. Source individual software module
@@ -227,12 +226,12 @@ Additionally, see [Multiprocessing](#3-multiprocessing) to speed-up your computa
 
 ### 1. Configure your environment
 
-    source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
-    conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl/                       # you may specify another directory where FSL is installed
+    source ~/miniconda3/bin/activate                  # should introduce '(base)' in front of each line
+    conda activate pnlpipe3                           # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl/                       # you may specify another directory where FSL is installed
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
-    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer        # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
@@ -447,12 +446,12 @@ space directions of all your eddy corrected DWI's, you could do the following:
 
 *(If you have not configured the following so far, do it now)*
 
-    source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl/                        # you may specify another directory where FSL is installed 
+    source ~/miniconda3/bin/activate                   # should intoduce '(base)' in front of each line
+    conda activate pnlpipe3                            # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl/                        # you may specify another directory where FSL is installed 
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
-    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
@@ -654,12 +653,12 @@ Similarly, for ANTs, you would run
 If you want your terminal to have the scripts automatically discoverable and environment ready to go,
 you may put the following lines in your bashrc:
 
-    source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl                         # you may specify another directory where FSL is installed
+    source ~/miniconda3/bin/activate                   # should intoduce '(base)' in front of each line
+    conda activate pnlpipe3                            # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl                         # you may specify another directory where FSL is installed
     export PATH=$PATH:$FSLDIR/bin
     source $FSLDIR/etc/fslconf/fsl.sh
-    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     export PATH=$PATH:/absolute/path/to/pnlpipe/pnlscripts
     export PNLPIPE_SOFT=/absolute/path/to/pnlpipe/soft_dir
