@@ -28,6 +28,7 @@ dependencies:
   - statsmodels
   - tensorflow==1.12.0
   - keras==2.2.4
+  - h5py<3
   - git
   - pip
   - pip:
