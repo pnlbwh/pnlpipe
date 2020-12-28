@@ -25,6 +25,7 @@ sqlalchemy
 dash
 tensorflow==1.12.0
 keras==2.2.4
+h5py<3
 git
 git+https://github.com/SlicerDMRI/whitematteranalysis.git
 git+https://github.com/dstrohl/Python_log_indenter.git
