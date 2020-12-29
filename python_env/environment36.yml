@@ -14,7 +14,7 @@ dependencies:
   - cmake
   - nibabel
   - nilearn
-  - dipy
+  - dipy<1.3.0
   - pyyaml
   - psutil
   - csvkit
