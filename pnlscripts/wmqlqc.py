@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import util
-from util import TemporaryDirectory
+
 from plumbum import local, cli, FG
-import sys
 import itertools
+from os import getenv
+from os.path import join as pjoin, isfile
 
 def concat(l):
     return l if l == [] else [item for sublist in l for item in sublist]
@@ -29,10 +29,12 @@ class App(cli.Application):
         mandatory=True)
 
     def main(self):
+
         wm_quality_control_tractography = local['wm_quality_control_tractography.py']
+
         tuples = zip(self.caseids.split(), map(local.path, self.wmqldirs.split()))
         vtks = [(caseid, vtk) for (caseid, d) in tuples for vtk in d // '*.vtk']
-        keyfn = lambda (s,x) : local.path(x).name[:-4]
+        keyfn = lambda x : local.path(x).name[:-4]
         groupedvtks = itertools.groupby(sorted(vtks, key=keyfn), key=keyfn)
         self.out.mkdir()
         for group, vtks in groupedvtks:

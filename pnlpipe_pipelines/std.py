@@ -12,7 +12,9 @@ def make_pipeline(caseid,
                   trainingDataT1AHCC_hash=trainingDataT1AHCC_hash,
                   FreeSurfer_version=FreeSurfer_version,
                   UKFTractography_hash=UKFTractography_hash,
-                  tract_querier_hash=tract_querier_hash):
+                  tract_querier_hash=tract_querier_hash,
+                  dcm2niix_hash=dcm2niix_hash,
+                  ANTs_hash=ANTs_hash):
     """Standard PNL pipeline.
 
     dwi:           input DWI
@@ -48,7 +50,7 @@ def make_pipeline(caseid,
     tags['t1xc'] = T1Xc(params, deps=[tags['t1']])
 
     if inputT1maskKey:
-        tags['t1mask'] = InputKey(params=[inputT1maskKey, caseid])
+        tags['t1mask'] = InputPathFromKey(params=[inputT1maskKey, caseid])
     else:
         tags['t1mask'] = T1wMaskMabs(params, deps=[tags['t1xc']])
 

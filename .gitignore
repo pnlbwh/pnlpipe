@@ -1,6 +1,6 @@
 *.pyc
-caselist.txt
-#.*
-pipeline_config.py
+.idea/
 python_env/
-_data/
+*_data/
+pnlpipe_params/
+soft_*/

@@ -9,6 +9,17 @@ import re
 import logging
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
+from multiprocessing import Pool
+
+
+def _WarpImage(dwimask, vol, xfm):
+
+    if dwimask:
+        unu('3op', 'ifelse', dwimask, vol, '0', '-o', vol)
+    volwarped = vol.stem + '-warped.nrrd'
+    WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
+                            xfm)
+    return volwarped
 
 
 class App(cli.Application):
@@ -28,6 +39,9 @@ class App(cli.Application):
         mandatory=True)
     out = cli.SwitchAttr(
         ['-o', '--out'], NonexistentNrrd, help='Transformed DWI')
+    nproc = cli.SwitchAttr(
+        ['-n', '--nproc'], help='''number of threads to use, if other processes in your computer 
+        becomes sluggish/you run into memory error, reduce --nproc''', default= 8)
 
     def main(self):
         with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
@@ -35,37 +49,62 @@ class App(cli.Application):
             dicePrefix = 'dwi'
 
             logging.info("Dice DWI")
-            (unu['convert', '-t', 'int16', '-i', self.dwi] | \
-                unu['dice','-a','3','-o',dicePrefix]) & FG
+            unu['dice','-a','3','-i',self.dwi,'-o',dicePrefix] & FG
 
             logging.info("Apply warp to each DWI volume")
             vols = sorted(tmpdir // (dicePrefix + '*'))
-            volsWarped = []
-            for vol in vols:
-                if self.dwimask:
-                    unu('3op','ifelse',self.dwimask,vol,'0','-o',vol)
-                volwarped = vol.stem + '-warped.nrrd'
-                WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
-                                        self.xfm)
-                unu('convert', '-t', 'int16', '-i', volwarped, '-o', volwarped)
-                volsWarped.append(volwarped)
 
-            logging.info("Join warped volumes together")
+            # use the following multi-processed loop
+            pool= Pool(int(self.nproc))
+            res= []
+            for vol in vols:
+                res.append(pool.apply_async(_WarpImage, (self.dwimask, vol, self.xfm)))
+
+            volsWarped= [r.get() for r in res]
+            pool.close()
+            pool.join()
+
+
+            # or use the following for loop
+            # volsWarped = []
+            # for vol in vols:
+            #     if self.dwimask:
+            #         unu('3op','ifelse',self.dwimask,vol,'0','-o',vol)
+            #     volwarped = vol.stem + '-warped.nrrd'
+            #     WarpImageMultiTransform('3', vol, volwarped, '-R', vol,
+            #                             self.xfm)
+            #     volsWarped.append(volwarped)
+            #
+            # logging.info("Join warped volumes together")
+
+
             (unu['join', '-a', '3', '-i', volsWarped] | \
-                unu['save', '-e', 'gzip', '-f', 'nrrd'] | \
-                unu['data','-'] > 'tmpdwi.raw.gz') & FG
+                unu['save', '-e', 'gzip', '-f', 'nrrd', '-o', 'dwi.nhdr']) & FG
+
+            # get data type
+            with open("dwi.nhdr", "r") as hdr:
+                lines = hdr.readlines()
+                for line in lines:
+                    if 'type' in line:
+                        typeline=line
 
             logging.info(
                 "Create new nrrd header pointing to the newly generated data file")
-            unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', self.dwi, '-o',
-                'dwi.nhdr')
-            with open("dwi.nhdr", "r") as hdr:
+
+            unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', self.dwi, '-o', 'tmpdwi.nhdr')
+
+            # get other header fields
+            with open("tmpdwi.nhdr", "r") as hdr:
                 lines = hdr.readlines()
+
             with open("dwi.nhdr", "w") as hdr:
                 for line in lines:
-                    hdr.write(
-                        re.sub(r'^data file:.*$', 'data file: tmpdwi.raw.gz',
-                               line))
+                    if 'data file' in line:
+                        hdr.write('data file: dwi.raw.gz\n')
+                    elif 'type' in line:
+                        hdr.write(typeline)
+                    else:
+                        hdr.write(line)
 
             logging.info('Make ' + str(self.out))
             unu('save', '-e', 'gzip', '-f', 'nrrd', '-i', 'dwi.nhdr', '-o',

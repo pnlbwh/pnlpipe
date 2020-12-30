@@ -1,13 +1,11 @@
 from __future__ import print_function
 from os.path import abspath, exists, dirname, join
-import os
+import os, sys
 import os as _os
-import logging
 import warnings as _warnings
 from tempfile import mkdtemp
 from plumbum import cli, local
 import logging
-
 
 logger = logging.getLogger()
 
@@ -58,6 +56,12 @@ def NonexistentNrrd(val):
         raise ValueError("%r must be a non-existent nrrd file" % (val,))
     return p
 
+    
+TMPDIR= local.path(os.getenv('PNLPIPE_TMPDIR','/tmp/'))
+# TMPDIR= local.path(os.getenv('PNLPIPE_TMPDIR',pjoin(os.environ['HOME'],'tmp'))
+if not TMPDIR.exists():
+    TMPDIR.mkdir()
+
 class TemporaryDirectory(object):
     """Create and return a temporary directory.  This has the same
     behavior as mkdtemp but can be used as a context manager.  For
@@ -70,7 +74,7 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix="", prefix="tmp", dir=None):
+    def __init__(self, suffix="", prefix="tmp", dir=TMPDIR):
         self._closed = False
         self.name = None # Handle mkdtemp raising an exception
         self.name = mkdtemp(suffix, prefix, dir)
@@ -172,8 +176,8 @@ class LocalModule(ModuleType):
     def __getattr__(self, name):
         antspath = os.environ.get('ANTSPATH',None)
         if not antspath:
-            raise Exception("ANTSPATH not set, make sure it's exported, e.g export ANTSPATH[=/path/to/software]")
-        path = os.environ.get('PATH',None)
+            raise Exception("ANTSPATH is not set, make sure it is exported, e.g export ANTSPATH[=/path/to/software]")
+
         scriptname = name.replace('_', '.')
         filename = join(antspath, scriptname)
         if not antspath or not exists(filename):

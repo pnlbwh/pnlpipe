@@ -1,7 +1,11 @@
 name: pnlpipe3
 
+channels:
+  - conda-forge
+
 dependencies:
   - python=3.6
+  - ipython
   - plumbum
   - future
   - numpy
@@ -9,6 +13,8 @@ dependencies:
   - vtk
   - cmake
   - nibabel
+  - nilearn
+  - dipy<1.3.0
   - pyyaml
   - psutil
   - csvkit
@@ -16,8 +22,18 @@ dependencies:
   - joblib
   - matplotlib
   - conda-build
-  - gcc_linux-64
-  - gxx_linux-64
+  - luigi
+  - sqlalchemy
+  - dash
+  - statsmodels
+  - tensorflow==1.12.0
+  - keras==2.2.4
+  - scikit-image
+  - h5py<3
   - git
+  - pip
   - pip:
+     - git+https://github.com/SlicerDMRI/whitematteranalysis.git
      - git+https://github.com/dstrohl/Python_log_indenter.git
+     - git+https://github.com/mhe/pynrrd.git
+     - git+https://github.com/pnlbwh/conversion.git

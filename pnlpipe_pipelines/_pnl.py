@@ -2,7 +2,8 @@ import sys
 import os
 from pnlpipe_lib import node, Node, reduce_hash, filehash, dirhash, LOG, find_tag
 import pnlpipe_lib.dag as dag
-from pnlpipe_software import BRAINSTools
+from pnlpipe_software import BRAINSTools, ANTs
+from pnlpipe_config import NCPU
 import pnlpipe_software as soft
 from plumbum import local, FG
 from pnlscripts import dwiconvert_py, alignAndCenter_py, atlas_py, eddy_py, bet_py, wmql_py, epi_py, makeRigidMask_py, fs_py, fs2dwi_py
@@ -11,16 +12,19 @@ import pnlpipe_cli.caseidnode as caseidnode
 import itertools
 import logging
 from python_log_indenter import IndentedLoggerAdapter
+import pandas as pd
 logger = logging.getLogger(__name__)
 log = IndentedLoggerAdapter(logger, indent_char='.')
 
 # defaults that pipelines can use
 bet_threshold = 0.1
-BRAINSTools_hash = '95ac1e28'
-trainingDataT1AHCC_hash = 'd6e5990'
+BRAINSTools_hash = '81a409d'
+trainingDataT1AHCC_hash = '8141805'
 FreeSurfer_version = '5.3.0'
-UKFTractography_hash = 'ce12942'
-tract_querier_hash = 'c57d670'
+UKFTractography_hash = '2e485b4'
+tract_querier_hash = 'd4a88aa'
+dcm2niix_hash= 'c0a3731'
+ANTs_hash= 'ca32228'
 ukfparams = ["--Ql", 70, "--Qm", 0.001, "--Rs", 0.015, "--numTensor", 2,
              "--recordLength", 1.7, "--seedFALimit", 0.18, "--seedsPerVoxel",
              10, "--stepLength", 0.3]
@@ -104,13 +108,13 @@ class DwiXc(NrrdOutput):
             alignAndCenter_py['-i', inputnrrd, '-o', self.output()] & LOG
 
 
-@node(params=['BRAINSTools_hash'], deps=['dwi'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['dwi'])
 class DwiEd(NrrdOutput):
     """ Eddy current correction. Accepts nrrd only. """
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash):
-            eddy_py['-i', self.dwi, '-o', self.output(), '--force'] & LOG
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
+            eddy_py['-i', self.dwi, '-o', self.output(), '--force', '-n', NCPU] & LOG
 
 
 @node(params=['bet_threshold', 'BRAINSTools_hash'], deps=['dwi'])
@@ -122,18 +126,19 @@ class DwiMaskBet(NrrdOutput):
                    self.output())
 
 
-@node(params=['BRAINSTools_hash'], deps=['dwi', 'dwimask', 't2', 't2mask'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['dwi', 'dwimask', 't2', 't2mask'])
 class DwiEpi(NrrdOutput):
     """DWI EPI correction."""
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash):
-            epi_py('--force',
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
+            epi_py('--force', '--typeCast',
                    '--dwi', self.dwi,
                    '--dwimask', self.dwimask,
                    '--t2', self.t2,
                    '--t2mask', self.t2mask,
-                   '-o', self.output())
+                   '-o', self.output(),
+                   '-n', NCPU)
 
 
 @node(params=['BRAINSTools_hash'], deps=['dwi'])
@@ -141,7 +146,9 @@ class DwiEpiMask(NrrdOutput):
     """Generates a mask from an EPI corrected DWI, which is already skullstripped."""
 
     def static_build(self):
+
         with BRAINSTools.env(self.BRAINSTools_hash):
+            from plumbum.cmd import unu
             slicecmd = unu["slice", "-a", "3", "-p", 0, "-i", self.dwi]
             binarizecmd = unu["3op", "ifelse", "-", 1, 0]
             gzipcmd = unu["save", "-e", "gzip", "-f", "nrrd", "-o", self.output()]
@@ -178,7 +185,7 @@ class DwiHcp(NiftiOutput):
 
 
     def static_build(self):
-        #with soft.HCPPipelines.env(self.HCPPipelines_version), local.tempdir() as tmpdir:
+        # with soft.HCPPipelines.env(self.HCPPipelines_version), local.tempdir() as tmpdir:
         with soft.HCPPipelines.env(self.HCPPipelines_version):
             tmpdir = local.path('hcp_tmp')
             tmpdir.mkdir()
@@ -233,33 +240,30 @@ class T2Xc(StrctXc):
     pass
 
 
-@node(params=['BRAINSTools_hash', 'trainingDataT1AHCC_hash'], deps=['t1'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash', 'trainingDataT1AHCC_hash'], deps=['t1'])
 class T1wMaskMabs(NrrdOutput):
     """Generates a T1w mask using multi-atlas brain segmentation."""
 
     def static_build(self):
-        with local.tempdir() as tmpdir, BRAINSTools.env(
-                self.BRAINSTools_hash):
+        with local.tempdir() as tmpdir, BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
             tmpdir = local.path(tmpdir)
-            # antsRegistration can't handle a non-conventionally named file, so
-            # we need to pass in a conventionally named one
-            # TODO needed any more?
             tmpt1 = tmpdir / ('t1' + ''.join(self.t1.suffixes))
             from plumbum.cmd import ConvertBetweenFileFormats
             ConvertBetweenFileFormats[self.t1, tmpt1] & FG
             trainingCsv = soft.trainingDataT1AHCC.get_path(
                 self.trainingDataT1AHCC_hash) / 'trainingDataT1AHCC-hdr.csv'
-            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir,
+            outPrefix= tmpdir / 'trainingDataT1'
+            atlas_py['csv', '--fusion', 'avg', '-t', tmpt1, '-o', tmpdir / 'trainingDataT1', '-n', NCPU,
                      trainingCsv] & FG
-            (tmpdir / 'mask.nrrd').copy(self.output())
+            (tmpdir / 'trainingDataT1-mask.nrrd').copy(self.output())
 
 
-@node(params=['BRAINSTools_hash'], deps=['moving', 'moving_mask', 'fixed'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['moving', 'moving_mask', 'fixed'])
 class MaskRigid(NrrdOutput):
     """Rigidly transforms a mask from one structural scan to another."""
 
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash), local.tempdir() as tmpdir:
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash), local.tempdir() as tmpdir:
             moving = tmpdir / 'moving.nrrd'
             movingmask = tmpdir / 'movingmask.nrrd'
             fixed = tmpdir / 'fixed.nrrd'
@@ -272,7 +276,7 @@ class MaskRigid(NrrdOutput):
             out.move(self.output())
 
 
-@node(params=['FreeSurfer_version'], deps=['t1', 't1mask'])
+@node(params=['FreeSurfer_version','BRAINSTools_hash'], deps=['t1', 't1mask'])
 class FreeSurferUsingMask(DirOutput):
     """Runs FreeSurfer after masking the T1w with the given mask."""
 
@@ -281,17 +285,17 @@ class FreeSurferUsingMask(DirOutput):
 
     def static_build(self):
         soft.FreeSurfer.validate(self.FreeSurfer_version)
-        fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
+        with BRAINSTools.env(self.BRAINSTools_hash):
+            fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
 
 
-@node(params=['BRAINSTools_hash'], deps=['fs', 'dwi', 'dwimask'])
+@node(params=['BRAINSTools_hash', 'ANTs_hash'], deps=['fs', 'dwi', 'dwimask'])
 class FsInDwiDirect(NiftiOutput):
     """Direct registration from FreeSurfer wmparc to DWI."""
 
     def static_build(self):
         fssubjdir = self.fs
-        with local.tempdir() as tmpdir, BRAINSTools.env(
-                self.BRAINSTools_hash):
+        with local.tempdir() as tmpdir, BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
             tmpoutdir = tmpdir / 'fsindwi'
             tmpdwi = tmpdir / 'dwi.nrrd'
             tmpdwimask = tmpdir / 'dwimask.nrrd'
@@ -299,41 +303,7 @@ class FsInDwiDirect(NiftiOutput):
             convertImage(self.dwimask, tmpdwimask, self.BRAINSTools_hash)
             fs2dwi_py['-f', fssubjdir, '-t', tmpdwi, '-m', tmpdwimask, '-o',
                       tmpoutdir, 'direct'] & FG
-            local.path(tmpoutdir / 'wmparcInDwi1mm.nii.gz').copy(self.output())
-
-
-@node(
-    params=['BRAINSTools_hash'],
-    deps=['fs', 'dwi', 'dwimask', 't1', 't1mask', 't2', 't2mask'])
-class FsInDwiUsingT2(NiftiOutput):
-    """Registration from FreeSurfer wmparc to DWI using intermediate
-    t1 and t2 registrations."""
-
-    def static_build(self):
-        fssubjdir = self.fs
-        with local.tempdir() as tmpdir, BRAINSTools.env(
-                self.BRAINSTools_hash):
-            tmpoutdir = tmpdir / 'fsindwi'
-            dwi = tmpdir / 'dwi.nrrd'
-            dwimask = tmpdir / 'dwimask.nrrd'
-            fs = tmpdir / 'fs'
-            t2 = tmpdir / 't2.nrrd'
-            t1 = tmpdir / 't1.nrrd'
-            t1mask = tmpdir / 't1mask.nrrd'
-            t2mask = tmpdir / 't2mask.nrrd'
-            fssubjdir.copy(fs)
-            dwiconvert_py('-i', self.dwi, '-o', dwi)
-            convertImage(self.dwimask, dwimask, self.BRAINSTools_hash)
-            convertImage(self.t2, t2, self.BRAINSTools_hash)
-            convertImage(self.t1, t1, self.BRAINSTools_hash)
-            convertImage(self.t2mask, t2mask, self.BRAINSTools_hash)
-            convertImage(self.t1mask, t1mask, self.BRAINSTools_hash)
-            script = local['pnlscripts/old/fs2dwi_T2.sh']
-            script['--fsdir', fs, '--dwi', dwi, '--dwimask', dwimask, '--t2',
-                   t2, '--t2mask', t2mask, '--t1', t1, '--t1mask', t1mask,
-                   '-o', tmpoutdir] & FG
-            convertImage(tmpoutdir / 'wmparc-in-bse.nrrd', self.output(),
-                         self.BRAINSTools_hash)
+            local.path(tmpoutdir / 'wmparcInDwi.nii.gz').copy(self.output())
 
 
 @node(
@@ -359,7 +329,7 @@ class Ukf(VtkOutput):
             ukfbin.bound_command(*params) & FG
 
 
-@node(params=['tract_querier_hash'], deps=['fsindwi', 'ukf'])
+@node(params=['tract_querier_hash','BRAINSTools_hash'], deps=['fsindwi', 'ukf'])
 class Wmql(DirOutput):
     """White matter query language"""
 
@@ -368,9 +338,9 @@ class Wmql(DirOutput):
 
     def static_build(self):
         self.output().delete()
-        with soft.tract_querier.env(self.tract_querier_hash):
+        with soft.tract_querier.env(self.tract_querier_hash), BRAINSTools.env(self.BRAINSTools_hash):
             wmql_py['-i', self.ukf, '--fsindwi', self.fsindwi, '-o',
-                    self.output()] & FG
+                    self.output(), '-n', NCPU] & FG
 
 
 @node(params=['caseid'], deps=['wmql'])
@@ -380,20 +350,18 @@ class TractMeasures(CsvOutput):
     def static_build(self):
         measureTracts_py = local[
             'pnlscripts/measuretracts/measureTracts.py']
-        vtks = self.wmql.up() // '*.vtk'
+        vtks = self.wmql // '*.vtk'
         measureTracts_py['-f', '-c', 'caseid', 'algo', '-v', self.caseid,
                          dag.showCompressedDAG(self.deps['wmql']), '-o', self.output(), '-i', vtks] & FG
-
 
 def summarize_tractmeasures(pipename, extra_flags=None):
     from pnlpipe_lib import OUTDIR
     from pnlpipe_cli import read_grouped_combos, make_pipeline
-
     log.info("Combine all csvs into one")
     dfs = []
     for paramid, combo, caseids in read_grouped_combos(pipename):
         pipelines = [make_pipeline(pipename, combo, caseid) for caseid in caseids]
-        csvs = ([pipeline['tractmeasures'].output().__str__() for pipeline in pipelines if \
+        csvs = ([pipeline['tractmeasures'].output().__str__() for pipeline in pipelines if
                      pipeline['tractmeasures'].output().exists()])
         if csvs:
             df = pd.concat(filter(lambda x: x is not None, (pd.read_csv(csv) for csv in csvs)))
@@ -403,12 +371,11 @@ def summarize_tractmeasures(pipename, extra_flags=None):
         from pnlscripts.summarizeTractMeasures import summarize
         df = pd.concat(dfs)
         df_summary = summarize(df)
-        #if 'csv' in extraFlags:
         outcsv = OUTDIR / (pipename + '-tractmeasures.csv')
         df.to_csv(outcsv.__str__(), header=True, index=False)
         log.info("Made '{}'".format(outcsv))
         outcsv_summary = OUTDIR / (pipename + '-tractmeasures-summary.csv')
-        #df_summary.to_csv(outcsv_summary.__str__(), header=True, index=False)
+        # df_summary.to_csv(outcsv_summary.__str__(), header=True, index=False)
         df_summary.to_csv(outcsv_summary.__str__(), header=True)
         log.info("Made '{}'".format(outcsv_summary))
     else:

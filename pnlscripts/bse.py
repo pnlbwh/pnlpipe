@@ -4,7 +4,7 @@ from __future__ import print_function
 import operator
 from util import logfmt, ExistingNrrdOrNifti, Nrrd
 from plumbum import local, cli, FG
-from plumbum.cmd import unu
+from plumbum.cmd import unu, ImageMath
 
 import logging
 logger = logging.getLogger()
@@ -20,14 +20,14 @@ def isNrrd(f):
 
 
 def get_grad_dirs(hdr):
-    return [map(float, line.split(b'=')[1].split())
-            for line in hdr.splitlines() if b'DWMRI_gradient' in line]
+    return [map(float, line.split('=')[1].split())
+            for line in hdr.splitlines() if 'DWMRI_gradient' in line]
 
 
 def get_bval(hdr):
     for line in hdr.splitlines():
-        if b'b-value' in line:
-            return float(line.split(b'=')[1])
+        if 'b-value' in line:
+            return float(line.split('=')[1])
 
 
 def nrrd_get_b0_index(dwi):

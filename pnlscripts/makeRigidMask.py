@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from util import logfmt, TemporaryDirectory
-import util
 from plumbum import local, cli, FG
 from util.antspath import antsRegistrationSyN_sh, antsApplyTransforms
-import sys
 
 import logging
 logger = logging.getLogger()
@@ -12,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG, format=logfmt(__file__))
 
 
 class App(cli.Application):
-    """Rigidly align a labelmap (usually a mask) to make another labelmap from a given one"""
+    """Rigidly align a given labelmap (usually a mask) to make another labelmap"""
 
     infile = cli.SwitchAttr(['-i','--infile'], cli.ExistingFile, help='structural (nrrd/nii)',mandatory=True)
     labelmap = cli.SwitchAttr(['-l','--labelmap'], cli.ExistingFile, help='structural labelmap, usually a mask (nrrd/nii)',mandatory=True)
@@ -24,7 +22,7 @@ class App(cli.Application):
             tmpdir = local.path(tmpdir)
             pre = tmpdir / 'ants'
             rigidxfm = pre + '0GenericAffine.mat'
-            antsRegistrationSyN_sh['-t', 'r', '-m', self.infile, '-f', self.target, '-o', pre, '-n', 32] & FG
+            antsRegistrationSyN_sh['-t', 'r', '-m', self.infile, '-f', self.target, '-o', pre, '-n', 4] & FG
             antsApplyTransforms('-d', '3'
                                 ,'-i', self.labelmap
                                 ,'-t', rigidxfm

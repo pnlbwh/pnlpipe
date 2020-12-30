@@ -1,0 +1,25 @@
+# Checks by Ryan Ekbo:
+
+## ENH:
+* handle empty caselist in readparams.py
+* add validators to pipeline (e.g. dwi validator/nrrdchecker)
+
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+
+# Checks by Tashrif Billah:
+
+## ENH:
+* make all unu dice along gradient axis, join accordingly:
+see antsApplyTransformsDWI.py and eddy.py
+Tashrif has codes for it in pnlbwh/conversion/bval_bvec_io.nrrd_bvals_bvecs
+
+* eddy.py assumes only lps or ras for the input DWI which may not be true
+Tashrif has codes for it in pnlbwh/conversion/nifti_write.py
+
+## BUG:
+* DwiEpiMask-*.nrrd header has gradients in it since it is not a bet mask rather a
+manually binarized mask over epi corrected DWI. See pnlpipe_pipelines/_pnl.py:class DwiEpiMask(NrrdOutput)
+
+* conversion to int16 in `epi.py` should be removed
+
