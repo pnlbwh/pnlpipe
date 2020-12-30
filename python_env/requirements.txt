@@ -23,7 +23,7 @@ conda-build
 luigi
 sqlalchemy
 dash
-tensorflow==1.12.0
+tensorflow==2.4.0
 keras==2.2.4
 scikit-image
 h5py<3
