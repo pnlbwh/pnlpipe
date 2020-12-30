@@ -22,7 +22,6 @@ Table of Contents
          * [FreeSurfer](#freesurfer)
       * [2. Install pipeline](#2-install-pipeline)
       * [3. Tests](#3-tests)
-      * [4. whitematteranalysis package](#4-whitematteranalysis-package)
    * [Running](#running)
       * [Running individual scripts](#running-individual-scripts)
          * [1. Configure your environment](#1-configure-your-environment)
@@ -109,7 +108,7 @@ Download [Miniconda Python 3.6 bash installer](https://conda.io/miniconda.html) 
 
 Activate the conda environment:
 
-    source ~/miniconda3/bin/activate # should introduce '(base)' in front of each line
+    source ~/miniconda3/bin/activate        # should introduce '(base)' in front of each line
 
 ### FSL
 
@@ -131,7 +130,6 @@ After installation, you can check FreeSurfer version by typing `freesurfer` on t
 Now that you have installed the prerequisite software, you are ready to install the pipelines (std, epi, hcp):
 
     git clone --recurse-submodules https://github.com/pnlbwh/pnlpipe.git && cd pnlpipe
-    git checkout py3-compatible         # temporarily we are using py3-compatible branch
     conda env create -f python_env/environment36.yml
     conda activate pnlpipe3             # should introduce '(pnlpipe3)' in front of each line
     mkdir soft_dir                      # 'soft_dir' is where pipeline dependencies will be installed
@@ -171,32 +169,6 @@ Also, at the end of execution, you can check the summary:
     ./pnlpipe std summarize
 
 
-## 4. whitematteranalysis package
-
-If you would like to analyze quality of tractography fibers, you should also install [whitematteranalysis](https://github.com/SlicerDMRI/whitematteranalysis) by Lauren O'Donnell. 
-While *pnlpipe* is based on *Python 3*, `whitematteranalysis` requires *Python 2* interpreter. 
-To install `whitematteranalysis`, open a new terminal and run the following set of commands:
-    
-    # download proper binay for your platform from https://repo.anaconda.com/miniconda.html
-    wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/Miniconda2-latest-Linux-x86_64.sh
-    
-    # install Python 2, you may install in another location specified by -p
-    sh ~/Miniconda2-latest-Linux-x86_64.sh -b -p ~/miniconda2/ 
-    
-    # this will set up the conda environment for package installation
-    source ~/miniconda2/bin/activate
-    
-    # install the package
-    pip install git+https://github.com/SlicerDMRI/whitematteranalysis.git
-    
-    # define an environment variable so Python 2 can be found by pnlscripts/wmqlqc.py
-    export PY2BIN=/absolute/path/to/miniconda2/bin
-    
-    
-[Here](https://github.com/SlicerDMRI/whitematteranalysis) is the detailed instruction for installation. Upon successful 
-installation, you should be able to run `~/miniconda2/bin/wm_quality_control_tractography.py --help`.
-
-
 
 # Running
 
@@ -207,12 +179,12 @@ every time you open a new terminal)*
 
 ### 1. Configure your environment
 
-    source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
-    conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl/                       # you may specify another directory where FSL is installed
+    source ~/miniconda3/bin/activate                  # should introduce '(base)' in front of each line
+    conda activate pnlpipe3                           # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl/                       # you may specify another directory where FSL is installed
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
-    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer        # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
@@ -223,8 +195,8 @@ Both *pnlpipe* and *pnlNipype* have centralized control over various temporary d
 The temporary directories can be large, and may possibly clog the default `/tmp/` directory. You may define custom 
 temporary directory with environment variable `PNLPIPE_TMPDIR`:
 
-    mkdir ~/tmp/
-    export PNLPIPE_TMPDIR=~/tmp/
+    mkdir /path/to/tmp/
+    export PNLPIPE_TMPDIR=/path/to/tmp/
 
     
 ### 3. Source individual software module
@@ -254,12 +226,12 @@ Additionally, see [Multiprocessing](#3-multiprocessing) to speed-up your computa
 
 ### 1. Configure your environment
 
-    source ~/miniconda3/bin/activate           # should introduce '(base)' in front of each line
-    conda activate pnlpipe3                    # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl/                       # you may specify another directory where FSL is installed
+    source ~/miniconda3/bin/activate                  # should introduce '(base)' in front of each line
+    conda activate pnlpipe3                           # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl/                       # you may specify another directory where FSL is installed
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
-    export FREESURFER_HOME=~/freesurfer        # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer        # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
@@ -474,12 +446,12 @@ space directions of all your eddy corrected DWI's, you could do the following:
 
 *(If you have not configured the following so far, do it now)*
 
-    source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl/                        # you may specify another directory where FSL is installed 
+    source ~/miniconda3/bin/activate                   # should intoduce '(base)' in front of each line
+    conda activate pnlpipe3                            # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl/                        # you may specify another directory where FSL is installed 
     source $FSLDIR/etc/fslconf/fsl.sh
     export PATH=$PATH:$FSLDIR/bin
-    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     cd pnlpipe && export PNLPIPE_SOFT=`pwd`/soft_dir
 
@@ -681,12 +653,12 @@ Similarly, for ANTs, you would run
 If you want your terminal to have the scripts automatically discoverable and environment ready to go,
 you may put the following lines in your bashrc:
 
-    source ~/miniconda3/bin/activate            # should intoduce '(base)' in front of each line
-    conda activate pnlpipe3                     # should introduce '(pnlpipe3)' in front of each line
-    export FSLDIR=~/fsl                         # you may specify another directory where FSL is installed
+    source ~/miniconda3/bin/activate                   # should intoduce '(base)' in front of each line
+    conda activate pnlpipe3                            # should introduce '(pnlpipe3)' in front of each line
+    export FSLDIR=/path/to/fsl                         # you may specify another directory where FSL is installed
     export PATH=$PATH:$FSLDIR/bin
     source $FSLDIR/etc/fslconf/fsl.sh
-    export FREESURFER_HOME=~/freesurfer         # you may specify another directory where FreeSurfer is installed
+    export FREESURFER_HOME=/path/to/freesurfer         # you may specify another directory where FreeSurfer is installed
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
     export PATH=$PATH:/absolute/path/to/pnlpipe/pnlscripts
     export PNLPIPE_SOFT=/absolute/path/to/pnlpipe/soft_dir

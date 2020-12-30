@@ -28,7 +28,7 @@ def load_transforms(path: str):
     else:
         # Otherwise, glob the directory
         # FIXME? don't assume the pattern?
-        filenames = glob.glob(path + "/Diffusion-*")
+        filenames = glob.glob(path + "/Diffusion-*.txt")
         filenames.sort()
         filedata = [open(f, 'rb').read() for f in filenames]
 
@@ -170,8 +170,8 @@ def main(args=sys.argv):
             parser.error("'output' argument is required!")
 
     if args.single_subject:
-        if (not os.path.exists(os.path.dirname(args.input)) or
-            os.path.isdir(args.input)):
+        if (not os.path.exists(os.path.dirname(args.output)) or
+            os.path.isdir(args.output)):
             print("Error: `output` argument must be filename, in an existing directory")
             sys.exit(1)
 
