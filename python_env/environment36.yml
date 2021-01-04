@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.6
   - ipython
+  - pytest
   - plumbum
   - future
   - numpy

@@ -4,6 +4,7 @@
 # but not tested adequately as `pip install -r requirements.txt`.
 
 ipython
+pytest
 plumbum
 future
 numpy
