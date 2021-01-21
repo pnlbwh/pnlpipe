@@ -11,7 +11,7 @@ dependencies:
   - future
   - numpy
   - pandas
-  - vtk
+  - vtk<=8.2.0
   - cmake
   - nibabel
   - nilearn
