@@ -1,6 +1,5 @@
 *.pyc
 .idea/
-python_env/
-*_data/
+_data/
 pnlpipe_params/
-soft_*/
+soft_dir/
