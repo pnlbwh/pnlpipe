@@ -84,7 +84,7 @@ each node represents an output, and the arrows represent dependencies:
 Dependencies:
 
 * unu
-* freesurfer
+* FreeSurfer
 * ANTs
 * numpy
 * FSL
@@ -94,7 +94,7 @@ Dependencies:
 
 ## 1. Install prerequisites
 
-Python 3, FreeSurfer>=5.0.3 and FSL (ignore the one(s) you have already):
+Python >= 3.6, FreeSurfer >= 5.3.0 and FSL >= 5.0.11 (ignore the one(s) you have already):
 
 ### Check system architecture
 
@@ -112,7 +112,7 @@ Activate the conda environment:
 
 ### FSL
 
-Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL.
+Follow the [instruction](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) to download and install FSL >= 5.0.11.
 
 Make sure to do the patch for *imcp/imglob/immv errors* from the instruction.
 
@@ -120,7 +120,7 @@ Make sure to do the patch for *imcp/imglob/immv errors* from the instruction.
     
 ### FreeSurfer
     
-Follow the [instruction](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to download and install FreeSurfer >= 5.0.3
+Follow the [instruction](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to download and install FreeSurfer >= 5.3.0
 After installation, you can check FreeSurfer version by typing `freesurfer` on the terminal.
 
 
