@@ -285,7 +285,7 @@ class FreeSurferUsingMask(DirOutput):
 
     def static_build(self):
         soft.FreeSurfer.validate(self.FreeSurfer_version)
-        with BRAINSTools.env(self.BRAINSTools_hash):
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash):
             fs_py['-i', self.t1, '-m', self.t1mask, '-f', '-o', self.output()] & FG
 
 
