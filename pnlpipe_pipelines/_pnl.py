@@ -120,7 +120,7 @@ class DwiEd(NrrdOutput):
 @node(params=['bet_threshold', 'BRAINSTools_hash', 'ANTs_hash'], deps=['dwi'])
 class DwiMaskBet(NrrdOutput):
     def static_build(self):
-        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash) \
+        with BRAINSTools.env(self.BRAINSTools_hash), ANTs.env(self.ANTs_hash), \
              local.tempdir() as tmpdir:
             bet_py('--force', '-f', self.bet_threshold, '-i', self.dwi, '-o',
                    self.output())
