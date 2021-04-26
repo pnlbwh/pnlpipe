@@ -276,7 +276,7 @@ class MaskRigid(NrrdOutput):
             out.move(self.output())
 
 
-@node(params=['FreeSurfer_version','BRAINSTools_hash'], deps=['t1', 't1mask'])
+@node(params=['FreeSurfer_version','BRAINSTools_hash','ANTs_hash'], deps=['t1', 't1mask'])
 class FreeSurferUsingMask(DirOutput):
     """Runs FreeSurfer after masking the T1w with the given mask."""
 
