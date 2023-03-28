@@ -1,44 +1,33 @@
 name: pnlpipe3-gpu
 
 channels:
-  - conda-forge
+    - conda-forge
 
 dependencies:
-  - python=3.6
-  - ipython
-  - pytest
-  - plumbum
-  - future
-  - numpy
-  - pandas
-  - vtk<=8.2.0
-  - cmake
-  - nibabel
-  - nilearn
-  - dipy<1.3.0
-  - pyyaml
-  - psutil
-  - csvkit
-  - gcc_linux-64<=7.3.0
-  - gxx_linux-64<=7.3.0
-  - joblib
-  - matplotlib
-  - conda-build
-  - luigi
-  - sqlalchemy
-  - dash
-  - statsmodels
-  - tensorflow-gpu==1.12.0
-  - keras==2.2.4
-  - cudnn==7.6.0
-  - scikit-image
-  - h5py<3
-  - git
-  - pip
-  - pip:
-     - prompt-toolkit==2.0.1
-     - gputil
-     - git+https://github.com/SlicerDMRI/whitematteranalysis.git
-     - git+https://github.com/dstrohl/Python_log_indenter.git
-     - git+https://github.com/mhe/pynrrd.git
-     - git+https://github.com/pnlbwh/conversion.git
+    - python
+    - ipython
+
+    - tensorflow-gpu==1.12.0
+    - cudnn==7.6.0
+    - keras==2.2.4
+    - torchvision=0.8.2
+    - h5py<3
+
+    - nibabel
+    - luigi
+    - plumbum
+    - sqlalchemy
+    - psutil
+    - pip
+
+    - pip:
+        - prompt-toolkit
+        - gputil
+        - scikit-image
+        - SimpleITK
+        - dipy==1.2.0
+        - torch
+        - git+https://github.com/pnlbwh/conversion.git
+        - git+https://github.com/MIC-DKFZ/batchgenerators#egg=batchgenerators
+
+
