@@ -58,7 +58,6 @@ def NonexistentNrrd(val):
 
     
 TMPDIR= local.path(os.getenv('PNLPIPE_TMPDIR','/tmp/'))
-# TMPDIR= local.path(os.getenv('PNLPIPE_TMPDIR',pjoin(os.environ['HOME'],'tmp'))
 if not TMPDIR.exists():
     TMPDIR.mkdir()
 
